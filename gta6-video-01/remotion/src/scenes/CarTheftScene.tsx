@@ -1,0 +1,55 @@
+import React from 'react';
+import {AbsoluteFill, interpolate, useCurrentFrame, Easing} from 'remotion';
+import {KineticText} from '../components/KineticText';
+import {Flash, NumberBadge, Shake, Whip} from '../components/Fx';
+import {ClipSlot} from '../components/ClipSlot';
+import {C, FONT} from '../theme';
+
+const Panel: React.FC<{title: string; sub: string; color: string; at: number}> = ({title, sub, color, at}) => {
+  const frame = useCurrentFrame();
+  const p = interpolate(frame, [at, at + 12], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.back(1.6))});
+  return (
+    <div style={{width: 400, padding: '30px 26px', borderRadius: 30, background: '#0B0620ee', border: `6px solid ${color}`, transform: `scale(${p}) rotate(${(1 - p) * 8}deg)`, opacity: p, textAlign: 'center'}}>
+      <div style={{fontFamily: FONT, fontWeight: 900, fontSize: 64, color, lineHeight: 1}}>{title}</div>
+      <div style={{fontFamily: FONT, fontSize: 28, color: '#fff', marginTop: 10}}>{sub}</div>
+    </div>
+  );
+};
+/** Stylised lock interaction. Fictional UI representation, not a real-world how-to. */
+export const CarTheftScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const prog = interpolate(frame, [170, 250], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const go = interpolate(frame, [270, 360], [-300, 1400], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.in(Easing.cubic)});
+  const R = 170, circ = 2 * Math.PI * R;
+  return (
+    <ClipSlot k="theft" fallback={
+      <AbsoluteFill style={{background: `linear-gradient(${C.ink}, #2b0f5a 60%, ${C.pink})`}}>
+        <div style={{position: 'absolute', left: 190, top: 700, width: 700, height: 340, display: frame < 270 ? 'block' : 'none'}}>
+          <svg viewBox="0 0 700 340" width="700" height="340"><path d="M20 260 Q40 120 220 100 L440 90 Q640 110 680 250 L680 290 L20 290Z" fill={C.turquoise} /><path d="M250 112 L440 104 Q560 120 600 200 L250 200Z" fill="#0B0620" opacity=".75" /><circle cx="160" cy="292" r="48" fill="#111" /><circle cx="540" cy="292" r="48" fill="#111" /></svg>
+        </div>
+        <div style={{position: 'absolute', left: go, top: 760, width: 560, display: frame >= 270 ? 'block' : 'none'}}><svg viewBox="0 0 700 340"><path d="M20 260 Q40 120 220 100 L440 90 Q640 110 680 250 L680 290 L20 290Z" fill={C.yellow} /><circle cx="160" cy="292" r="48" fill="#111" /><circle cx="540" cy="292" r="48" fill="#111" /></svg></div>
+        <div style={{position: 'absolute', left: 540 - R - 20, top: 480, opacity: frame >= 150 && frame < 270 ? 1 : 0}}>
+          <svg width={R * 2 + 40} height={R * 2 + 40}><circle cx={R + 20} cy={R + 20} r={R} fill="none" stroke="#ffffff33" strokeWidth="26" /><circle cx={R + 20} cy={R + 20} r={R} fill="none" stroke={C.yellow} strokeWidth="26" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - prog)} transform={`rotate(-90 ${R + 20} ${R + 20})`} /><text x={R + 20} y={R + 50} textAnchor="middle" fontFamily={FONT} fontSize="90" fill="#fff">{Math.round(prog * 100)}%</text></svg>
+        </div>
+      </AbsoluteFill>}
+    />
+  );
+};
+export const CarTheftOverlay: React.FC = () => (
+  <Shake amp={4} at={0} dur={20}>
+    <NumberBadge n="05" label="CAR THEFT" color={C.red} />
+    <AbsoluteFill style={{alignItems: 'center', paddingTop: 270}}>
+      <KineticText text="Not every car is [easy] to steal." at={10} out={110} size={96} hl={C.red} from="bottom" />
+    </AbsoluteFill>
+    <AbsoluteFill style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 30, paddingTop: 280, paddingRight: 80, paddingLeft: 0}}>
+      <Panel title="SLIM JIM" sub="for some locked doors" color={C.turquoise} at={115} />
+      <Panel title="KEY CLONER" sub="for certain vehicles" color={C.pink} at={135} />
+    </AbsoluteFill>
+    <AbsoluteFill style={{alignItems: 'center', paddingTop: 1050}}>
+      <KineticText text="[Tools.]" at={260} out={300} size={130} hl={C.yellow} from="left" />
+      <KineticText text="[Interactions.]" at={300} out={335} size={110} hl={C.turquoise} from="right" />
+      <KineticText text="[Progression.]" at={338} size={120} hl={C.pink} />
+    </AbsoluteFill>
+    <Flash at={10} color={C.red} /><Whip at={262} color={C.yellow} />
+  </Shake>
+);
