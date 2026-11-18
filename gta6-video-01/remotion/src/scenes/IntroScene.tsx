@@ -23,17 +23,17 @@ const Tile: React.FC<{src: string; at: number; left: number; top: number; rot: n
 /** Opening: fast aerial push-in over Vice City + kinetic title. Never static, never dark. */
 export const IntroScene: React.FC = () => {
   const frame = useCurrentFrame();
-  const z = interpolate(frame, [0, 180], [1.0, 1.35], {easing: Easing.out(Easing.cubic)});
+  const z = interpolate(frame, [0, 180], [1.0, 1.18], {easing: Easing.out(Easing.cubic)});
   const px = interpolate(frame, [0, 180], [-120, 140]);
   const layer = (scale: number, par: number, op = 1, filter = '') => (
     <AbsoluteFill style={{opacity: op, transform: `translateX(${px * par}px) scale(${z * scale})`, filter}}>
-      <Img src={staticFile('images/vicecity_dusk_aerial.webp')} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 50%'}} />
+      <Img src={staticFile('images/cover_sunset.jpg')} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 50%'}} />
     </AbsoluteFill>
   );
   return (
     <AbsoluteFill style={{background: C.purple}}>
       <Shake amp={5} at={0} dur={14}>
-        {layer(1.55, 1, 1, 'saturate(1.45) brightness(1.18) contrast(1.05)')}
+        {layer(1.12, 0.5, 1, 'saturate(1.25) contrast(1.05)')}
         <AbsoluteFill style={{background: `linear-gradient(180deg, ${C.pink}55 0%, transparent 35%, ${C.turquoise}33 100%)`, mixBlendMode: 'screen'}} />
         <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(11,6,32,.45) 100%)'}} />
       </Shake>
