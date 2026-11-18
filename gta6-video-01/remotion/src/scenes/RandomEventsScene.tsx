@@ -15,9 +15,9 @@ export const RandomEventsScene: React.FC = () => {
   const alertP = interpolate(frame, [140, 150], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   return (
     <ClipSlot k="events" fallback={
-      <AbsoluteFill style={{background: `linear-gradient(${C.orange}, ${C.pink} 55%, ${C.purple})`, transform: `scale(${zoom})`}}>
+      <AbsoluteFill style={{background: `linear-gradient(${C.orange}88, ${C.pink}88 55%, ${C.purple}aa)`, transform: `scale(${zoom})`}}>
         {/* perspective road */}
-        <div style={{position: 'absolute', left: -200, right: -200, top: 760, bottom: 0, background: '#2a2147', transform: 'perspective(700px) rotateX(58deg)', transformOrigin: 'top'}}>
+        <div style={{position: 'absolute', left: -200, right: -200, top: 760, bottom: 0, background: '#2a2147cc', transform: 'perspective(700px) rotateX(58deg)', transformOrigin: 'top'}}>
           {Array.from({length: 12}).map((_, i) => <div key={i} style={{position: 'absolute', left: '49.2%', width: '1.6%', height: 110, top: i * 200 + lineY - 200, background: C.yellow}} />)}
         </div>
         {[0, 1, 2].map((i) => <div key={i} style={{position: 'absolute', top: 820 + i * 150, left: ((f * (8 + i * 4) + i * 400) % 1500) - 200, width: 220, height: 90, borderRadius: 24, background: [C.turquoise, C.white, C.yellow][i], boxShadow: '0 16px 0 rgba(0,0,0,.3)'}} />)}

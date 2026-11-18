@@ -19,7 +19,7 @@ export const PlayableGamesScene: React.FC = () => {
   const cards = [C.pink, C.turquoise, C.yellow, C.green];
   return (
     <ClipSlot k="games" fallback={
-      <AbsoluteFill style={{background: `radial-gradient(circle at 50% 45%, ${C.purple}, ${C.ink})`}}>
+      <AbsoluteFill style={{background: `radial-gradient(circle at 50% 45%, ${C.purple}aa, ${C.ink}cc)`}}>
         {frame < 100 && <PhotoCard src="images/bar_jason.jpg" at={0} out={92} w={900} ratio={0.67} left={90} top={520} rotate={-2} zoom={[1.0, 1.35]} focus="55% 40%" from="left" />}
         {frame >= 90 && <div style={{position: 'absolute', left: 540 - (330 + 400 * expand), top: 760 - (230 + 830 * expand), width: 660 + 800 * expand, height: 460 + 1660 * expand, borderRadius: 40 * (1 - expand), background: '#000', border: `${14 * (1 - expand)}px solid #2a2147`, overflow: 'hidden', transform: `scale(${0.4 + tvP * 0.6}) translateX(${glitch}px)`, boxShadow: `0 0 ${80 * tvP}px ${C.turquoise}`}}>
           <div style={{position: 'absolute', inset: 0, background: `linear-gradient(${C.ink}, #240a52)`}} />

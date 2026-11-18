@@ -7,8 +7,8 @@ import {C, FONT} from '../theme';
 import {PhotoCard, BlurBg} from '../components/PhotoCard';
 
 const Room: React.FC<{furnished: boolean}> = ({furnished}) => (
-  <AbsoluteFill style={{background: furnished ? `linear-gradient(${C.yellow}, ${C.orange})` : 'linear-gradient(#cfd8e3,#9aa8ba)'}}>
-    <div style={{position: 'absolute', left: 0, right: 0, bottom: 0, height: 820, background: furnished ? '#B5683A' : '#8795a8'}} />
+  <AbsoluteFill style={{background: furnished ? `linear-gradient(${C.yellow}99, ${C.orange}99)` : 'linear-gradient(#cfd8e399,#9aa8ba99)'}}>
+    <div style={{position: 'absolute', left: 0, right: 0, bottom: 0, height: 820, background: furnished ? '#B5683Aaa' : '#8795a8aa'}} />
     {furnished && (<>
       <div style={{position: 'absolute', left: 120, top: 1040, width: 520, height: 150, borderRadius: 30, background: C.turquoise, boxShadow: '0 20px 0 rgba(0,0,0,.25)'}} />
       <div style={{position: 'absolute', left: 150, top: 1180, width: 340, height: 18, background: '#5a2e12'}} />

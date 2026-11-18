@@ -4,7 +4,7 @@ import {KineticText} from '../components/KineticText';
 import {Flash, NumberBadge} from '../components/Fx';
 import {ClipSlot} from '../components/ClipSlot';
 import {C, FONT} from '../theme';
-import {PhotoCard, BlurBg} from '../components/PhotoCard';
+import {PhotoCard} from '../components/PhotoCard';
 
 const POSTS = [['@sunset.cruiser', '🌴 neon night in the Keys', C.pink], ['@gator_watch', 'ok that gator is NOT a pet', C.green], ['@vc_beach', 'who left a boat on the highway??', C.turquoise], ['@leonida_live', 'traffic is wild today', C.orange], ['@palm.patrol', 'sunsets > everything', C.purple], ['@keys_daily', 'you will not believe this one', C.yellow]] as const;
 /** Illustrative (NOT the real in-game UI) phone feed: scroll + follow, no posting. */
@@ -14,8 +14,7 @@ export const SocialMediaScene: React.FC = () => {
   const phoneIn = interpolate(frame, [0, 22], [0, 1], {extrapolateRight: 'clamp', easing: Easing.out(Easing.back(1.4))});
   return (
     <ClipSlot k="social" fallback={
-      <AbsoluteFill style={{background: `linear-gradient(160deg, ${C.purple}, ${C.pink})`}}>
-        <BlurBg src="images/bar_jason.jpg" tint="#FF2E93" opacity={0.55} />
+      <AbsoluteFill style={{background: `linear-gradient(160deg, ${C.purple}99, ${C.pink}88)`}}>
         <PhotoCard src="images/bar_jason.jpg" at={0} w={520} ratio={1.15} left={30} top={470} rotate={-7} zoom={[1.1, 1.3]} focus="55% 40%" from="left" />
         <div style={{position: 'absolute', left: 330, top: 300, width: 600, height: 960, borderRadius: 70, background: '#0B0620', border: '12px solid #fff', overflow: 'hidden', transform: `scale(${0.7 + phoneIn * 0.3}) translateY(${(1 - phoneIn) * 600}px)`, boxShadow: '0 40px 90px rgba(0,0,0,.45)'}}>
           <div style={{transform: `translateY(${-scroll}px)`, padding: 24}}>

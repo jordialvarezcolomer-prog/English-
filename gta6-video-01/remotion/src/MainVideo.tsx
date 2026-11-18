@@ -11,12 +11,14 @@ import {PlayableGamesScene, PlayableGamesOverlay} from './scenes/PlayableGamesSc
 import {FinalCTA} from './scenes/FinalCTA';
 import {SubtitleTrack} from './components/SubtitleTrack';
 import {AudioController} from './components/AudioController';
+import {GlobalBg} from './components/GlobalBg';
 
 const S: React.FC<{k: Parameters<typeof sceneFrom>[0]; children: React.ReactNode}> = ({k, children}) => (
   <Sequence from={sceneFrom(k)} durationInFrames={sceneLen(k)}>{children}</Sequence>
 );
 export const MainVideo: React.FC = () => (
   <AbsoluteFill style={{background: '#0B0620'}}>
+    <GlobalBg />
     <S k="intro"><IntroScene /></S>
     <S k="jetski"><JetSkiDogScene /><JetSkiDogOverlay /></S>
     <S k="events"><RandomEventsScene /><RandomEventsOverlay /></S>
