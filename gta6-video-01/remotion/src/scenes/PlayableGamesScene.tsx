@@ -11,7 +11,7 @@ export const PlayableGamesScene: React.FC = () => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const on = spring({frame: frame - 88, fps, config: {damping: 12, stiffness: 120}});
-  const grow = interpolate(frame, [150, 205], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic)});
+  const grow = interpolate(frame, [146, 200], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic)});
   const glitch = frame > 200 && frame < 216 ? (random(`g${frame}`) - 0.5) * 50 : 0;
   const w = 660 + 280 * grow, h = 470 + 360 * grow;
   const bright = frame < 100 ? 0 : 1;
@@ -30,16 +30,17 @@ export const PlayableGamesScene: React.FC = () => {
 export const PlayableGamesOverlay: React.FC = () => (
   <Shake amp={14} at={200} dur={40}>
     <NumberBadge n="06" label="THE BIG ONE" color={C.pink} />
-    <AbsoluteFill style={{alignItems: 'center', paddingTop: 230}}>
-      <KineticText text="[Wait...]" at={100} out={170} size={160} hl={C.yellow} />
+    <AbsoluteFill style={{alignItems: 'center', paddingTop: 215}}>
+      <KineticText text="The [last one]" at={4} out={78} size={118} hl={C.yellow} />
     </AbsoluteFill>
-    <AbsoluteFill style={{alignItems: 'center', paddingTop: 230}}>
-      <KineticText text="Play [video games]..." at={128} out={205} size={90} hl={C.turquoise} />
+    <AbsoluteFill style={{alignItems: 'center', paddingTop: 215}}>
+      <KineticText text="[Fully playable] games" at={84} out={142} size={84} hl={C.turquoise} />
     </AbsoluteFill>
-    <AbsoluteFill style={{alignItems: 'center', paddingTop: 190}}>
-      <KineticText text="Inside [GTA 6.]" at={214} out={290} size={120} hl={C.pink} />
-      <KineticText text="A [game] inside a [game.]" at={296} size={96} hl={C.yellow} />
+    <AbsoluteFill style={{alignItems: 'center', paddingTop: 215}}>
+      <KineticText text="Not [fake.]" at={146} out={188} size={130} hl={C.red} />
+      <KineticText text="[Real] mini-games" at={192} out={250} size={96} hl={C.pink} />
+      <KineticText text="A [game] inside a [game.]" at={256} size={100} hl={C.yellow} />
     </AbsoluteFill>
-    <Flash at={200} /><Flash at={296} color={C.yellow} len={12} />
+    <Flash at={146} /><Flash at={292} color={C.yellow} len={12} />
   </Shake>
 );

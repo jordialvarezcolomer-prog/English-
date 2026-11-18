@@ -17,8 +17,8 @@ export const SocialMediaScene: React.FC = () => {
     <ClipSlot k="social" fallback={
       <AbsoluteFill style={{background: 'transparent'}}>
         <VideoCard src="clips/social_feed.mp4" at={4} out={192} w={940} ratio={1.05} left={70} top={250} rotate={1.5} focus="86% 50%" zoom={[1.25, 1.45]} />
-        <PhotoCard src="images/bar_jason.jpg" at={198} w={520} ratio={1.15} left={30} top={470} rotate={-7} zoom={[1.1, 1.3]} focus="55% 40%" from="left" />
-        <PhotoCard src="images/phone_social.jpg" at={204} w={560} ratio={1.427} left={360} top={270} rotate={2} zoom={[1.0, 1.22]} focus="50% 35%" from="bottom" radius={44} />
+        <PhotoCard src="images/bar_jason.jpg" at={192} w={520} ratio={1.15} left={30} top={470} rotate={-7} zoom={[1.1, 1.3]} focus="55% 40%" from="left" />
+        <PhotoCard src="images/phone_social.jpg" at={198} w={560} ratio={1.427} left={360} top={270} rotate={2} zoom={[1.0, 1.22]} focus="50% 35%" from="bottom" radius={44} />
         <div style={{position: 'absolute', left: 330, top: 300, width: 600, height: 960, display: 'none', borderRadius: 70, background: '#0B0620', border: '12px solid #fff', overflow: 'hidden', transform: `scale(${0.7 + phoneIn * 0.3}) translateY(${(1 - phoneIn) * 600}px)`, boxShadow: '0 40px 90px rgba(0,0,0,.45)'}}>
           <div style={{transform: `translateY(${-scroll}px)`, padding: 24}}>
             {[...POSTS, ...POSTS].map(([u, t, c], i) => (
@@ -36,23 +36,23 @@ export const SocialMediaScene: React.FC = () => {
 };
 export const SocialMediaOverlay: React.FC = () => {
   const frame = useCurrentFrame();
-  const strike = interpolate(frame, [292, 306], [0, 100], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const strike = interpolate(frame, [208, 222], [0, 100], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   return (
     <AbsoluteFill>
       <NumberBadge n="03" label="SOCIAL MEDIA" color={C.purple} />
       <AbsoluteFill style={{alignItems: 'center', paddingTop: 1190, gap: 0}}>
-        <KineticText text="You can [scroll.]" at={170} out={225} size={96} hl={C.turquoise} from="left" />
+        <KineticText text="You can [scroll.]" at={40} out={112} size={96} hl={C.turquoise} from="left" />
       </AbsoluteFill>
       <AbsoluteFill style={{alignItems: 'center', paddingTop: 1190}}>
-        <KineticText text="You can [follow.]" at={232} out={285} size={96} hl={C.green} from="right" />
+        <KineticText text="You can [follow.]" at={118} out={186} size={96} hl={C.green} from="right" />
       </AbsoluteFill>
       <AbsoluteFill style={{alignItems: 'center', paddingTop: 1190}}>
         <div style={{position: 'relative'}}>
-          <KineticText text="But you can't [post.]" at={290} size={96} hl={C.red} />
+          <KineticText text="But you can't [post.]" at={192} size={96} hl={C.red} />
           <div style={{position: 'absolute', left: 0, top: 120, height: 14, width: `${strike}%`, background: C.red, transform: 'rotate(-3deg)'}} />
         </div>
       </AbsoluteFill>
-      <Flash at={290} color={C.red} />
+      <Flash at={192} color={C.red} />
     </AbsoluteFill>
   );
 };

@@ -9,7 +9,7 @@ export const AudioController: React.FC = () => {
   return (
     <>
       {ASSETS.music && <Audio src={staticFile(ASSETS.music)} volume={(f) => musicVol * interpolate(f, [0, 10, 77 * FPS - 30, 77 * FPS], [0, 1, 1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})} />}
-      {ASSETS.sfx && <Audio src={staticFile(ASSETS.sfx)} volume={0.9} />}
+      {ASSETS.sfx && <Audio src={staticFile(ASSETS.sfx)} volume={0.55} />}
       {ASSETS.voice && <Audio src={staticFile(ASSETS.voice)} volume={1} />}
     </>
   );
