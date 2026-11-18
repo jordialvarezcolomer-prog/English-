@@ -5,6 +5,7 @@ import {Flash, NumberBadge, Whip} from '../components/Fx';
 import {ClipSlot} from '../components/ClipSlot';
 import {C} from '../theme';
 import {PhotoCard} from '../components/PhotoCard';
+import {VideoCard} from '../components/VideoCard';
 
 const Wave: React.FC<{y: number; color: string; amp: number; speed: number; o?: number}> = ({y, color, amp, speed, o = 1}) => {
   const frame = useCurrentFrame();
@@ -21,10 +22,11 @@ export const JetSkiDogScene: React.FC = () => {
       <AbsoluteFill style={{background: phase2 ? `linear-gradient(${C.yellow}88, ${C.orange}99)` : `linear-gradient(${C.turquoise}77, #0A7FD6aa)`}}>
         {!phase2 && (<>
           {Array.from({length: 26}).map((_, i) => { const t = (frame * (6 + random(`s${i}`) * 8) + random(`o${i}`) * 1000) % 1300; return <div key={i} style={{position: 'absolute', left: 80 + random(`l${i}`) * 900, top: 1500 - t, width: 14, height: 14, borderRadius: 14, background: 'white', opacity: 0.8 - t / 1700}} />; })}
-          <PhotoCard src="images/boat_duo.jpg" at={0} out={140} w={940} left={70} top={250} rotate={-2} zoom={[1.05, 1.4]} focus="30% 40%" from="left" />
-          <Wave y={1100} color="#0CB3C8" amp={26} speed={0.25} /><Wave y={1250} color="#0A8FB5" amp={34} speed={0.33} /><Wave y={1420} color="#075E92" amp={40} speed={0.4} />
+          <VideoCard src="clips/dog_jetski.mp4" at={0} out={142} w={940} ratio={0.95} left={70} top={400} rotate={-1.5} focus="52% 85%" zoom={[1.5, 1.75]} />
+          <Wave y={1340} color="#0CB3C8" amp={26} speed={0.25} /><Wave y={1420} color="#0A8FB5" amp={34} speed={0.33} /><Wave y={1500} color="#075E92" amp={40} speed={0.4} />
         </>)}
         {phase2 && (<>
+          <PhotoCard src="images/boat_duo.jpg" at={150} w={900} left={90} top={540} rotate={2} zoom={[1.05, 1.4]} focus="72% 50%" from="right" />
           <Wave y={1450} color={C.turquoise} amp={16} speed={0.2} />
           <div style={{position: 'absolute', left: ballX, top: ballY, width: 120, height: 120, borderRadius: 60, background: `radial-gradient(circle at 35% 30%, ${C.white}, ${C.pink})`, boxShadow: '0 20px 0 rgba(0,0,0,.2)'}} />
         </>)}
@@ -35,7 +37,7 @@ export const JetSkiDogScene: React.FC = () => {
 export const JetSkiDogOverlay: React.FC = () => (
   <AbsoluteFill>
     <NumberBadge n="01" label="LEONIDA LIFE" color={C.turquoise} />
-    <AbsoluteFill style={{alignItems: 'center', paddingTop: 860}}>
+    <AbsoluteFill style={{alignItems: 'center', paddingTop: 205}}>
       <KineticText text="[Jet skis]" at={20} out={140} size={190} hl={C.yellow} from="left" />
       <KineticText text="Dog [interactions]" at={160} out={235} size={130} hl={C.pink} from="right" />
       <KineticText text="Even play [fetch]" at={240} size={140} hl={C.turquoise} />
