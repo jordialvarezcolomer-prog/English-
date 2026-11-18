@@ -4,6 +4,7 @@ import {KineticText} from '../components/KineticText';
 import {Flash, NumberBadge, Shake, Whip} from '../components/Fx';
 import {ClipSlot} from '../components/ClipSlot';
 import {C} from '../theme';
+import {VideoCard} from '../components/VideoCard';
 import {PhotoCard, BlurBg} from '../components/PhotoCard';
 
 export const RandomEventsScene: React.FC = () => {
@@ -15,15 +16,16 @@ export const RandomEventsScene: React.FC = () => {
   const alertP = interpolate(frame, [140, 150], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   return (
     <ClipSlot k="events" fallback={
-      <AbsoluteFill style={{background: `linear-gradient(${C.orange}88, ${C.pink}88 55%, ${C.purple}aa)`, transform: `scale(${zoom})`}}>
+      <AbsoluteFill style={{background: 'transparent', transform: `scale(${zoom})`}}>
         {/* perspective road */}
-        <div style={{position: 'absolute', left: -200, right: -200, top: 760, bottom: 0, background: '#2a2147cc', transform: 'perspective(700px) rotateX(58deg)', transformOrigin: 'top'}}>
+        <div style={{position: 'absolute', left: -200, right: -200, top: 760, bottom: 0, display: 'none', background: '#2a2147cc', transform: 'perspective(700px) rotateX(58deg)', transformOrigin: 'top'}}>
           {Array.from({length: 12}).map((_, i) => <div key={i} style={{position: 'absolute', left: '49.2%', width: '1.6%', height: 110, top: i * 200 + lineY - 200, background: C.yellow}} />)}
         </div>
-        {[0, 1, 2].map((i) => <div key={i} style={{position: 'absolute', top: 820 + i * 150, left: ((f * (8 + i * 4) + i * 400) % 1500) - 200, width: 220, height: 90, borderRadius: 24, background: [C.turquoise, C.white, C.yellow][i], boxShadow: '0 16px 0 rgba(0,0,0,.3)'}} />)}
-        <PhotoCard src="images/weazel_crash.jpg" at={6} out={146} w={900} ratio={0.569} left={90} top={640} rotate={-2} zoom={[1.0, 1.4]} focus="45% 55%" from="left" />
-        <PhotoCard src="images/duo_bike_chase.jpg" at={152} out={246} w={860} left={110} top={640} rotate={2.5} zoom={[1.05, 1.35]} focus="55% 50%" from="right" />
-        <PhotoCard src="images/car_meet.jpg" at={250} w={900} left={90} top={680} rotate={-2} zoom={[1.0, 1.5]} focus="40% 60%" from="bottom" />
+        {([] as number[]).map((i) => <div key={i} style={{position: 'absolute', top: 820 + i * 150, left: ((f * (8 + i * 4) + i * 400) % 1500) - 200, width: 220, height: 90, borderRadius: 24, background: [C.turquoise, C.white, C.yellow][i], boxShadow: '0 16px 0 rgba(0,0,0,.3)'}} />)}
+        <VideoCard src="clips/road_crash.mp4" at={6} out={200} w={940} ratio={0.8} left={70} top={560} rotate={-1.5} focus="55% 55%" zoom={[1.05, 1.3]} />
+        <PhotoCard src="images/weazel_crash.jpg" at={206} out={268} w={900} ratio={0.569} left={90} top={640} rotate={-2} zoom={[1.0, 1.4]} focus="45% 55%" from="left" />
+        <PhotoCard src="images/duo_bike_chase.jpg" at={272} out={330} w={860} left={110} top={640} rotate={2.5} zoom={[1.05, 1.35]} focus="55% 50%" from="right" />
+        <PhotoCard src="images/car_meet.jpg" at={300} out={999} w={900} left={90} top={680} rotate={-2} zoom={[1.0, 1.5]} focus="40% 60%" from="bottom" />
         <div style={{position: 'absolute', top: 300, left: 740, width: 220, height: 200, opacity: alertP, transform: `scale(${0.6 + alertP * 0.4}) rotate(${(1 - alertP) * 20}deg)`}}>
           <svg viewBox="0 0 100 90"><polygon points="50,4 96,86 4,86" fill={C.red} stroke={C.white} strokeWidth="5" /><text x="50" y="72" textAnchor="middle" fontSize="54" fontWeight="900" fill={C.white} fontFamily="Montserrat">!</text></svg>
         </div>

@@ -7,7 +7,7 @@ import {C} from '../theme';
 import {PhotoCard} from '../components/PhotoCard';
 import {VideoCard} from '../components/VideoCard';
 
-const Wave: React.FC<{y: number; color: string; amp: number; speed: number; o?: number}> = ({y, color, amp, speed, o = 1}) => {
+const Wave: React.FC<{y: number; color: string; amp: number; speed: number; o?: number}> = ({y, color, amp, speed, o = 0.0}) => {
   const frame = useCurrentFrame();
   const pts = Array.from({length: 33}, (_, i) => `${i * 36},${y + Math.sin(i * 0.7 + frame * speed) * amp}`).join(' ');
   return <svg width={1080} height={1920} style={{position: 'absolute', inset: 0, opacity: o}}><polygon points={`0,1920 ${pts} 1152,1920`} fill={color} /></svg>;
@@ -19,7 +19,7 @@ export const JetSkiDogScene: React.FC = () => {
   const ballY = 760 - Math.sin(interpolate(frame, [190, 260], [0, Math.PI], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})) * 360;
   return (
     <ClipSlot k="jetski" fallback={
-      <AbsoluteFill style={{background: phase2 ? `linear-gradient(${C.yellow}88, ${C.orange}99)` : `linear-gradient(${C.turquoise}77, #0A7FD6aa)`}}>
+      <AbsoluteFill style={{background: 'transparent'}}>
         {!phase2 && (<>
           {Array.from({length: 26}).map((_, i) => { const t = (frame * (6 + random(`s${i}`) * 8) + random(`o${i}`) * 1000) % 1300; return <div key={i} style={{position: 'absolute', left: 80 + random(`l${i}`) * 900, top: 1500 - t, width: 14, height: 14, borderRadius: 14, background: 'white', opacity: 0.8 - t / 1700}} />; })}
           <VideoCard src="clips/dog_jetski.mp4" at={0} out={142} w={940} ratio={0.95} left={70} top={400} rotate={-1.5} focus="52% 85%" zoom={[1.5, 1.75]} />

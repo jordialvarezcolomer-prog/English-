@@ -5,6 +5,7 @@ import {Flash, NumberBadge} from '../components/Fx';
 import {ClipSlot} from '../components/ClipSlot';
 import {C, FONT} from '../theme';
 import {PhotoCard} from '../components/PhotoCard';
+import {VideoCard} from '../components/VideoCard';
 
 const POSTS = [['@sunset.cruiser', '🌴 neon night in the Keys', C.pink], ['@gator_watch', 'ok that gator is NOT a pet', C.green], ['@vc_beach', 'who left a boat on the highway??', C.turquoise], ['@leonida_live', 'traffic is wild today', C.orange], ['@palm.patrol', 'sunsets > everything', C.purple], ['@keys_daily', 'you will not believe this one', C.yellow]] as const;
 /** Illustrative (NOT the real in-game UI) phone feed: scroll + follow, no posting. */
@@ -14,9 +15,10 @@ export const SocialMediaScene: React.FC = () => {
   const phoneIn = interpolate(frame, [0, 22], [0, 1], {extrapolateRight: 'clamp', easing: Easing.out(Easing.back(1.4))});
   return (
     <ClipSlot k="social" fallback={
-      <AbsoluteFill style={{background: `linear-gradient(160deg, ${C.purple}99, ${C.pink}88)`}}>
-        <PhotoCard src="images/bar_jason.jpg" at={0} w={520} ratio={1.15} left={30} top={470} rotate={-7} zoom={[1.1, 1.3]} focus="55% 40%" from="left" />
-        <PhotoCard src="images/phone_social.jpg" at={4} w={560} ratio={1.427} left={360} top={270} rotate={2} zoom={[1.0, 1.22]} focus="50% 35%" from="bottom" radius={44} />
+      <AbsoluteFill style={{background: 'transparent'}}>
+        <VideoCard src="clips/social_feed.mp4" at={4} out={192} w={940} ratio={1.05} left={70} top={250} rotate={1.5} focus="86% 50%" zoom={[1.25, 1.45]} />
+        <PhotoCard src="images/bar_jason.jpg" at={198} w={520} ratio={1.15} left={30} top={470} rotate={-7} zoom={[1.1, 1.3]} focus="55% 40%" from="left" />
+        <PhotoCard src="images/phone_social.jpg" at={204} w={560} ratio={1.427} left={360} top={270} rotate={2} zoom={[1.0, 1.22]} focus="50% 35%" from="bottom" radius={44} />
         <div style={{position: 'absolute', left: 330, top: 300, width: 600, height: 960, display: 'none', borderRadius: 70, background: '#0B0620', border: '12px solid #fff', overflow: 'hidden', transform: `scale(${0.7 + phoneIn * 0.3}) translateY(${(1 - phoneIn) * 600}px)`, boxShadow: '0 40px 90px rgba(0,0,0,.45)'}}>
           <div style={{transform: `translateY(${-scroll}px)`, padding: 24}}>
             {[...POSTS, ...POSTS].map(([u, t, c], i) => (
