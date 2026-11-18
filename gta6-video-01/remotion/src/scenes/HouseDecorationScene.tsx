@@ -4,6 +4,7 @@ import {KineticText} from '../components/KineticText';
 import {Flash, NumberBadge} from '../components/Fx';
 import {ClipSlot} from '../components/ClipSlot';
 import {C, FONT} from '../theme';
+import {PhotoCard, BlurBg} from '../components/PhotoCard';
 
 const Room: React.FC<{furnished: boolean}> = ({furnished}) => (
   <AbsoluteFill style={{background: furnished ? `linear-gradient(${C.yellow}, ${C.orange})` : 'linear-gradient(#cfd8e3,#9aa8ba)'}}>
@@ -29,7 +30,8 @@ export const HouseDecorationScene: React.FC = () => {
         <div style={{position: 'absolute', top: 0, bottom: 0, left: `${wipe}%`, width: 10, background: '#fff', opacity: wipe > 0 && wipe < 100 ? 1 : 0}} />
         <div style={{position: 'absolute', top: 1180, left: 60, fontFamily: FONT, fontSize: 56, color: '#fff', textShadow: '0 4px 0 #0B0620', opacity: wipe < 100 ? 1 : 0}}>BEFORE</div>
         <div style={{position: 'absolute', top: 1180, right: 170, fontFamily: FONT, fontSize: 56, color: C.ink, opacity: wipe > 60 ? 1 : 0}}>AFTER</div>
-        <div style={{position: 'absolute', left: 430, top: 780, fontSize: 130, opacity: heart, transform: `scale(${0.5 + heart * 0.6}) translateY(${(1 - heart) * 80}px)`}}>💞</div>
+        <PhotoCard src="images/boat_duo.jpg" at={215} w={640} left={380} top={700} rotate={5} zoom={[1.15, 1.35]} focus="72% 50%" ratio={0.7} />
+        <div style={{position: 'absolute', left: 340, top: 650, fontSize: 130, opacity: heart, transform: `scale(${0.5 + heart * 0.6}) translateY(${(1 - heart) * 80}px)`}}>💞</div>
       </AbsoluteFill>}
     />
   );

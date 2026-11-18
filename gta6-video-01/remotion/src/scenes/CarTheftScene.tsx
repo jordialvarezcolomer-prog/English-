@@ -4,6 +4,7 @@ import {KineticText} from '../components/KineticText';
 import {Flash, NumberBadge, Shake, Whip} from '../components/Fx';
 import {ClipSlot} from '../components/ClipSlot';
 import {C, FONT} from '../theme';
+import {PhotoCard, BlurBg} from '../components/PhotoCard';
 
 const Panel: React.FC<{title: string; sub: string; color: string; at: number}> = ({title, sub, color, at}) => {
   const frame = useCurrentFrame();
@@ -24,11 +25,13 @@ export const CarTheftScene: React.FC = () => {
   return (
     <ClipSlot k="theft" fallback={
       <AbsoluteFill style={{background: `linear-gradient(${C.ink}, #2b0f5a 60%, ${C.pink})`}}>
-        <div style={{position: 'absolute', left: 190, top: 700, width: 700, height: 340, display: frame < 270 ? 'block' : 'none'}}>
+        <BlurBg src="images/car_meet.jpg" tint="#FF2E93" opacity={0.5} />
+        {frame < 270 && <PhotoCard src="images/car_meet.jpg" at={0} w={960} left={60} top={560} rotate={-1.5} zoom={[1.0, 1.7]} focus="55% 70%" from="bottom" />}
+        <div style={{position: 'absolute', left: 190, top: 700, width: 700, height: 340, display: 'none'}}>
           <svg viewBox="0 0 700 340" width="700" height="340"><path d="M20 260 Q40 120 220 100 L440 90 Q640 110 680 250 L680 290 L20 290Z" fill={C.turquoise} /><path d="M250 112 L440 104 Q560 120 600 200 L250 200Z" fill="#0B0620" opacity=".75" /><circle cx="160" cy="292" r="48" fill="#111" /><circle cx="540" cy="292" r="48" fill="#111" /></svg>
         </div>
         <div style={{position: 'absolute', left: go, top: 760, width: 560, display: frame >= 270 ? 'block' : 'none'}}><svg viewBox="0 0 700 340"><path d="M20 260 Q40 120 220 100 L440 90 Q640 110 680 250 L680 290 L20 290Z" fill={C.yellow} /><circle cx="160" cy="292" r="48" fill="#111" /><circle cx="540" cy="292" r="48" fill="#111" /></svg></div>
-        <div style={{position: 'absolute', left: 540 - R - 20, top: 480, opacity: frame >= 150 && frame < 270 ? 1 : 0}}>
+        <div style={{position: 'absolute', left: 540 - R - 20, top: 700, opacity: frame >= 150 && frame < 270 ? 1 : 0}}>
           <svg width={R * 2 + 40} height={R * 2 + 40}><circle cx={R + 20} cy={R + 20} r={R} fill="none" stroke="#ffffff33" strokeWidth="26" /><circle cx={R + 20} cy={R + 20} r={R} fill="none" stroke={C.yellow} strokeWidth="26" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - prog)} transform={`rotate(-90 ${R + 20} ${R + 20})`} /><text x={R + 20} y={R + 50} textAnchor="middle" fontFamily={FONT} fontSize="90" fill="#fff">{Math.round(prog * 100)}%</text></svg>
         </div>
       </AbsoluteFill>}

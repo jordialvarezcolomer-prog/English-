@@ -22,9 +22,9 @@ export const IntroScene: React.FC = () => {
         <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(11,6,32,.45) 100%)'}} />
       </Shake>
       <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', gap: 6, paddingBottom: 520}}>
-        <KineticText text="Did you know" at={4} size={118} />
-        <KineticText text="these [6 things]" at={16} size={118} hl={C.turquoise} />
-        <KineticText text="about [GTA 6]?" at={28} size={135} hl={C.pink} />
+        <KineticText text="Did you know" at={4} size={104} />
+        <KineticText text="these [6 things]" at={16} size={104} hl={C.turquoise} />
+        <KineticText text="about [GTA 6]?" at={28} size={120} hl={C.pink} />
         <div style={{height: 40}} />
         <KineticText text="The last one will [blow your mind.]" at={100} size={78} hl={C.yellow} style={{padding: '0 90px'}} />
       </AbsoluteFill>
