@@ -41,17 +41,17 @@ export const CarTheftScene: React.FC = () => {
 };
 export const CarTheftOverlay: React.FC = () => (
   <Shake amp={4} at={0} dur={20}>
-    <NumberBadge n="05" label="CAR THEFT" color={C.red} />
+    <NumberBadge n="06" label="CAR THEFT" color={C.red} />
     <AbsoluteFill style={{alignItems: 'center', paddingTop: 270}}>
       <KineticText text="Not every car is [easy] to steal." at={6} out={92} size={96} hl={C.red} from="bottom" />
     </AbsoluteFill>
     <AbsoluteFill style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 30, paddingTop: 280, paddingRight: 80, paddingLeft: 0}}>
       <Panel title="SLIM JIM" sub="for some locked doors" color={C.turquoise} at={162} />
-      <Panel title="KEY CLONER" sub="for certain vehicles" color={C.pink} at={222} />
+      <Panel title="KEY CLONER" sub="for certain vehicles" color={C.pink} at={228} />
     </AbsoluteFill>
     <AbsoluteFill style={{alignItems: 'center', paddingTop: 1050}}>
       <KineticText text="[Tools.]" at={98} out={158} size={130} hl={C.yellow} from="left" />
-      <KineticText text="[Interactions.]" at={284} out={322} size={110} hl={C.turquoise} from="right" />
+      <KineticText text="[Interactions.]" at={296} out={336} size={110} hl={C.turquoise} from="right" />
     </AbsoluteFill>
     <Flash at={10} color={C.red} /><Whip at={262} color={C.yellow} />
   </Shake>

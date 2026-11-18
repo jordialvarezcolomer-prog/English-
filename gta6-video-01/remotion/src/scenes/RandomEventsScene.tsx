@@ -22,11 +22,11 @@ export const RandomEventsScene: React.FC = () => {
           {Array.from({length: 12}).map((_, i) => <div key={i} style={{position: 'absolute', left: '49.2%', width: '1.6%', height: 110, top: i * 200 + lineY - 200, background: C.yellow}} />)}
         </div>
         {([] as number[]).map((i) => <div key={i} style={{position: 'absolute', top: 820 + i * 150, left: ((f * (8 + i * 4) + i * 400) % 1500) - 200, width: 220, height: 90, borderRadius: 24, background: [C.turquoise, C.white, C.yellow][i], boxShadow: '0 16px 0 rgba(0,0,0,.3)'}} />)}
-        <VideoCard src="clips/road_crash.mp4" at={6} out={211} w={940} ratio={0.8} left={70} top={560} rotate={-1.5} focus="55% 55%" zoom={[1.05, 1.3]} />
-        <PhotoCard src="images/weazel_crash.jpg" at={214} out={262} w={900} ratio={0.569} left={90} top={640} rotate={-2} zoom={[1.0, 1.4]} focus="45% 55%" from="left" />
-        <PhotoCard src="images/duo_bike_chase.jpg" at={266} out={318} w={860} left={110} top={640} rotate={2.5} zoom={[1.05, 1.35]} focus="55% 50%" from="right" />
-        <PhotoCard src="images/car_meet.jpg" at={322} out={999} w={900} left={90} top={680} rotate={-2} zoom={[1.0, 1.5]} focus="40% 60%" from="bottom" />
-        <div style={{position: 'absolute', top: 300, left: 740, width: 220, height: 200, opacity: alertP, transform: `scale(${0.6 + alertP * 0.4}) rotate(${(1 - alertP) * 20}deg)`}}>
+        <VideoCard src="clips/road_crash.mp4" at={6} out={206} w={940} ratio={0.8} left={70} top={560} rotate={-1.5} focus="55% 55%" zoom={[1.05, 1.3]} />
+        <PhotoCard src="images/weazel_crash.jpg" at={210} out={260} w={900} ratio={0.569} left={90} top={640} rotate={-2} zoom={[1.0, 1.4]} focus="45% 55%" from="left" />
+        <PhotoCard src="images/duo_bike_chase.jpg" at={264} out={308} w={860} left={110} top={640} rotate={2.5} zoom={[1.05, 1.35]} focus="55% 50%" from="right" />
+        <PhotoCard src="images/car_meet.jpg" at={312} out={999} w={900} left={90} top={680} rotate={-2} zoom={[1.0, 1.5]} focus="40% 60%" from="bottom" />
+        <div style={{position: 'absolute', top: 430, left: 790, width: 170, height: 150, opacity: alertP, transform: `scale(${0.6 + alertP * 0.4}) rotate(${(1 - alertP) * 20}deg)`}}>
           <svg viewBox="0 0 100 90"><polygon points="50,4 96,86 4,86" fill={C.red} stroke={C.white} strokeWidth="5" /><text x="50" y="72" textAnchor="middle" fontSize="54" fontWeight="900" fill={C.white} fontFamily="Montserrat">!</text></svg>
         </div>
       </AbsoluteFill>}
@@ -35,11 +35,11 @@ export const RandomEventsScene: React.FC = () => {
 };
 export const RandomEventsOverlay: React.FC = () => (
   <Shake amp={9} at={66} dur={40}>
-    <NumberBadge n="02" label="LIVING WORLD" color={C.orange} />
+    <NumberBadge n="03" label="LIVING WORLD" color={C.orange} />
     <AbsoluteFill style={{alignItems: 'center', paddingTop: 300}}>
       <KineticText text="[Random] events" at={6} out={58} size={140} hl={C.yellow} from="bottom" />
       <KineticText text="[Unexpected] crashes" at={66} out={205} size={120} hl={C.red} />
-      <KineticText text="Every drive is [different]" at={262} size={115} hl={C.turquoise} />
+      <KineticText text="Every drive is [different]" at={232} size={115} hl={C.turquoise} />
     </AbsoluteFill>
     <Whip at={58} color={C.yellow} /><Flash at={66} />
   </Shake>

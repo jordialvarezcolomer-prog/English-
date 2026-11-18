@@ -16,11 +16,11 @@ export const HouseDecorationScene: React.FC = () => (
 );
 export const HouseOverlay: React.FC = () => (
   <AbsoluteFill>
-    <NumberBadge n="04" label="HOME LIFE" color={C.orange} />
+    <NumberBadge n="05" label="HOME LIFE" color={C.orange} />
     <AbsoluteFill style={{alignItems: 'center', paddingTop: 215}}>
       <KineticText text="Yes, you can [decorate]" at={8} out={102} size={78} hl={C.turquoise} from="bottom" />
       <KineticText text="Jason's [beach house]" at={22} out={102} size={82} hl={C.pink} style={{marginTop: 12}} />
-      <KineticText text="Even [build furniture] together" at={108} size={80} hl={C.yellow} />
+      <KineticText text="Even [build furniture] together" at={112} size={80} hl={C.yellow} />
     </AbsoluteFill>
     <Flash at={6} /><Whip at={140} color={C.orange} /><Flash at={146} />
   </AbsoluteFill>

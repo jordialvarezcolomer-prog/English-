@@ -3,6 +3,7 @@ import {AbsoluteFill, Sequence} from 'remotion';
 import {sceneFrom, sceneLen} from './timeline';
 import {IntroScene} from './scenes/IntroScene';
 import {JetSkiDogScene, JetSkiDogOverlay} from './scenes/JetSkiDogScene';
+import {PlanesScene, PlanesOverlay} from './scenes/PlanesScene';
 import {RandomEventsScene, RandomEventsOverlay} from './scenes/RandomEventsScene';
 import {SocialMediaScene, SocialMediaOverlay} from './scenes/SocialMediaScene';
 import {HouseDecorationScene, HouseOverlay} from './scenes/HouseDecorationScene';
@@ -25,6 +26,7 @@ export const MainVideo: React.FC = () => (
     <Pulse>
     <S k="intro"><IntroScene /></S>
     <S k="jetski"><JetSkiDogScene /><JetSkiDogOverlay /></S>
+    <S k="planes"><PlanesScene /><PlanesOverlay /></S>
     <S k="events"><RandomEventsScene /><RandomEventsOverlay /></S>
     <S k="social"><SocialMediaScene /><SocialMediaOverlay /></S>
     <S k="house"><HouseDecorationScene /><HouseOverlay /></S>

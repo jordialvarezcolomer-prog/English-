@@ -44,7 +44,7 @@ export const IntroScene: React.FC = () => {
       <PhotoCard src="images/logo_hero.jpg" at={22} out={92} w={470} ratio={0.667} left={305} top={500} rotate={-4} zoom={[1.0, 1.15]} from="top" />
       <AbsoluteFill style={{justifyContent: 'flex-start', alignItems: 'center', gap: 4, paddingTop: 960}}>
         <KineticText text="Did you know" at={4} out={92} size={104} />
-        <KineticText text="these [6 things]" at={16} out={92} size={104} hl={C.turquoise} />
+        <KineticText text="these [7 things]" at={16} out={92} size={104} hl={C.turquoise} />
         <KineticText text="about [GTA 6]?" at={28} out={92} size={120} hl={C.pink} />
       </AbsoluteFill>
       <VideoCard src="clips/zombie_game.mp4" at={98} w={900} ratio={0.8} left={90} top={500} rotate={-2} focus="50% 50%" zoom={[1.1, 1.3]} startFrom={150} />
@@ -52,7 +52,7 @@ export const IntroScene: React.FC = () => {
         <KineticText text="The last one will" at={100} size={88} />
         <KineticText text="[blow your mind.]" at={106} size={96} hl={C.yellow} style={{whiteSpace: 'nowrap'}} />
       </AbsoluteFill>
-      <Flash at={4} /><Flash at={100} color={C.yellow} /><Whip at={166} color={C.turquoise} />
+      <Flash at={4} /><Flash at={100} color={C.yellow} /><Whip at={181} color={C.turquoise} />
     </AbsoluteFill>
   );
 };

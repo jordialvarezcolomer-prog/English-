@@ -2,14 +2,15 @@ import {FPS} from './theme';
 // Scene boundaries in SECONDS. These are estimates from the script; once the real
 // ElevenLabs narration exists they are replaced by the measured values (captions.json + scene marks).
 export const SCENES = {
-  intro:   [0, 6.15],
-  jetski:  [6.15, 17.77],
-  events:  [17.77, 29.85],
-  social:  [29.85, 41.35],
-  house:   [41.35, 50.78],
-  theft:   [50.78, 61.61],
-  games:   [61.61, 72.93],
-  outro:   [72.93, 77],
+  intro:   [0, 6.31],
+  jetski:  [6.31, 20.22],
+  planes:  [20.22, 27.43],
+  events:  [27.43, 38.03],
+  social:  [38.03, 49.8],
+  house:   [49.8, 59.43],
+  theft:   [59.43, 70.73],
+  games:   [70.73, 82.9],
+  outro:   [82.9, 87.3],
 } as const;
 export type SceneKey = keyof typeof SCENES;
 export const f = (s: number) => Math.round(s * FPS);

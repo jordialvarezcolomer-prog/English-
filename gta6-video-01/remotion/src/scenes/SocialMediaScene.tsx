@@ -39,7 +39,7 @@ export const SocialMediaOverlay: React.FC = () => {
   const strike = interpolate(frame, [208, 222], [0, 100], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   return (
     <AbsoluteFill>
-      <NumberBadge n="03" label="SOCIAL MEDIA" color={C.purple} />
+      <NumberBadge n="04" label="SOCIAL MEDIA" color={C.purple} />
       <AbsoluteFill style={{alignItems: 'center', paddingTop: 1190, gap: 0}}>
         <KineticText text="You can [scroll.]" at={40} out={112} size={96} hl={C.turquoise} from="left" />
       </AbsoluteFill>
