@@ -1,6 +1,8 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, staticFile, interpolate, useCurrentFrame, Easing} from 'remotion';
-import {BG, FONT, G, Floor, FrontPerson, Person, POSES, Pill, Pop, Source, Tank, TimerCard, Xray, mixPose} from './kit';
+import {OL, BG, FONT, G, Floor, FrontPerson, Person, POSES, Pill, Pop, Source, Tank, TimerCard, Xray, mixPose} from './kit';
+import {PlateG, Rack, FuelCell, Skeleton, PhoneGlow} from './props';
+import {Pose} from './kit';
 import {GYM_TOTAL, SEC, SecKey, secFrom, secLen} from './timeline';
 import {Subs} from './Subs';
 import {FPS} from '../theme';
@@ -53,24 +55,60 @@ const SitScene: React.FC<{shirt: string; cap?: boolean; beard?: boolean; phone?:
 };
 
 /* ---------------- 1. buddy vs you ---------------- */
+const SIDE: Pose = {hip: [200, 365], sh: [206, 215], head: [214, 160], handL: [228, 342], handR: [212, 350], footL: [214, 565], footR: [188, 565], legBend: 1, armBend: -1};
+const READY: Pose = {...SIDE, handL: [302, 210], handR: [292, 218]};
+const walkPose = (ph: number): Pose => ({...SIDE, footL: [200 + 34 * Math.sin(ph), 565 - Math.max(0, 22 * Math.cos(ph))], footR: [200 - 34 * Math.sin(ph), 565 - Math.max(0, -22 * Math.cos(ph))], handL: [218 - 30 * Math.sin(ph), 342], handR: [210 + 30 * Math.sin(ph), 346]});
+const S1 = 1.8, FLOOR = 1150;
+const BenchB: React.FC<{x: number}> = ({x}) => <Seat x={x} y={FLOOR - 165} w={360} floor={FLOOR} />;
+/** Timer card with a per-second bump; `hot` turns it red with expanding pulse rings. */
+const LiveTimer: React.FC<{secs: number; color: string; hot?: number; scribble?: number; x: number; y: number}> = ({secs, color, hot = -1, scribble = -1, x, y}) => {
+  const t = useT();
+  const bump = 1 + 0.06 * (1 - (secs % 1)) + (hot >= 0 && t >= hot ? 0.3 * Math.exp(-(t - hot) * 7) : 0);
+  const sh = hot >= 0 && t >= hot && t < hot + 0.35 ? Math.sin(t * 120) * 10 : 0;
+  return (
+    <div style={{position: 'absolute', left: x, top: y, width: 320, height: 130}}>
+      {hot >= 0 && t >= hot && [0, 1, 2].map((k) => { const d = t - hot - k * 0.16; if (d < 0 || d > 0.8) return null; const r = 90 + d * 420; return <div key={k} style={{position: 'absolute', left: 160 - r, top: 65 - r, width: r * 2, height: r * 2, borderRadius: r, border: `${8 * (1 - d / 0.8)}px solid ${G.red}`, opacity: 1 - d / 0.8}} />; })}
+      {scribble >= 0 && t >= scribble && <svg width={480} height={300} viewBox="0 0 480 300" style={{position: 'absolute', left: -80, top: -85, overflow: 'visible'}}>{[[60, 60, 20, 20], [110, 40, 96, 4], [240, 30, 240, -8], [380, 50, 420, 14], [410, 230, 456, 262], [70, 230, 26, 266]].map(([a, b, c, d], i) => { const p = Math.min(1, Math.max(0, (t - scribble - i * 0.03) / 0.18)); return <line key={i} x1={a} y1={b} x2={a + (c - a) * p} y2={b + (d - b) * p} stroke={color} strokeWidth={7} strokeLinecap="round" opacity={t - scribble > 1.2 ? 0 : 1} />; })}</svg>}
+      <div style={{transform: `translateX(${sh}px) scale(${bump})`, transformOrigin: 'center'}}><TimerCard text={mmss(Math.min(secs, 180))} color={color} w={320} /></div>
+    </div>
+  );
+};
 const Buddy: React.FC = () => {
   const t = useT();
   const sw = interpolate(t, [2.8, 3.25], [0, 1], {...clamp, easing: Easing.inOut(Easing.cubic)});
-  const secs = interpolate(t, [0.15, 2.7], [0, 60], clamp);
-  const shake = t > 3.6 && t < 4.0 ? Math.sin(t * 90) * 7 : 0;
+  // --- buddy: timer races to 1:00, he jumps up and walks to the plate post
+  const secs = interpolate(t, [0.1, 1.5], [0, 60], {...clamp, easing: Easing.in(Easing.quad)});
+  const rise = interpolate(t, [1.55, 1.8], [0, 1], {...clamp, easing: Easing.out(Easing.cubic)});
+  const hop = t > 1.62 && t < 1.98 ? Math.sin(((t - 1.62) / 0.36) * Math.PI) * 95 : 0;
+  const walk = interpolate(t, [1.95, 2.6], [0, 1], clamp);
+  const sitPose = POSES.sit;
+  let pose: Pose = mixPose(sitPose, SIDE, rise);
+  if (walk > 0 && walk < 1) pose = walkPose(walk * Math.PI * 4);
+  if (walk >= 1) pose = mixPose(SIDE, READY, interpolate(t, [2.6, 2.75], [0, 1], clamp));
+  const x0 = interpolate(rise, [0, 1], [40, -68]) + walk * 295;
+  const y0 = interpolate(rise, [0, 1], [FLOOR - 462 * S1, FLOOR - 585 * S1]) - hop;
+  // --- you: blue guy relaxed on his phone, plate post waiting
+  const ty = t;
   return (
     <AbsoluteFill>
-      <Floor y={1150} />
-      <div style={{position: 'absolute', left: 1500 * 0, top: 0, width: 1080, height: 1920, transform: `translateX(${-sw * 1100}px)`}}>
-        <SitScene shirt={G.orange} cap beard />
-        <Pop at={4} style={{left: 400, top: 230}}><TimerCard text={mmss(secs)} color={G.ink} w={300} /></Pop>
-        <Pop at={8} style={{left: 640, top: 470}}><Pill text="Your buddy" color={G.orange} size={30} /></Pop>
+      <Floor y={FLOOR} />
+      <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, transform: `translateX(${-sw * 1100}px)`}}>
+        <BenchB x={140} />
+        <Rack x={880} floor={FLOOR} top={380} plateY={505} />
+        <Person pose={pose} shirt={G.orange} cap beard s={S1} x={x0} y={y0} mood={rise > 0.5 ? 'smile' : 'flat'} />
+        <LiveTimer secs={secs} color={t >= 1.5 ? G.red : G.ink} hot={1.5} x={380} y={170} />
+        <Pop at={8} style={{left: 60, top: 300}}><Pill text="Your buddy" color={G.orange} size={30} /></Pop>
+        {t > 1.6 && <Slam at={1.6} text="GO!" color={G.orange} size={80} left={120} top={600} rot={-8} out={2.8} />}
       </div>
       <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, transform: `translateX(${(1 - sw) * 1100}px)`}}>
-        <SitScene shirt={G.blue} phone mood="smile" />
-        {t > 3.55 && <div style={{position: 'absolute', left: 400, top: 230}}><TimerCard text="3:00" color={G.blue} w={300} shake={shake} /></div>}
-        {t > 4.25 && <div style={{position: 'absolute', left: 590, top: 350}}><Pill text="Resting" color={G.blue} size={28} /></div>}
-        {t > 2.95 && <div style={{position: 'absolute', left: 440, top: 350}}><Pill text="You" color={G.blue} size={30} /></div>}
+        <BenchB x={140} />
+        <Rack x={880} floor={FLOOR} top={380} plateY={505} bob={Math.sin(ty * 3) * 4} />
+        <Pop at={Math.round(3.4 * FPS)} style={{left: 760, top: 300}}><div style={{background: '#fff', border: `4px solid ${G.ink}`, borderRadius: 22, padding: '4px 18px', fontFamily: FONT, fontWeight: 900, fontSize: 40}}>{'.'.repeat(1 + (Math.floor(ty * 3) % 3))}</div></Pop>
+        {t > 2.9 && <PhoneGlow x={40 + 222 * S1} y={FLOOR - 462 * S1 + 210 * S1} t={t} />}
+        <Person pose={POSES.sit} shirt={G.blue} phone mood="smile" s={S1} x={40} y={FLOOR - 462 * S1} />
+        {t > 3.55 && <LiveTimer secs={180} color={G.blue} scribble={3.55} x={380} y={170} />}
+        {t > 2.95 && <div style={{position: 'absolute', left: 90, top: 360}}><Pill text="You" color={G.blue} size={30} /></div>}
+        {t > 4.25 && <Pop at={Math.round(4.25 * FPS)} style={{left: 230, top: 360}}><Pill text="Resting" color={G.blue} size={30} bg="#E8F0FF" /></Pop>}
       </div>
     </AbsoluteFill>
   );
@@ -78,21 +116,32 @@ const Buddy: React.FC = () => {
 
 /* ---------------- 2. eight weeks: leg-press lanes ---------------- */
 const LegLane: React.FC<{y: number; shirt: string; e: number; v: number; reps: number; sweat: number; glow: number; cap?: boolean; beard?: boolean; label: string; color: string; show: number}> = ({y, shirt, e, v, reps, sweat, glow, cap, beard, label, color, show}) => {
-  const L = 118 + 74 * e, th = (42 * Math.PI) / 180;
-  const hip: [number, number] = [172, 372], sh: [number, number] = [52, 290];
-  const footL: [number, number] = [hip[0] + L * Math.cos(th), hip[1] - L * Math.sin(th)];
-  const pose = {hip, sh, head: [10, 246] as [number, number], handL: [hip[0] + 6, hip[1] + 34] as [number, number], handR: [hip[0] - 4, hip[1] + 40] as [number, number], footL, footR: [footL[0] - 6, footL[1] + 6] as [number, number], legBend: 1 as const, armBend: -1 as const};
+  const d: [number, number] = [0.707, -0.707], n: [number, number] = [0.707, 0.707];
+  const hip: [number, number] = [205, 425], sh: [number, number] = [86, 345];
+  const L = 128 + 78 * e;
+  const F: [number, number] = [hip[0] + d[0] * L, hip[1] + d[1] * L];
+  const at = (k: number, m: number): [number, number] => [F[0] + d[0] * k + n[0] * m, F[1] + d[1] * k + n[1] * m];
+  const pose = {hip, sh, head: [50, 312] as [number, number], handL: [214, 468] as [number, number], handR: [204, 474] as [number, number], footL: F, footR: [F[0] - 8, F[1] + 8] as [number, number], legBend: 1 as const, armBend: -1 as const};
+  const tube = (x1: number, y1: number, x2: number, y2: number, w = 20, c = '#4C5260') => <g><line x1={x1} y1={y1} x2={x2} y2={y2} stroke={OL} strokeWidth={w + 7} strokeLinecap="round" /><line x1={x1} y1={y1} x2={x2} y2={y2} stroke={c} strokeWidth={w} strokeLinecap="round" /></g>;
+  const p1 = at(16, 70), p2 = at(16, -80), s1 = at(18, 10), s2 = at(140, 10), pl1 = at(78, 18), pl2 = at(108, -14);
   return (
-    <div style={{position: 'absolute', left: 150, top: y, transform: 'scale(1.2)', transformOrigin: '0 0', opacity: show}}>
-      <svg width={640} height={520} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-        <line x1={110} y1={470} x2={540} y2={170} stroke="#B9B9B5" strokeWidth={14} strokeLinecap="round" />
-        <line x1={50} y1={350} x2={180} y2={445} stroke="#3A3F4B" strokeWidth={70} strokeLinecap="round" />
-        {[0, 1, 2].map((i) => <line key={i} x1={footL[0] + 80 + i * 18} y1={footL[1] - 80 + i * 26} x2={footL[0] + 130 + i * 18} y2={footL[1] - 122 + i * 26} stroke={G.ink} strokeWidth={6} strokeLinecap="round" opacity={Math.min(1, Math.abs(v) * 0.9)} />)}
-        <g transform={`translate(${footL[0] + 34} ${footL[1] - 26}) rotate(${42})`}><rect x={-14} y={-110} width={30} height={220} rx={10} fill="#3A3F4B" /><circle cx={0} cy={86} r={34} fill="#2B6BE0" /><circle cx={0} cy={86} r={10} fill="#E9E9E6" /><circle cx={0} cy={-86} r={34} fill="#2B6BE0" /><circle cx={0} cy={-86} r={10} fill="#E9E9E6" /></g>
+    <div style={{position: 'absolute', left: 90, top: y, transform: 'scale(1.15)', transformOrigin: '0 0', opacity: show}}>
+      <svg width={720} height={560} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+        {/* frame */}
+        {tube(30, 540, 680, 540, 20)}{tube(620, 540, 620, 120, 22)}{tube(260, 540, 260, 478, 20)}{tube(120, 540, 120, 440, 20)}{tube(430, 540, 520, 300, 16)}
+        {/* twin rails */}
+        {tube(250, 470, 610, 110, 14, '#9AA0AA')}{tube(272, 492, 632, 132, 14, '#9AA0AA')}
+        {/* seat */}
+        {tube(40, 335, 200, 450, 48, '#2B2F3A')}{tube(200, 452, 276, 462, 42, '#2B2F3A')}
+        {/* carriage: platform + sled + plate horns */}
+        {tube(s1[0], s1[1], s2[0], s2[1], 30, '#3A3F4B')}
+        <PlateG cx={pl2[0]} cy={pl2[1]} r={62} label="25" /><PlateG cx={pl1[0]} cy={pl1[1]} r={62} label="25" />
+        {tube(p1[0], p1[1], p2[0], p2[1], 18, '#5A606D')}
+        {[0, 1, 2].map((i) => { const a = at(160 + i * 10, 60 - i * 50), b = at(205 + i * 10, 60 - i * 50); return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={G.ink} strokeWidth={6} strokeLinecap="round" opacity={Math.min(1, Math.abs(v) * 0.8)} />; })}
       </svg>
-      <Person pose={pose} shirt={shirt} cap={cap} beard={beard} s={1} glowThigh={glow} sweat={sweat} mood={e > 0.6 ? 'strain' : 'flat'} />
-      <div style={{position: 'absolute', left: 10, top: 70}}><Pill text={label} color={color} size={30} /></div>
-      <div style={{position: 'absolute', left: 560, top: 330, fontFamily: FONT, fontWeight: 900, fontSize: 30, color: G.grey, letterSpacing: 2, textAlign: 'center'}}>REPS<div style={{fontSize: 64, color, lineHeight: 1}}>{reps}</div></div>
+      <Person pose={pose} shirt={shirt} cap={cap} beard={beard} s={1} glowThigh={glow} sweat={sweat} mood={e > 0.55 ? 'strain' : 'flat'} />
+      <div style={{position: 'absolute', left: 10, top: 150}}><Pill text={label} color={color} size={28} bg="#fff" /></div>
+      <div style={{position: 'absolute', left: 640, top: 300, fontFamily: FONT, fontWeight: 900, fontSize: 26, color: G.grey, letterSpacing: 2, textAlign: 'center'}}>REPS<div style={{fontSize: 60, color, lineHeight: 1}}>{reps}</div></div>
     </div>
   );
 };
@@ -106,8 +155,8 @@ const Weeks: React.FC = () => {
   return (
     <AbsoluteFill>
       <div style={{position: 'absolute', left: 0, right: 0, top: 150, textAlign: 'center', opacity: lanes}}><div style={{display: 'inline-block', background: G.ink, color: '#fff', fontFamily: FONT, fontWeight: 900, fontSize: 34, padding: '8px 30px', borderRadius: 999, letterSpacing: 2}}>WEEK {week} OF 8</div></div>
-      <LegLane y={250} shirt={G.blue} e={e(0)} v={v(0)} reps={reps(0)} sweat={(t * 1.6) % 1} glow={glowB} label="3 MIN REST" color={G.blue} show={lanes} cap={false} />
-      <LegLane y={720} shirt={G.orange} e={e(0.22)} v={v(0.22)} reps={reps(0.22) + 4} sweat={(t * 1.6 + 0.5) % 1} glow={glowO} label="1 MIN REST" color={G.orange} show={lanes} cap beard />
+      <LegLane y={190} shirt={G.blue} e={e(0)} v={v(0)} reps={reps(0)} sweat={(t * 1.6) % 1} glow={glowB} label="3 MIN REST" color={G.blue} show={lanes} cap={false} />
+      <LegLane y={690} shirt={G.orange} e={e(0.22)} v={v(0.22)} reps={reps(0.22) + 4} sweat={(t * 1.6 + 0.5) % 1} glow={glowO} label="1 MIN REST" color={G.orange} show={lanes} cap beard />
       <div style={{position: 'absolute', left: 60, top: 1290, opacity: lanes}}><Source /></div>
       {lazy > 0 && (
         <div style={{position: 'absolute', inset: 0, opacity: lazy}}>
@@ -126,7 +175,7 @@ const Weeks: React.FC = () => {
 const Inside: React.FC = () => {
   const t = useT();
   const dark = t < 8.7;
-  const level = t < 4.9 ? interpolate(t, [2.6, 4.2], [0.08, 0.1], clamp) : t < 6.6 ? interpolate(t, [4.94, 5.9], [0.08, 0.5], clamp) : t < 8.6 ? interpolate(t, [6.97, 8.1], [0.5, 0.92], clamp) : interpolate(t, [8.9, 11.6], [0.46, 0.2], clamp);
+  const level = t < 4.6 ? 0.08 : t < 6.6 ? interpolate(t, [4.6, 5.6], [0.08, 0.5], clamp) : t < 8.6 ? interpolate(t, [6.6, 7.6], [0.5, 0.92], clamp) : interpolate(t, [8.9, 11.6], [0.46, 0.2], clamp);
   const timer = t < 6.7 ? (t > 4.9 ? '1:00' : null) : t < 8.7 ? '3:00' : null;
   const reps = Math.max(0, Math.min(4, Math.floor((t - 9.6) / 0.62) + 1));
   const ph = t > 9.6 ? Math.min(((t - 9.6) % 0.62) / 0.62, 1) : 0;
@@ -139,19 +188,21 @@ const Inside: React.FC = () => {
       <Header dark={dark} tag="FUEL" />
       {dark ? (
         <>
-          <Xray x={70} y={250} s={1.4} glow={interpolate(t, [0, 1], [0.3, 1], clamp)} />
-          <Pop at={Math.round(1.9 * FPS)} style={{left: 590, top: 330}}><Pill text="Fast fuel" color={G.yellow} size={36} bg="#0B1E3F" /></Pop>
-          <Pop at={Math.round(1.9 * FPS)} style={{left: 590, top: 450}}><Tank level={level} s={2.2} /></Pop>
-          {timer && <div style={{position: 'absolute', left: 640, top: 200}}><TimerCard text={timer} color={t < 6.7 ? G.orange : G.blue} w={250} /></div>}
-          {t > 5.65 && t < 6.6 && <Pop at={Math.round(5.7 * FPS)} style={{left: 90, top: 1130}}><Pill text="Half a tank" color={G.yellow} size={34} bg="#0B1E3F" /></Pop>}
-          {t > 7.75 && <Pop at={Math.round(7.8 * FPS)} style={{left: 90, top: 1130}}><Pill text="Almost full" color={G.green} size={34} bg="#0B1E3F" /></Pop>}
+          <div style={{position: 'absolute', inset: 0, transform: `scale(${interpolate(t, [0.3, 2.2], [1, 2.05], {...clamp, easing: Easing.inOut(Easing.cubic)})})`, transformOrigin: '540px 980px'}}>
+            <Skeleton left={210} top={190} s={1.1} sweep={t > 2.0 && t < 4.6 ? ((t - 2.0) % 1.3) / 1.3 : 0} pulse={0.5 + 0.5 * Math.sin(t * 5)} />
+          </div>
+          <Pop at={Math.round(1.9 * FPS)} style={{left: 395, top: 520}}><Pill text="Fast fuel" color={G.yellow} size={38} bg="#0B1E3F" /></Pop>
+          <Pop at={Math.round(1.9 * FPS)} style={{left: 435, top: 610}}><FuelCell level={level} t={t} left={0} top={0} w={210} h={420} glow={level} /></Pop>
+          {t > 4.5 && <LiveTimer secs={t < 6.6 ? interpolate(t, [4.6, 5.6], [0, 60], clamp) : interpolate(t, [6.6, 7.6], [60, 180], clamp)} color={t < 6.6 ? G.orange : t > 7.6 ? G.green : G.ink} x={380} y={190} />}
+          {t > 5.65 && t < 6.6 && <Slam at={5.7} text="HALF" color={G.yellow} size={70} left={720} top={760} rot={6} bg="#0B1E3F" />}
+          {t > 7.75 && <Slam at={7.8} text="ALMOST FULL" color={G.green} size={64} left={290} top={1110} rot={-5} bg="#0B1E3F" />}
         </>
       ) : (
         <>
           <Floor y={1130} />
           <div style={{position: 'absolute', left: 30, top: 1130 - 565 * 1.9}}>
             <svg width={400 * 1.9} height={600 * 1.9} viewBox="0 0 400 600" style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-              <circle cx={squatPose.sh[0] - 22} cy={squatPose.sh[1] - 4} r={54} fill="#2B6BE0" stroke="#3A2A24" strokeWidth={3.4} /><circle cx={squatPose.sh[0] - 22} cy={squatPose.sh[1] - 4} r={40} fill="none" stroke="#1B4FB0" strokeWidth={5} /><circle cx={squatPose.sh[0] - 22} cy={squatPose.sh[1] - 4} r={12} fill="#E9E9E6" stroke="#3A2A24" strokeWidth={3} />
+              <PlateG cx={squatPose.sh[0] - 24} cy={squatPose.sh[1] - 6} r={70} />
             </svg>
             <Person pose={squatPose} shirt={G.blue} s={1.9} mood={stuck ? 'worry' : 'strain'} sweat={(t * 1.8) % 1} />
           </div>
@@ -184,7 +235,7 @@ const Study: React.FC = () => {
         const at = Math.round((0.15 + i * 0.1) * FPS);
         const grp = i < 11 ? 'o' : 'b';
         const shirt = !split ? '#9AA3B2' : grp === 'o' ? G.orange : G.blue;
-        return <Pop key={i} at={at} style={{left: 40 + col * 138, top: 340 + row * 235}}><div style={{position: 'relative', width: 160, height: 240}}><FrontPerson shirt={shirt} s={0.4} cap={split && grp === 'o'} /></div></Pop>;
+        return <Pop key={i} at={at} style={{left: 40 + col * 138, top: 360 + row * 235}}><div style={{position: 'relative', width: 160, height: 240}}><FrontPerson shirt={shirt} s={0.4} cap={split && grp === 'o'} barbell crouch={t > 1.0 ? tri(((t - 1.0) * 1.25 + i * 0.045) % 1) * 0.9 : 0} /></div></Pop>;
       })}
       {t > 2.75 && <Pop at={Math.round(2.8 * FPS)} style={{left: 60, top: 1090}}><Pill text="Same exercises" color={G.ink} size={28} bg="#fff" /></Pop>}
       {t > 3.4 && <Pop at={Math.round(3.5 * FPS)} style={{left: 400, top: 1090}}><Pill text="Same sets" color={G.ink} size={28} bg="#fff" /></Pop>}
@@ -202,7 +253,7 @@ const Squatter: React.FC<{x: number; shirt: string; glow: number; ph: number; ca
   const p = mixPose(POSES.squatUp, POSES.squatDown, tri(ph)); const s = 1.5;
   return (
     <div style={{position: 'absolute', left: x, top: 1160 - 565 * s}}>
-      <svg width={400 * s} height={600 * s} viewBox="0 0 400 600" style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><circle cx={p.sh[0] - 22} cy={p.sh[1] - 4} r={52} fill="#2B6BE0" stroke="#3A2A24" strokeWidth={3.4} /><circle cx={p.sh[0] - 22} cy={p.sh[1] - 4} r={38} fill="none" stroke="#1B4FB0" strokeWidth={5} /><circle cx={p.sh[0] - 22} cy={p.sh[1] - 4} r={12} fill="#E9E9E6" stroke="#3A2A24" strokeWidth={3} /></svg>
+      <svg width={400 * s} height={600 * s} viewBox="0 0 400 600" style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><PlateG cx={p.sh[0] - 24} cy={p.sh[1] - 6} r={70} /></svg>
       <Person pose={p} shirt={shirt} s={s} glowThigh={glow} cap={cap} beard={beard} mood="strain" sweat={(ph * 2) % 1} />
     </div>
   );
@@ -293,6 +344,7 @@ const Phone: React.FC = () => {
     <AbsoluteFill>
       <Header />
       <Floor y={1150} />
+      <PhoneGlow x={30 + 222 * 2} y={1150 - 462 * 2 + 210 * 2} t={t} />
       <SitScene shirt={G.blue} phone mood="smile" x={-110} />
       <Tank level={level} x={660} y={1150 - 250 * 1.9} s={1.9} />
       {stamp > 0 && <div style={{position: 'absolute', left: 200, top: 250, transform: `rotate(-10deg) scale(${0.4 + 0.6 * stamp})`, opacity: stamp, border: `10px solid ${G.green}`, color: G.green, borderRadius: 18, fontFamily: FONT, fontWeight: 900, fontSize: 78, padding: '6px 34px', letterSpacing: 3}}>NOT LAZY</div>}

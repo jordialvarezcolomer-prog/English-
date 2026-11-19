@@ -36,7 +36,7 @@ export const POSES = {
 
 
 /* ================= character renderer (outlined cartoon style, like the reference) ================= */
-const OL = '#3A2A24', SK = '#F3B78E', HAIR = '#3B2A20', MOH = '#E5383B';
+export const OL = '#3A2A24'; const SK_ = 0; const SK = '#F3B78E', HAIR = '#3B2A20', MOH = '#E5383B';
 const shade = (hex: string, k = 0.82) => { const n = parseInt(hex.slice(1), 16); const r = Math.round(((n >> 16) & 255) * k), g = Math.round(((n >> 8) & 255) * k), b = Math.round((n & 255) * k); return `rgb(${r},${g},${b})`; };
 const OW = 3.4;
 /** Outlined capsule limb. */
@@ -179,12 +179,15 @@ export const Floor: React.FC<{y: number}> = ({y}) => <div style={{position: 'abs
 
 
 const ik2 = (a: V, b: V, l1: number, l2: number): V => { const A = ik(a, b, l1, l2, 1), B = ik(a, b, l1, l2, -1); return Math.abs(A[0] - 200) >= Math.abs(B[0] - 200) ? A : B; };
-type FrontProps = {x?: number; y?: number; s?: number; shirt?: string; hair?: Hair; beard?: boolean; mood?: 'smile' | 'flat' | 'worry' | 'strain'; handL?: V; handR?: V; stopwatch?: boolean; glow?: number; glowColor?: string; opacity?: number; sweat?: number; cap?: boolean};
+type FrontProps = {crouch?: number; barbell?: boolean; x?: number; y?: number; s?: number; shirt?: string; hair?: Hair; beard?: boolean; mood?: 'smile' | 'flat' | 'worry' | 'strain'; handL?: V; handR?: V; stopwatch?: boolean; glow?: number; glowColor?: string; opacity?: number; sweat?: number; cap?: boolean};
 /** Front-facing outlined cartoon athlete (400x600 box, shoe soles at y~570). Arms use 2-bone IK from the shoulders. */
-export const FrontPerson: React.FC<FrontProps> = ({x = 0, y = 0, s = 1, shirt = G.blue, hair = 'short', beard = false, mood = 'flat', handL = [118, 368], handR = [282, 368], stopwatch = false, glow = 0, glowColor = G.green, opacity = 1, sweat = 0, cap = false}) => {
+export const FrontPerson: React.FC<FrontProps> = ({crouch = 0, barbell = false, x = 0, y = 0, s = 1, shirt = G.blue, hair = 'short', beard = false, mood = 'flat', handL = [118, 368], handR = [282, 368], stopwatch = false, glow = 0, glowColor = G.green, opacity = 1, sweat = 0, cap = false}) => {
   if (cap) hair = 'mohawk';
-  const shL: V = [140, 226], shR: V = [260, 226];
+  const dy = crouch * 62;
+  if (barbell) { handL = [104, 214 + dy]; handR = [296, 214 + dy]; }
+  const shL: V = [140, 226 + dy], shR: V = [260, 226 + dy];
   const eL = ik2(shL, handL, 82, 74), eR = ik2(shR, handR, 82, 74);
+  const kL = ik2([172, 380 + dy], [166, 536], 84, 80), kR = ik2([228, 380 + dy], [234, 536], 84, 80);
   const legF = (hip: V, knee: V, ank: V, dir: number) => (
     <g>
       <Cap a={knee} b={ank} w={30} c={SK} />
@@ -197,12 +200,16 @@ export const FrontPerson: React.FC<FrontProps> = ({x = 0, y = 0, s = 1, shirt = 
   );
   return (
     <svg width={400 * s} height={600 * s} viewBox="0 0 400 600" style={{position: 'absolute', left: x, top: y, overflow: 'visible', opacity}}>
-      {legF([172, 380], [168, 462], [166, 536], -1)}{legF([228, 380], [232, 462], [234, 536], 1)}
+      {legF([172, 380 + dy], kL, [166, 536], -1)}{legF([228, 380 + dy], kR, [234, 536], 1)}
+      <g transform={`translate(0 ${dy})`}>
       <path d="M142 352 L258 352 L266 448 L210 452 L200 414 L190 452 L134 448 Z" fill={G.shorts} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
       {glow > 0 && <><ellipse cx={170} cy={420} rx={20 + 14 * glow} ry={46 + 10 * glow} fill={glowColor} opacity={0.62} stroke={OL} strokeWidth={OW} strokeOpacity={0.5} /><ellipse cx={230} cy={420} rx={20 + 14 * glow} ry={46 + 10 * glow} fill={glowColor} opacity={0.62} stroke={OL} strokeWidth={OW} strokeOpacity={0.5} /></>}
       <Cap a={[200, 186]} b={[200, 214]} w={30} c={SK} />
       <path d="M140 214 Q200 200 260 214 L254 362 Q200 372 146 362 Z" fill={shirt} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
       <path d="M186 208 L200 226 L214 208" fill="none" stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
+      </g>
+      {barbell && <g><line x1={20} y1={214 + dy} x2={380} y2={214 + dy} stroke={OL} strokeWidth={14} strokeLinecap="round" /><line x1={20} y1={214 + dy} x2={380} y2={214 + dy} stroke="#9AA0AA" strokeWidth={8} strokeLinecap="round" /><rect x={28} y={150 + dy} width={30} height={128} rx={8} fill="#1C1D22" stroke={OL} strokeWidth={4} /><rect x={342} y={150 + dy} width={30} height={128} rx={8} fill="#1C1D22" stroke={OL} strokeWidth={4} /><rect x={58} y={168 + dy} width={18} height={92} rx={6} fill="#1C1D22" stroke={OL} strokeWidth={4} /><rect x={324} y={168 + dy} width={18} height={92} rx={6} fill="#1C1D22" stroke={OL} strokeWidth={4} /></g>}
+      <g transform={`translate(0 ${dy})`}>
       {arm(shL, eL, handL)}{arm(shR, eR, handR)}
       {stopwatch && <g transform={`translate(${handL[0]} ${handL[1] - 30})`}><circle r={28} fill="#fff" stroke={OL} strokeWidth={5} /><rect x={-6} y={-38} width={12} height={9} fill={OL} /><path d="M0 0 L0 -18 M0 0 L13 6" stroke={G.red} strokeWidth={4} /></g>}
       {/* head */}
@@ -217,6 +224,7 @@ export const FrontPerson: React.FC<FrontProps> = ({x = 0, y = 0, s = 1, shirt = 
       <path d="M200 142 Q206 156 196 160" stroke={OL} strokeWidth={3.2} fill="none" strokeLinecap="round" />
       <path d={mood === 'smile' ? 'M184 172 Q200 188 216 172' : mood === 'worry' ? 'M186 182 Q200 170 214 182' : mood === 'strain' ? 'M182 172 L218 172 L218 182 L182 182Z' : 'M188 178 L212 178'} stroke={beard ? '#fff' : OL} strokeWidth={4} fill={mood === 'strain' ? '#fff' : 'none'} strokeLinecap="round" strokeLinejoin="round" />
       {sweat > 0 && <path d={`M${248} ${104 + 24 * sweat} q-7 12 0 15 q7 -3 0 -15z`} fill="#8FD3FF" stroke={OL} strokeWidth={2.5} opacity={1 - sweat * 0.6} />}
+      </g>
     </svg>
   );
 };
