@@ -1,6 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, staticFile, interpolate, useCurrentFrame, Easing} from 'remotion';
-import {BG, Bench, FONT, G, Floor, Person, POSES, Pill, Plate, Pop, Source, Tank, TimerCard, Xray, mixPose} from './kit';
+import {BG, FONT, G, Floor, FrontPerson, Person, POSES, Pill, Pop, Source, Tank, TimerCard, Xray, mixPose} from './kit';
 import {GYM_TOTAL, SEC, SecKey, secFrom, secLen} from './timeline';
 import {Subs} from './Subs';
 import {FPS} from '../theme';
@@ -62,7 +62,7 @@ const LegLane: React.FC<{y: number; shirt: string; e: number; glow: number; cap?
   const L = 118 + 74 * e, th = (42 * Math.PI) / 180;
   const hip: [number, number] = [172, 372], sh: [number, number] = [52, 290];
   const footL: [number, number] = [hip[0] + L * Math.cos(th), hip[1] - L * Math.sin(th)];
-  const pose = {hip, sh, head: [10, 246] as [number, number], handL: [hip[0] + 22, hip[1] + 10] as [number, number], handR: [hip[0] + 12, hip[1] + 18] as [number, number], footL, footR: [footL[0] - 6, footL[1] + 6] as [number, number], legBend: 1 as const, armBend: -1 as const};
+  const pose = {hip, sh, head: [10, 246] as [number, number], handL: [hip[0] + 6, hip[1] + 34] as [number, number], handR: [hip[0] - 4, hip[1] + 40] as [number, number], footL, footR: [footL[0] - 6, footL[1] + 6] as [number, number], legBend: 1 as const, armBend: -1 as const};
   return (
     <div style={{position: 'absolute', left: 150, top: y, transform: 'scale(1.2)', transformOrigin: '0 0', opacity: show}}>
       <svg width={640} height={520} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
@@ -91,7 +91,7 @@ const Weeks: React.FC = () => {
       {lazy > 0 && (
         <div style={{position: 'absolute', inset: 0, opacity: lazy}}>
           <Floor y={1210} />
-          <Person pose={POSES.stand} shirt={G.blue} s={2.0} x={140} y={1210 - 565 * 2} mood="worry" />
+          <FrontPerson shirt={G.blue} s={2.0} x={140} y={1210 - 575 * 2} mood="worry" />
           <Pop at={Math.round(4.3 * FPS)} style={{left: 640, top: 250}}><Pill text="Lazy?!" color={G.red} size={46} bg="#fff" /></Pop>
           <Pop at={Math.round(4.5 * FPS)} style={{left: 90, top: 320}}><Pill text="Lazy?" color={G.orange} size={34} bg="#fff" /></Pop>
         </div>
@@ -127,7 +127,6 @@ const Inside: React.FC = () => {
       ) : (
         <>
           <Floor y={1130} />
-          <Plate x={0} y={0} r={0} />
           <div style={{position: 'absolute', left: 30, top: 1130 - 565 * 1.9}}>
             <Person pose={squatPose} shirt={G.blue} s={1.9} mood={stuck ? 'worry' : 'flat'} />
             <svg width={400 * 1.9} height={600 * 1.9} viewBox="0 0 400 600" style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
@@ -162,7 +161,7 @@ const Study: React.FC = () => {
         const at = Math.round((0.15 + i * 0.1) * FPS);
         const grp = i < 11 ? 'o' : 'b';
         const shirt = !split ? '#9AA3B2' : grp === 'o' ? G.orange : G.blue;
-        return <Pop key={i} at={at} style={{left: 40 + col * 138, top: 340 + row * 235}}><div style={{position: 'relative', width: 160, height: 240}}><Person pose={POSES.stand} shirt={shirt} s={0.4} cap={split && grp === 'o'} /></div></Pop>;
+        return <Pop key={i} at={at} style={{left: 40 + col * 138, top: 340 + row * 235}}><div style={{position: 'relative', width: 160, height: 240}}><FrontPerson shirt={shirt} s={0.4} cap={split && grp === 'o'} /></div></Pop>;
       })}
       {t > 2.75 && <Pop at={Math.round(2.8 * FPS)} style={{left: 60, top: 1090}}><Pill text="Same exercises" color={G.ink} size={28} bg="#fff" /></Pop>}
       {t > 3.4 && <Pop at={Math.round(3.5 * FPS)} style={{left: 400, top: 1090}}><Pill text="Same sets" color={G.ink} size={28} bg="#fff" /></Pop>}
@@ -218,7 +217,7 @@ const Results: React.FC = () => {
         <>
           <div style={{position: 'absolute', left: 190, top: 520, width: 700, height: 700, borderRadius: 350, background: 'radial-gradient(circle, rgba(255,201,60,.65), rgba(255,201,60,0) 68%)', opacity: gl}} />
           <Floor y={1200} />
-          <Person pose={POSES.flex} shirt={G.orange} cap beard mood="smile" s={1.7} x={200} y={1200 - 565 * 1.7} />
+          <FrontPerson shirt={G.orange} cap beard mood="smile" s={1.7} x={200} y={1200 - 575 * 1.7} handL={[78, 126]} handR={[322, 126]} />
           <Pop at={Math.round(4.15 * FPS)} style={{left: 410, top: 230}}><Pill text="Pump" color={G.red} size={48} bg="#fff" /></Pop>
           {t > 5.8 && <Pop at={Math.round(5.85 * FPS)} style={{left: 330, top: 320}}><Pill text="Feels bigger" color={G.orange} size={34} bg="#fff" /></Pop>}
           {t > 6.85 && (
@@ -249,8 +248,8 @@ const Pooling: React.FC = () => {
       ) : (
         <>
           <Floor y={1210} />
-          <Person pose={POSES.stand} shirt={same ? G.blue : G.orange} s={1.9} x={160} y={1210 - 565 * 1.9} glowThigh={glow} mood={same ? 'smile' : 'worry'} cap={!same} beard={!same} />
-          <div style={{position: 'absolute', left: 400, top: 240}}><TimerCard text={mmss(time)} color={same ? G.green : G.red} w={280} /></div>
+          <FrontPerson shirt={same ? G.blue : G.orange} s={1.9} x={160} y={1210 - 575 * 1.9} glow={glow} mood={same ? 'smile' : 'worry'} cap={!same} beard={!same} />
+          <div style={{position: 'absolute', left: 400, top: 150}}><TimerCard text={mmss(time)} color={same ? G.green : G.red} w={280} /></div>
           {!same && t > 2.2 && <Pop at={Math.round(2.25 * FPS)} style={{left: 360, top: 1230}}><Pill text="A bit worse" color={G.red} size={38} bg="#fff" /></Pop>}
           {same && t > 4.6 && <Pop at={Math.round(4.65 * FPS)} style={{left: 280, top: 1230}}><Pill text="Basically the same" color={G.green} size={36} bg="#fff" /></Pop>}
         </>
@@ -283,9 +282,9 @@ const Cta: React.FC = () => {
     <AbsoluteFill>
       <Header />
       <Floor y={1210} />
-      <Person pose={POSES.point} shirt={G.orange} cap beard stopwatch mood="smile" s={1.95} x={150} y={1210 - 565 * 1.95} />
-      <Pop at={6} style={{left: 680, top: 230}}><Pill text="That friend" color={G.orange} size={36} bg="#fff" /></Pop>
-      <Pop at={Math.round(1.5 * FPS)} style={{left: 60, top: 230}}>
+      <FrontPerson shirt={G.orange} cap beard stopwatch mood="smile" s={1.95} x={150} y={1210 - 575 * 1.95} handL={[160, 330]} handR={[350, 196]} />
+      <Pop at={6} style={{left: 690, top: 180}}><Pill text="That friend" color={G.orange} size={36} bg="#fff" /></Pop>
+      <Pop at={Math.round(1.5 * FPS)} style={{left: 40, top: 140}}>
         <div style={{position: 'relative', background: '#fff', border: `5px solid ${G.ink}`, borderRadius: 26, padding: '16px 28px', fontFamily: FONT, fontWeight: 900, fontSize: 42, lineHeight: 1.1, textAlign: 'center', width: 460}}>3 MINUTES IS<br />FOR SLACKERS!<div style={{position: 'absolute', left: 50, bottom: -30, width: 0, height: 0, borderLeft: '20px solid transparent', borderRight: '20px solid transparent', borderTop: `32px solid ${G.ink}`}} /></div>
       </Pop>
       {t > 3.1 && <Pop at={Math.round(3.15 * FPS)} style={{left: 330, top: 1235}}><div style={{background: G.green, color: '#fff', fontFamily: FONT, fontWeight: 900, fontSize: 40, borderRadius: 999, padding: '12px 40px', letterSpacing: 2}}>SEND IT ➜</div></Pop>}

@@ -25,7 +25,7 @@ export const mixPose = (a: Pose, b: Pose, t: number): Pose => {
   return {hip: m(a.hip, b.hip), sh: m(a.sh, b.sh), head: m(a.head, b.head), handL: m(a.handL, b.handL), handR: m(a.handR, b.handR), footL: m(a.footL, b.footL), footR: m(a.footR, b.footR), legBend: a.legBend, armBend: a.armBend};
 };
 export const POSES = {
-  sit: {hip: [140, 330], sh: [146, 188], head: [152, 134], handL: [226, 258], handR: [236, 266], footL: [262, 438], footR: [250, 442], legBend: 1, armBend: -1} as Pose,
+  sit: {hip: [140, 330], sh: [146, 188], head: [152, 134], handL: [212, 240], handR: [222, 246], footL: [262, 438], footR: [250, 442], legBend: 1, armBend: -1} as Pose,
   stand: {hip: [200, 365], sh: [200, 215], head: [204, 160], handL: [182, 345], handR: [216, 345], footL: [185, 565], footR: [220, 565], legBend: 1, armBend: -1} as Pose,
   squatUp: {hip: [190, 365], sh: [205, 218], head: [212, 164], handL: [216, 190], handR: [226, 196], footL: [180, 565], footR: [215, 565], legBend: 1, armBend: -1} as Pose,
   squatDown: {hip: [140, 462], sh: [195, 330], head: [215, 280], handL: [208, 304], handR: [218, 310], footL: [185, 565], footR: [222, 565], legBend: 1, armBend: -1} as Pose,
@@ -48,9 +48,18 @@ export const Person: React.FC<PersonProps> = ({pose, shirt = G.blue, cap = false
       <Limb a={pose.hip} b={kneeR} w={50} c={G.shorts} /><Limb a={kneeR} b={pose.footR} w={30} c={G.skinD} />
       <ellipse cx={pose.footR[0] + 12} cy={pose.footR[1] + 6} rx={30} ry={13} fill="#DADADA" />
       <Limb a={pose.sh} b={elbR} w={34} c={shirt} /><Limb a={elbR} b={pose.handR} w={26} c={G.skinD} />
-      {/* torso */}
-      <Limb a={pose.sh} b={pose.hip} w={94} c={shirt} />
-      <Limb a={pose.hip} b={[pose.hip[0], pose.hip[1] + 4]} w={84} c={G.shorts} />
+      {/* torso: chest/back shape along the spine, shoulder cap, short shorts block */}
+      {(() => {
+        const ux = pose.hip[0] - pose.sh[0], uy = pose.hip[1] - pose.sh[1], L = Math.hypot(ux, uy) || 1; const u: V = [ux / L, uy / L]; const f: V = [u[1], -u[0]];
+        const P = (b: V, k: number, m: number): string => `${b[0] + f[0] * k + u[0] * m},${b[1] + f[1] * k + u[1] * m}`;
+        const pts = [P(pose.sh, -34, -12), P(pose.sh, 34, -8), P(pose.sh, 44, 40), P(pose.hip, 38, -30), P(pose.hip, 30, 10), P(pose.hip, -32, 10), P(pose.hip, -36, -40), P(pose.sh, -40, 36)].join(' ');
+        return <>
+          <line x1={pose.sh[0]} y1={pose.sh[1] - 4} x2={h[0]} y2={h[1] + 20} stroke={G.skin} strokeWidth={30} strokeLinecap="round" />
+          <polygon points={pts} fill={shirt} stroke={shirt} strokeWidth={22} strokeLinejoin="round" />
+          <line x1={pose.hip[0] - u[0] * 26} y1={pose.hip[1] - u[1] * 26} x2={pose.hip[0] + u[0] * 14} y2={pose.hip[1] + u[1] * 14} stroke={G.shorts} strokeWidth={86} strokeLinecap="round" />
+          <circle cx={pose.sh[0] + f[0] * 8} cy={pose.sh[1] + u[1] * 14} r={25} fill={shirt} />
+        </>;
+      })()}
       {/* near leg */}
       <Limb a={pose.hip} b={kneeL} w={50} c={G.shorts} />
       {glowThigh > 0 && <ellipse cx={(pose.hip[0] + kneeL[0]) / 2} cy={(pose.hip[1] + kneeL[1]) / 2} rx={26 + 26 * glowThigh} ry={62 + 22 * glowThigh} fill={thighColor} opacity={0.55} transform={`rotate(${Math.atan2(kneeL[1] - pose.hip[1], kneeL[0] - pose.hip[0]) * 180 / Math.PI - 90} ${(pose.hip[0] + kneeL[0]) / 2} ${(pose.hip[1] + kneeL[1]) / 2})`} />}
@@ -62,7 +71,6 @@ export const Person: React.FC<PersonProps> = ({pose, shirt = G.blue, cap = false
       {phone && <g transform={`translate(${pose.handL[0] + 6} ${pose.handL[1] - 36}) rotate(-12)`}><rect width={42} height={70} rx={8} fill="#1d2230" /><rect x={5} y={6} width={32} height={56} rx={4} fill="#9bd0ff" /></g>}
       {stopwatch && <g transform={`translate(${pose.handL[0] + 4} ${pose.handL[1] - 20})`}><circle r={26} fill="#fff" stroke={G.ink} strokeWidth={5} /><rect x={-6} y={-36} width={12} height={9} fill={G.ink} /><path d="M0 0 L0 -17 M0 0 L12 6" stroke={G.red} strokeWidth={4} /></g>}
       {/* head */}
-      <rect x={h[0] - 13} y={h[1] + 24} width={26} height={30} fill={G.skin} />
       <circle cx={h[0]} cy={h[1]} r={40} fill={G.skin} />
       {beard && <path d={`M${h[0] - 36} ${h[1] + 6} Q${h[0] - 30} ${h[1] + 54} ${h[0] + 6} ${h[1] + 50} Q${h[0] + 38} ${h[1] + 46} ${h[0] + 38} ${h[1] + 6} Q${h[0] + 22} ${h[1] + 24} ${h[0]} ${h[1] + 22} Q${h[0] - 22} ${h[1] + 24} ${h[0] - 36} ${h[1] + 6}Z`} fill="#3A2A22" />}
       {cap ? <><path d={`M${h[0] - 42} ${h[1] - 6} A42 42 0 0 1 ${h[0] + 42} ${h[1] - 6}Z`} fill={G.cap} /><path d={`M${h[0] + 4} ${h[1] - 8} L${h[0] + 70} ${h[1] - 4} L${h[0] + 68} ${h[1] + 4} L${h[0] + 4} ${h[1] + 2}Z`} fill="#A83330" /></> : <path d={`M${h[0] - 41} ${h[1] - 4} A41 41 0 0 1 ${h[0] + 41} ${h[1] - 6} Q${h[0] + 10} ${h[1] - 28} ${h[0] - 41} ${h[1] - 4}Z`} fill="#3A2A22" />}
@@ -130,3 +138,38 @@ export const BG: React.FC<{dark?: boolean}> = ({dark}) => (
   <div style={{position: 'absolute', inset: 0, background: dark ? '#0B1E3F' : G.bg, backgroundImage: dark ? 'linear-gradient(rgba(80,160,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(80,160,255,.10) 1px, transparent 1px)' : `linear-gradient(${G.grid} 1px, transparent 1px), linear-gradient(90deg, ${G.grid} 1px, transparent 1px)`, backgroundSize: '60px 60px'}} />
 );
 export const Floor: React.FC<{y: number}> = ({y}) => <div style={{position: 'absolute', left: 0, right: 0, top: y, height: 6, background: '#B9B9B5'}} />;
+
+const ik2 = (a: V, b: V, l1: number, l2: number): V => { const A = ik(a, b, l1, l2, 1), B = ik(a, b, l1, l2, -1); return Math.abs(A[0] - 200) >= Math.abs(B[0] - 200) ? A : B; };
+type FrontProps = {x?: number; y?: number; s?: number; shirt?: string; cap?: boolean; beard?: boolean; mood?: 'smile' | 'flat' | 'worry'; handL?: V; handR?: V; stopwatch?: boolean; glow?: number; opacity?: number};
+/** Symmetric front-facing athlete (400x600 box, feet at y~570). Arms use 2-bone IK from broad shoulders. */
+export const FrontPerson: React.FC<FrontProps> = ({x = 0, y = 0, s = 1, shirt = G.blue, cap = false, beard = false, mood = 'flat', handL = [112, 372], handR = [288, 372], stopwatch = false, glow = 0, opacity = 1}) => {
+  const shL: V = [142, 236], shR: V = [258, 236];
+  const eL = ik2(shL, handL, 84, 76), eR = ik2(shR, handR, 84, 76);
+  const mouth = mood === 'smile' ? 'M182 176 Q200 194 218 176' : mood === 'worry' ? 'M184 188 Q200 172 216 188' : 'M184 182 L216 182';
+  return (
+    <svg width={400 * s} height={600 * s} viewBox="0 0 400 600" style={{position: 'absolute', left: x, top: y, overflow: 'visible', opacity}}>
+      {/* legs */}
+      <Limb a={[168, 420]} b={[158, 540]} w={36} c={G.skin} /><Limb a={[232, 420]} b={[242, 540]} w={36} c={G.skin} />
+      <ellipse cx={146} cy={558} rx={36} ry={16} fill="#F2F2F2" /><ellipse cx={254} cy={558} rx={36} ry={16} fill="#F2F2F2" /><rect x={112} y={564} width={68} height={6} rx={3} fill={G.cap} /><rect x={220} y={564} width={68} height={6} rx={3} fill={G.cap} />
+      <Limb a={[166, 376]} b={[160, 470]} w={64} c={G.shorts} /><Limb a={[234, 376]} b={[240, 470]} w={64} c={G.shorts} />
+      {glow > 0 && <><ellipse cx={164} cy={436} rx={26 + 22 * glow} ry={64 + 14 * glow} fill={G.green} opacity={0.55} /><ellipse cx={236} cy={436} rx={26 + 22 * glow} ry={64 + 14 * glow} fill={G.green} opacity={0.55} /></>}
+      {/* torso */}
+      <path d="M136 226 Q200 206 264 226 L254 384 Q200 398 146 384Z" fill={shirt} stroke={shirt} strokeWidth={16} strokeLinejoin="round" />
+      <rect x={140} y={364} width={120} height={36} rx={14} fill={G.shorts} />
+      {/* arms */}
+      <Limb a={shL} b={eL} w={40} c={shirt} /><Limb a={eL} b={handL} w={30} c={G.skin} /><circle cx={handL[0]} cy={handL[1]} r={17} fill={G.skin} />
+      <Limb a={shR} b={eR} w={40} c={shirt} /><Limb a={eR} b={handR} w={30} c={G.skin} /><circle cx={handR[0]} cy={handR[1]} r={17} fill={G.skin} />
+      <circle cx={shL[0]} cy={shL[1]} r={26} fill={shirt} /><circle cx={shR[0]} cy={shR[1]} r={26} fill={shirt} />
+      {stopwatch && <g transform={`translate(${handL[0]} ${handL[1] - 28})`}><circle r={26} fill="#fff" stroke={G.ink} strokeWidth={5} /><rect x={-6} y={-36} width={12} height={9} fill={G.ink} /><path d="M0 0 L0 -17 M0 0 L12 6" stroke={G.red} strokeWidth={4} /></g>}
+      {/* head */}
+      <rect x={184} y={190} width={32} height={40} rx={10} fill={G.skin} />
+      <circle cx={158} cy={154} r={10} fill={G.skin} /><circle cx={242} cy={154} r={10} fill={G.skin} />
+      <circle cx={200} cy={146} r={46} fill={G.skin} />
+      {beard && <path d="M156 160 Q158 212 200 214 Q242 212 244 160 Q226 184 200 182 Q174 184 156 160Z" fill="#3A2A22" />}
+      {cap ? <><path d="M153 140 A47 47 0 0 1 247 140 Q200 126 153 140Z" fill={G.cap} /><path d="M150 140 Q200 124 250 140 Q250 150 200 146 Q150 150 150 140Z" fill="#A83330" /></> : <path d="M154 136 A46 46 0 0 1 246 136 Q200 114 154 136Z" fill="#3A2A22" />}
+      <circle cx={184} cy={158} r={5} fill={G.ink} /><circle cx={216} cy={158} r={5} fill={G.ink} />
+      <path d={mood === 'worry' ? 'M174 146 l18 6 M226 146 l-18 6' : 'M174 148 l18 -3 M226 148 l-18 -3'} stroke={G.ink} strokeWidth={4} strokeLinecap="round" />
+      <path d={mouth} stroke={beard ? '#fff' : G.ink} strokeWidth={4.5} fill="none" strokeLinecap="round" />
+    </svg>
+  );
+};
