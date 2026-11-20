@@ -20,7 +20,7 @@ export const Test3D: React.FC = () => {
       {face ? <Cam pos={[f < 5 || f === 40 ? -0.42 : 0.42, 1.68, 0.95]} look={[f < 5 || f === 40 ? -0.42 : 0.42, 1.68, 0]} fov={26} /> : f >= 30 ? <Cam pos={[0, 1.4, 2.6]} look={[0, 1.3, 0]} fov={36} /> : <Cam pos={[0, 1.3, 4.6]} look={[0, 1.15, 0]} fov={38} />}
       <Gym />
       <Character spec={ALEX} position={[-0.45, 0, 0]} smile={0.4} muscle={f >= 20 && f < 30 ? 0.62 : 0.12} pose={a} flexL={f >= 20 && f < 30 ? 1 : 0} holdL={f >= 30 ? <Tub scale={1.1} /> : undefined} />
-      <Character spec={DANIEL} position={[0.45, 0, 0]} smile={0.1} muscle={f >= 20 && f < 30 ? 0.52 : 0.12} pose={d} flexL={f >= 20 && f < 30 ? 1 : 0} tongue={f >= 5 && f < 10 || f >= 40 || (f >= 30 && f < 35) ? 1 : 0} holdR={f >= 35 ? <Bottle /> : undefined} />
+      <Character spec={DANIEL} position={[0.45, 0, 0]} smile={0.1} muscle={f >= 20 && f < 30 ? 0.52 : 0.12} pose={d} flexL={f >= 20 && f < 30 ? 1 : 0} tired={f >= 5 && f < 10 ? 1 : 0} holdR={f >= 35 ? <Bottle /> : undefined} />
     </ThreeCanvas>
   ) : null;
 };

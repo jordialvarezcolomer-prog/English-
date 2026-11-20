@@ -5,10 +5,11 @@ import {FX} from './theme';
 import {toNew} from './time';
 
 type Card = {t0: number; t1: number; words: {w: string; a: number; hl: boolean}[]};
-const build = (): Card[] => {
+type Cap = [number, number, string, string[]];
+export const buildCards = (caps: Cap[], map: (x: number) => number = (x) => x): Card[] => {
   const out: Card[] = [];
-  for (const [a0, b0, text, hl] of EP1_CAPTIONS) {
-    const a = toNew(a0), b = toNew(b0);
+  for (const [a0, b0, text, hl] of caps) {
+    const a = map(a0), b = map(b0);
     const w = text.split(' '); const k = Math.ceil(w.length / 3); const size = Math.ceil(w.length / k);
     const chunks: string[][] = []; for (let i = 0; i < w.length; i += size) chunks.push(w.slice(i, i + size));
     const tot = chunks.reduce((s, c) => s + c.join(' ').length + 1, 0); let t = a;
@@ -16,11 +17,11 @@ const build = (): Card[] => {
   }
   return out;
 };
-const CARDS = build();
+const CARDS = buildCards(EP1_CAPTIONS, toNew);
 /** Bold phrase captions (<=3 words), active word lifts; keywords & numbers in gold. Safe zone y 1360-1560. */
-export const Subs: React.FC = () => {
+export const Subs: React.FC<{cards?: Card[]}> = ({cards = CARDS}) => {
   const s = useCurrentFrame() / 30;
-  const c = CARDS.find((x) => s >= x.t0 && s < x.t1 + 0.05);
+  const c = cards.find((x) => s >= x.t0 && s < x.t1 + 0.05);
   if (!c) return null;
   const pop = interpolate(s, [c.t0, c.t0 + 0.1], [0.82, 1], {extrapolateRight: 'clamp'});
   return (

@@ -35,12 +35,12 @@ export const NameTag: React.FC<{at: number; out?: number; name: string; sub: str
   );
 };
 /** Persistent experiment progress bar: DAY n / 90. */
-export const DayBar: React.FC<{day: number; show?: number}> = ({day, show = 1}) => (
+export const DayBar: React.FC<{day: number; show?: number; total?: number}> = ({day, show = 1, total = 90}) => (
   <div style={{position: 'absolute', left: 70, right: 160, top: 120, opacity: show}}>
-    <div style={{display: 'flex', justifyContent: 'space-between', fontFamily: FX.font, fontWeight: 900, color: FX.white, fontSize: 34, letterSpacing: 2}}><span>DAY <span style={{color: FX.gold}}>{Math.round(day)}</span></span><span style={{opacity: 0.6}}>/ 90</span></div>
+    <div style={{display: 'flex', justifyContent: 'space-between', fontFamily: FX.font, fontWeight: 900, color: FX.white, fontSize: 34, letterSpacing: 2}}><span>DAY <span style={{color: FX.gold}}>{Math.round(day)}</span></span><span style={{opacity: 0.6}}>/ {total}</span></div>
     <div style={{height: 14, borderRadius: 7, background: 'rgba(255,255,255,.14)', marginTop: 10, overflow: 'hidden', position: 'relative'}}>
-      <div style={{position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(day / 90) * 100}%`, background: `linear-gradient(90deg, ${FX.blue}, ${FX.gold})`, boxShadow: `0 0 18px ${FX.gold}`}} />
-      {[30, 60].map((d) => <div key={d} style={{position: 'absolute', left: `${(d / 90) * 100}%`, top: 0, bottom: 0, width: 3, background: 'rgba(0,0,0,.5)'}} />)}
+      <div style={{position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(day / total) * 100}%`, background: `linear-gradient(90deg, ${FX.blue}, ${FX.gold})`, boxShadow: `0 0 18px ${FX.gold}`}} />
+      {(total === 90 ? [30, 60] : [7, 14, 21]).map((d) => <div key={d} style={{position: 'absolute', left: `${(d / total) * 100}%`, top: 0, bottom: 0, width: 3, background: 'rgba(0,0,0,.5)'}} />)}
     </div>
   </div>
 );

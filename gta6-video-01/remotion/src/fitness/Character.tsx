@@ -46,7 +46,7 @@ export type Pose = {
   gripL?: number; gripR?: number; handL?: HandMode; handR?: HandMode; handW?: number;
 };
 type HandMode = 'stop' | 'up' | 'wrap' | 'drink';
-type Props = {smile?: number; talk?: number; spec: CharSpec; pose?: Pose; position?: [number, number, number]; muscle?: number; flexL?: number; flexR?: number; holdL?: React.ReactNode; holdR?: React.ReactNode; sweat?: number; mouthOpen?: number; soft?: boolean; tongue?: number};
+type Props = {smile?: number; talk?: number; spec: CharSpec; pose?: Pose; position?: [number, number, number]; muscle?: number; flexL?: number; flexR?: number; holdL?: React.ReactNode; holdR?: React.ReactNode; sweat?: number; mouthOpen?: number; soft?: boolean; tongue?: number; tired?: number};
 
 const lathe = (pts: [number, number][], seg = 40) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
 const limbCache = new Map<string, THREE.LatheGeometry>();
@@ -175,7 +175,7 @@ const solveHand = (P: Required<Pose>, sd: number, m: number, mode: HandMode) => 
 };
 
 /** Procedural rigged athlete (~1.77 m), forward kinematics. muscle 0..1 thickens arms/shoulders/chest; flex 0..1 peaks the biceps. */
-export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose = {}, position = [0, 0, 0], muscle = 0.2, flexL = 0, flexR = 0, holdL, holdR, sweat = 0, mouthOpen = 0, soft = true, tongue = 0}) => {
+export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose = {}, position = [0, 0, 0], muscle = 0.2, flexL = 0, flexR = 0, holdL, holdR, sweat = 0, mouthOpen = 0, soft = true, tongue = 0, tired = 0}) => {
   const k = useKit(spec);
   const frame = useCurrentFrame(); const {fps} = useVideoConfig(); const tt = frame / fps;
   const seed = spec.name;
@@ -261,7 +261,7 @@ export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose =
   };
   const head = (
     <group position={[0, 0.628, 0.01]} rotation={[P.headX, P.headY, 0]} scale={[spec.beard ? 1.04 : 1, 1, 1]}>
-      <RpmHead spec={spec} smile={smileLive} open={Math.max(openLive, tongue)} look={look} blink={blink} tongue={tongue} />
+      <RpmHead spec={spec} smile={smileLive} open={Math.max(openLive, tongue)} look={look} blink={blink} tongue={tongue} tired={tired} />
       {sweat > 0 && <M g={sph(0.0065)} mat={k.sweat} p={[0.05, 0.05 - sweat * 0.08, 0.085]} s={[1, 1.5, 1]} shadow={false} />}
     </group>
   );
