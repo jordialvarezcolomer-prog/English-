@@ -1,4 +1,4 @@
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
 import * as THREE from 'three';
 import {MarchingCubes} from 'three/examples/jsm/objects/MarchingCubes.js';
 import type {Pose} from './Character';
@@ -33,7 +33,8 @@ export const useSoftBody = (P: Required<Pose>, muscle: number, flexL: number, fl
     const leg = (sd: number) => { const hp = mkNode(body), kn = mkNode(hp); return {hp, kn, sd}; };
     return {root, body, spine, arms: [arm(1), arm(-1)], legs: [leg(1), leg(-1)],
       skin: mkField(SKIN, mats.skin), shirt: mkField(SHIRT, mats.shirt), shorts: mkField(SHORTS, mats.shorts)};
-  }, [mats]);
+  }, [mats.skin, mats.shirt, mats.shorts]);
+  useEffect(() => () => { [rig.skin, rig.shirt, rig.shorts].forEach((mc) => mc.geometry.dispose()); }, [rig]);
   const m = muscle, bi = 1 + m * 0.62, dl = 1 + m * 0.34, ch = 1 + m * 0.2, lg = 1 + m * 0.18, fa = 1 + m * 0.28;
   // ---- forward kinematics (same nesting & numbers as Character) ----
   rig.body.position.set(0, 0.95 + P.bob, 0); rig.body.rotation.set(0, 0, P.side);
