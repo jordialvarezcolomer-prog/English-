@@ -68,7 +68,7 @@ const Hook: React.FC = () => {
   const curling = t < 3.2;
   const a: Pose = curling ? curl(c, idle(t, 1), 'B', cR) : mixPose(idle(t, 1), SHOW_TUB, show);
   const d: Pose = curling ? curl(c, idle(t, -1), 'B', cR) : t < 6.15 ? idle(t, -1) : {...mixPose(idle(t, -1), STOP_R, push), handW: push, headY: Math.sin(t * 9) * 0.2 * (t < 7.8 ? 1 : 0)};
-  const tongue = interpolate(t, [6.5, 6.75, 8.2, 8.5], [0, 1, 1, 0], clamp);
+  const tongue = interpolate(t, [6.5, 6.75, 8.2, 8.5], [0, 1, 1, 0], clamp); // cheeky smile while saying no
   const tubX = interpolate(push, [0, 1], [0.37, 1.1]);
   if (t >= 8.59) {
     // split-screen face close-ups
@@ -95,7 +95,7 @@ const Hook: React.FC = () => {
   }
   return (
     <AbsoluteFill>
-      <Stage tongueD={tongue} smileA={curling ? 0.1 : 0.55} smileD={0} cam={cam} a={a} d={d} flexA={curling ? [c, c] : [0, 0]} flexD={curling ? [c, c] : [0, 0]} holdA={[curling ? DB : <Tub scale={1.1} />, curling ? DB : null]} holdD={[curling ? DB : null, curling ? DB : null]}>
+      <Stage smileA={curling ? 0.1 : 0.55} smileD={curling ? 0.05 : 0.2 + 0.3 * tongue} cam={cam} a={a} d={d} flexA={curling ? [c, c] : [0, 0]} flexD={curling ? [c, c] : [0, 0]} holdA={[curling ? DB : <Tub scale={1.1} />, curling ? DB : null]} holdD={[curling ? DB : null, curling ? DB : null]}>
         {!curling && t >= 6.0 && <group position={[tubX, 1.32 - push * 0.4, 0.42]} rotation={[0, push * 2, push]}><Tub scale={1.1} /></group>}
       </Stage>
       <Slam at={1.45} out={3.15} text="90 DAYS" size={230} color={FX.gold} top={1000} glow="rgba(255,194,61,.8)" />
