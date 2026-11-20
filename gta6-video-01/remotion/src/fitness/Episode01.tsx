@@ -29,7 +29,7 @@ const DB = <group rotation={[0, Math.PI / 2, 0]}><Dumbbell scale={0.85} /></grou
 const POS_A: V3 = [-0.37, 0, 0], POS_D: V3 = [0.37, 0, 0];
 
 /** Full 3D gym stage with both characters; `children` adds scene-specific 3D objects. */
-const Stage: React.FC<{cam: ReturnType<typeof camAt>; a: Pose; d: Pose; muscle?: number; muscleD?: number; flexA?: [number, number]; flexD?: [number, number]; holdA?: [React.ReactNode, React.ReactNode]; holdD?: [React.ReactNode, React.ReactNode]; sweat?: number; children?: React.ReactNode; light?: number; spread?: number}> = ({spread = 0.37, cam, a, d, muscle = 0.2, muscleD, flexA = [0, 0], flexD = [0, 0], holdA = [null, null], holdD = [null, null], sweat = 0, children, light = 1}) => (
+const Stage: React.FC<{cam: ReturnType<typeof camAt>; a: Pose; d: Pose; muscle?: number; muscleD?: number; flexA?: [number, number]; flexD?: [number, number]; holdA?: [React.ReactNode, React.ReactNode]; holdD?: [React.ReactNode, React.ReactNode]; sweat?: number; children?: React.ReactNode; light?: number; spread?: number}> = ({spread = 0.37, cam, a, d, muscle = 0.12, muscleD, flexA = [0, 0], flexD = [0, 0], holdA = [null, null], holdD = [null, null], sweat = 0, children, light = 1}) => (
   <ThreeCanvas width={W} height={H} shadows>
     <Cam pos={cam.pos} look={cam.look} fov={cam.fov} />
     <Gym light={light} />
@@ -207,7 +207,7 @@ const Weeks: React.FC = () => {
   const chart = t >= 7.39;
   return (
     <AbsoluteFill>
-      <Stage cam={cam} a={curl(cA, idle(t, 1), 'L')} d={curl(cD, idle(t, -1), 'R')} flexA={[cA, 0]} flexD={[0, cD]} holdA={[DB, null]} holdD={[null, DB]} sweat={(t * 1.3) % 1} />
+      <Stage cam={cam} a={curl(cA, idle(t, 1), 'L')} d={curl(cD, idle(t, -1), 'R')} flexA={[cA, 0]} flexD={[0, cD]} holdA={[DB, null]} holdD={[null, DB]} sweat={(t * 1.3) % 1} muscle={0.22} muscleD={0.2} />
       <DayBar day={interpolate(t, [1.5, 9], [21, 28], clamp)} />
       {!chart && <>
         <Reps n={repsA} color={FX.blue} x={70} y={1010} label="ALEX" />
@@ -268,20 +268,51 @@ const Day60: React.FC = () => {
     );
   }
   const cam = camAt(t, [{t: 0, pos: [0, 1.3, 3.8], look: [0, 1.1, 0], fov: 36}, {t: 1.25, pos: [0, 1.35, 3.0], look: [0, 1.15, 0], fov: 34}]);
-  return <AbsoluteFill><Stage cam={cam} a={idle(t, 1)} d={idle(t, -1)} muscle={0.35} /><DayBar day={interpolate(t, [0, 0.8], [28, 60], clamp)} /><Slam at={0.05} text="DAY 60" size={220} color={FX.gold} top={360} glow="rgba(255,194,61,.7)" /></AbsoluteFill>;
+  return <AbsoluteFill><Stage cam={cam} a={idle(t, 1)} d={idle(t, -1)} muscle={0.36} muscleD={0.31} /><DayBar day={interpolate(t, [0, 0.8], [28, 60], clamp)} /><Slam at={0.05} text="DAY 60" size={220} color={FX.gold} top={360} glow="rgba(255,194,61,.7)" /></AbsoluteFill>;
 };
 
 /* ====================== SCENE 7 — DAY 90 ====================== */
 const Day90: React.FC = () => {
   const t = useT(); // starts at 55.44
   const flex = interpolate(t, [1.3, 1.8], [0, 1], {...clamp, easing: Easing.out(Easing.back(1.4))});
-  const ang = interpolate(t, [1.3, 7.6], [0, 0.9]);
-  const cam = t < 1.3 ? camAt(t, [{t: 0, pos: [0, 1.3, 4.5], look: [0, 1.1, 0], fov: 38}, {t: 1.3, pos: [0, 1.35, 3.6], look: [0, 1.15, 0], fov: 36}]) : {pos: [Math.sin(ang) * 4.7, 1.4, Math.cos(ang) * 4.7] as V3, look: [0, 1.2, 0] as V3, fov: 38};
+  const ang = interpolate(t, [3.6, 7.6], [0, 0.8]);
+  const cam = t < 1.3 ? camAt(t, [{t: 0, pos: [0, 1.3, 4.5], look: [0, 1.1, 0], fov: 38}, {t: 1.3, pos: [0, 1.35, 3.6], look: [0, 1.15, 0], fov: 36}]) : {pos: [Math.sin(ang) * 5.2, 1.4, Math.cos(ang) * 5.2] as V3, look: [0, 1.2, 0] as V3, fov: 38};
   const pose = (side: 1 | -1): Pose => ({...idle(t, side), shL: [0, 0, 1.4 * flex], twL: Math.PI / 2 * flex, elL: 0.15 + 1.75 * flex, shR: [0, 0, -1.4 * flex], twR: -Math.PI / 2 * flex, elR: 0.15 + 1.75 * flex, turn: 0.1 * side});
   const stats = t >= 4.5;
+  if (t >= 1.3 && t < 3.6) {
+    // muscle-growth time-lapse: same 90 days, both grow; creatine adds a small extra
+    const p = interpolate(t, [1.45, 3.35], [0, 1], {...clamp, easing: Easing.inOut(Easing.cubic)});
+    const mA = 0.12 + 0.5 * p, mD = 0.12 + 0.4 * p;
+    const fx = (side: 1 | -1): Pose => ({...idle(t, side), turn: 0.25 * side, shL: [0, 0, 1.4], twL: Math.PI / 2, elL: 1.85 + 0.08 * Math.sin(t * 6), shR: [0, 0, -1.4], twR: -Math.PI / 2, elR: 1.85 + 0.08 * Math.sin(t * 6)});
+    return (
+      <AbsoluteFill>
+        {[0, 1].map((i) => (
+          <div key={i} style={{position: 'absolute', left: i * 540, top: 0, width: 540, height: H, overflow: 'hidden'}}>
+            <ThreeCanvas width={540} height={H} shadows>
+              <Cam pos={[i ? 0.66 : -0.66, 1.5, 2.7]} look={[i ? 0.66 : -0.66, 1.42, 0]} fov={40} />
+              <Gym />
+              <Character spec={ALEX} position={[-0.42, 0, 0]} pose={fx(1)} muscle={mA} flexL={1} flexR={1} sweat={(t * 1.2) % 1} />
+              <Character spec={DANIEL} position={[0.42, 0, 0]} pose={fx(-1)} muscle={mD} flexL={1} flexR={1} sweat={(t * 1.2 + 0.5) % 1} />
+            </ThreeCanvas>
+            <AbsoluteFill style={{background: `linear-gradient(180deg, transparent 60%, ${i ? FX.red : FX.blue}66)`}} />
+            <div style={{position: 'absolute', left: 40, right: 40, top: 1150}}>
+              <div style={{fontFamily: FX.font, fontWeight: 900, fontSize: 30, color: '#fff', letterSpacing: 3}}>MUSCLE</div>
+              <div style={{height: 30, borderRadius: 15, background: 'rgba(255,255,255,.15)', marginTop: 8, overflow: 'hidden'}}><div style={{width: `${20 + (i ? 52 : 62) * p}%`, height: '100%', background: i ? FX.red : FX.blue, boxShadow: `0 0 18px ${i ? FX.red : FX.blue}`}} /></div>
+            </div>
+          </div>
+        ))}
+        <div style={{position: 'absolute', left: 536, top: 0, width: 8, height: H, background: `linear-gradient(${FX.blue}, ${FX.gold}, ${FX.red})`, boxShadow: `0 0 30px ${FX.gold}`}} />
+        <DayBar day={Math.round(90 * p)} />
+        <Chip at={1.35} text="ALEX · CREATINE" color={FX.blue} x={40} y={250} />
+        <Chip at={1.45} text="DANIEL · NONE" color={FX.red} x={600} y={250} />
+        <div style={{position: 'absolute', left: 0, right: 0, top: 1250, textAlign: 'center', fontFamily: FX.font, fontWeight: 700, fontSize: 22, color: 'rgba(255,255,255,.6)', letterSpacing: 2}}>BOTH GROW · CREATINE'S EXTRA IS SMALL (PARTLY WATER) · ILLUSTRATIVE</div>
+        <Flash at={1.3} len={0.15} />
+      </AbsoluteFill>
+    );
+  }
   return (
     <AbsoluteFill>
-      <Stage spread={0.52} cam={cam} a={pose(1)} d={pose(-1)} muscle={0.55} muscleD={0.52} flexA={[flex, flex]} flexD={[flex, flex]} light={1.1} />
+      <Stage spread={0.64} cam={cam} a={pose(1)} d={pose(-1)} muscle={0.62} muscleD={0.52} flexA={[flex, flex]} flexD={[flex, flex]} light={1.1} />
       <DayBar day={interpolate(t, [0, 0.8], [60, 90], clamp)} />
       <Slam at={0.05} out={1.25} text="DAY 90" size={240} color={FX.gold} top={360} glow="rgba(255,194,61,.8)" />
       {!stats && <>
@@ -309,7 +340,7 @@ const Final: React.FC = () => {
   const end = t >= 6.2;
   return (
     <AbsoluteFill>
-      <Stage cam={cam} a={{...idle(t, 1), shL: [-0.9, 0.1, 0.3], elL: 1.4}} d={{...idle(t, -1), shR: [0, 0, -0.1]}} holdA={[<Tub scale={1.1} />, null]} light={end ? 0.75 : 1} />
+      <Stage cam={cam} a={{...idle(t, 1), shL: [-0.9, 0.1, 0.3], elL: 1.4}} d={{...idle(t, -1), shR: [0, 0, -0.1]}} holdA={[<Tub scale={1.1} />, null]} light={end ? 0.75 : 1} muscle={0.62} muscleD={0.52} />
       {!end && <Slam at={0.05} out={1.6} text="ISN'T MAGIC" size={120} top={330} />}
       {!end && <>
         <Chip at={1.75} text="TRAINING" icon="🏋️" x={70} y={330} />
