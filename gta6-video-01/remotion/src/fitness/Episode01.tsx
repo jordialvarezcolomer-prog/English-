@@ -86,7 +86,7 @@ const Hook: React.FC = () => {
   }
   return (
     <AbsoluteFill>
-      <Stage smileA={curling ? 0.1 : 0.55} smileD={0} cam={cam} a={a} d={d} flexA={curling ? [c, c] : [0, 0]} flexD={curling ? [c, c] : [0, 0]} holdA={[curling ? DB : <group rotation={[0, 0, 0]}><Tub scale={1.1} /></group>, curling ? DB : null]} holdD={[curling ? DB : null, curling ? DB : null]}>
+      <Stage smileA={curling ? 0.1 : 0.55} smileD={0} cam={cam} a={a} d={d} flexA={curling ? [c, c] : [0, 0]} flexD={curling ? [c, c] : [0, 0]} holdA={[curling ? DB : <Tub scale={1.1} />, curling ? DB : null]} holdD={[curling ? DB : null, curling ? DB : null]}>
         {!curling && t >= 6.0 && <group position={[tubX, 1.32 - push * 0.4, 0.42]} rotation={[0, push * 2, push]}><Tub scale={1.1} /></group>}
       </Stage>
       <Slam at={1.45} out={3.15} text="90 DAYS" size={230} color={FX.gold} top={1000} glow="rgba(255,194,61,.8)" />
@@ -341,7 +341,7 @@ const Final: React.FC = () => {
   const end = t >= 6.2;
   return (
     <AbsoluteFill>
-      <Stage cam={cam} a={{...idle(t, 1), shL: [-0.9, 0.1, 0.3], elL: 1.4}} d={{...idle(t, -1), shR: [0, 0, -0.1]}} holdA={[<Tub scale={1.1} />, null]} light={end ? 0.75 : 1} muscle={0.62} muscleD={0.52} smileA={0.75} smileD={0.55} />
+      <Stage cam={cam} a={{...idle(t, 1), shL: [-0.5, 0.1, 0.38], elL: 1.45}} d={{...idle(t, -1), shR: [0, 0, -0.1]}} holdA={[<Tub scale={1.1} />, null]} light={end ? 0.75 : 1} muscle={0.62} muscleD={0.52} smileA={0.75} smileD={0.55} />
       {!end && <Slam at={0.05} out={1.6} text="ISN'T MAGIC" size={120} top={330} />}
       {!end && <>
         <Chip at={1.75} text="TRAINING" icon="🏋️" x={70} y={330} />

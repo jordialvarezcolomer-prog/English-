@@ -48,12 +48,12 @@ const shell = (src: THREE.BufferGeometry, keep: (n: THREE.Vector3, p: THREE.Vect
 };
 
 /** Realistic head with per-character skin tone, hair, beard and expressions. Origin = eye level, model faces +Z. */
-export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; look?: [number, number]}> = ({spec, smile = 0, open = 0, look = [0, 0]}) => {
+export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; look?: [number, number]; blink?: number}> = ({spec, smile = 0, open = 0, look = [0, 0], blink = 0}) => {
   const built = useMemo(() => {
     if (!BASE) return null;
     const c = SkeletonUtils.clone(BASE) as THREE.Group;
     const morphs: THREE.Mesh[] = [];
-    let headGeo: THREE.BufferGeometry | null = null;
+    let headGeo: THREE.BufferGeometry | null = null; let lidMat: THREE.Material | null = null;
     const tint = new THREE.Color('#ffffff').lerp(new THREE.Color(spec.skin).multiply(new THREE.Color(1 / 0.94, 1 / 0.78, 1 / 0.7)), 0.55);
     c.traverse((o) => {
       const m = o as THREE.Mesh; o.frustumCulled = false;
@@ -61,7 +61,7 @@ export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; l
       m.castShadow = true; m.receiveShadow = true;
       const keepVis = /^(Wolf3D_Head|EyeLeft|EyeRight|Wolf3D_Teeth)$/.test(o.name);
       m.visible = keepVis;
-      if (o.name === 'Wolf3D_Head') { headGeo = m.geometry; const mat = (m.material as THREE.MeshStandardMaterial).clone(); mat.color = tint; mat.roughness = 0.62; m.material = mat; }
+      if (o.name === 'Wolf3D_Head') { headGeo = m.geometry; const mat = (m.material as THREE.MeshStandardMaterial).clone(); mat.color = tint; mat.roughness = 0.62; m.material = mat; lidMat = new THREE.MeshStandardMaterial({color: new THREE.Color(spec.skin).multiplyScalar(0.9), roughness: 0.55}); }
       if (/Eye(Left|Right)/.test(o.name) && spec.beard) { const mat = (m.material as THREE.MeshStandardMaterial).clone(); mat.color = new THREE.Color('#9CC7FF'); m.material = mat; }
       if (m.morphTargetDictionary) morphs.push(m);
     });
@@ -77,7 +77,7 @@ export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; l
       const stache = n.z > 0.5 && p.y > 1.662 && p.y < 1.684 ? ss(1.0, 1.3, mouth) * (1 - ss(1.6, 2.4, mouth)) : 0;
       return Math.max(lower * (1 - lips), stache);
     }, (n, k) => k * (0.005 + noise(n))) : null;
-    return {c, morphs, hair, beard, hairMat};
+    return {c, morphs, hair, beard, hairMat, lidMat: lidMat as THREE.Material | null, lash: new THREE.MeshStandardMaterial({color: '#2A1A14', roughness: 0.9})};
   }, [spec]);
   if (!built) return null;
   built.morphs.forEach((m) => {
@@ -91,6 +91,17 @@ export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; l
       <primitive object={built.c} />
       {built.hair && <mesh geometry={built.hair} material={built.hairMat} castShadow />}
       {built.beard && <mesh geometry={built.beard} material={built.hairMat} castShadow />}
+      {built.lidMat && [1, -1].map((sd) => {
+        // eyelids: sphere caps just outside the eyeball. Open = only the very top is covered (alert, not sleepy); blink = upper lid sweeps down.
+        const up = Math.PI * (0.29 + 0.33 * blink + 0.04 * look[1]), lo = Math.PI * (0.76 - 0.1 * blink);
+        return (
+          <group key={sd} position={[0.0304 * sd, 1.726, 0.0876]}>
+            <mesh material={built.lidMat!}><sphereGeometry args={[0.0201, 32, 16, -0.25, Math.PI + 0.5, 0, up]} /></mesh>
+            <mesh material={built.lash} position={[0, 0.0201 * Math.cos(up), 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.0201 * Math.sin(up), 0.0011, 6, 32, Math.PI]} /></mesh>
+            <mesh material={built.lidMat!}><sphereGeometry args={[0.0201, 32, 16, -0.25, Math.PI + 0.5, lo, Math.PI - lo]} /></mesh>
+          </group>
+        );
+      })}
     </group>
   );
 };

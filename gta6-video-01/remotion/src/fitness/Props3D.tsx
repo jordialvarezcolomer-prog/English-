@@ -20,6 +20,7 @@ export const Tub: React.FC<{scale?: number}> = ({scale = 1}) => {
     </group>
   );
 };
+(Tub as unknown as {upright: boolean}).upright = true; // rests upright on an open palm when held
 /** Measuring scoop with a heap of powder. */
 export const Scoop: React.FC<{tilt?: number; full?: number}> = ({tilt = 0, full = 1}) => (
   <group rotation={[0, 0, tilt]}>
