@@ -11,7 +11,7 @@ import {ALEX, DANIEL, FX} from './theme';
 import {EP1, EP1_TOTAL, sceneNew} from './ep01_timeline';
 import {SceneClock, useLocalOld} from './time';
 import {useRpmBase} from './Human';
-import {DRINK_R, OLY_A, OLY_D, SHOW_TUB, STOP_R, mixPose} from './poses';
+import {DRINK_R, SHOW_TUB, STOP_R, mixPose} from './poses';
 
 const W = 1080, H = 1920, FPS = 30;
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
@@ -30,10 +30,11 @@ const tri = (x: number) => { const e = (u: number) => 0.5 - 0.5 * Math.cos(Math.
 const idle = (t: number, side: 1 | -1): Pose => ({bob: 0.004 * Math.sin(t * 2.2), shL: [0, 0, 0.1 + 0.015 * Math.sin(t * 2.2)], shR: [0, 0, -0.1 - 0.015 * Math.sin(t * 2.2)], turn: 0.14 * side, headY: -0.05 * side});
 /** Natural dumbbell curl: elbow drives, upper arm drifts forward a little, wrist curls, torso rocks back slightly and the head follows. */
 const curl = (c: number, base: Pose, side: 'L' | 'R' | 'B', cR = c): Pose => {
-  const arm = (k: number, sd: number) => ({sh: [-0.1 * k - 0.1 * k * k, 0, sd * (0.12 + 0.03 * k)] as V3, el: 0.22 + 2.1 * k, wr: -0.3 * k});
+  // hammer-style curl: forearm roll and wrist stay fixed, so hand and dumbbell never twist — only the elbow travels
+  const arm = (k: number, sd: number) => ({sh: [-0.08 * k - 0.06 * k * k, 0, sd * 0.12] as V3, el: 0.22 + 2.1 * k, wr: 0, rl: sd * 1.4});
   const L = arm(c, 1), Rr = arm(cR, -1); const both = side === 'B' ? (c + cR) / 2 : c;
   return {...base, lean: (base.lean ?? 0) - 0.035 * both, bob: (base.bob ?? 0) - 0.004 * both, headX: (base.headX ?? 0) + 0.05 * both,
-    ...(side !== 'R' ? {shL: L.sh, elL: L.el, wrL: L.wr} : {}), ...(side !== 'L' ? {shR: Rr.sh, elR: Rr.el, wrR: Rr.wr} : {})};
+    ...(side !== 'R' ? {shL: L.sh, elL: L.el, wrL: L.wr, rlL: L.rl} : {}), ...(side !== 'L' ? {shR: Rr.sh, elR: Rr.el, wrR: Rr.wr, rlR: Rr.rl} : {})};
 };
 const DB = <group rotation={[0, Math.PI / 2, 0]}><Dumbbell scale={0.85} /></group>;
 const POS_A: V3 = [-0.37, 0, 0], POS_D: V3 = [0.37, 0, 0];
@@ -288,7 +289,9 @@ const Day90: React.FC = () => {
   const ang = interpolate(t, [3.6, 7.6], [0, 0.8]);
   const cam = t < 1.3 ? camAt(t, [{t: 0, pos: [0, 1.3, 4.5], look: [0, 1.1, 0], fov: 38}, {t: 1.3, pos: [0, 1.35, 3.6], look: [0, 1.15, 0], fov: 36}]) : {pos: [Math.sin(ang) * 5.2, 1.4, Math.cos(ang) * 5.2] as V3, look: [0, 1.2, 0] as V3, fov: 38};
   // classic Olympia stage poses: Alex = arm out + side biceps, Daniel = overhead arm + open-hand flex
-  const pose = (side: 1 | -1): Pose => ({...mixPose(idle(t, side), side === 1 ? OLY_A : OLY_D, flex), handW: flex, turn: 0.1 * side});
+  // classic front double-biceps for both, facing camera so the pose reads clearly
+  const DBL: Pose = {shL: [0, 0, 1.4], twL: Math.PI / 2, elL: 1.9, gripL: 1.4, shR: [0, 0, -1.4], twR: -Math.PI / 2, elR: 1.9, gripR: 1.4, headX: 0.04};
+  const pose = (side: 1 | -1): Pose => ({...mixPose(idle(t, side), DBL, flex), turn: 0.06 * side});
   const stats = t >= 4.5;
   if (t >= 1.3 && t < 3.6) {
     // muscle-growth time-lapse: same 90 days, both grow; creatine adds a small extra
