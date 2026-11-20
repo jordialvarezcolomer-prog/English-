@@ -25,7 +25,7 @@ const v = new THREE.Vector3();
 
 export type SoftMats = {skin: THREE.Material; shirt: THREE.Material; shorts: THREE.Material};
 
-export const useSoftBody = (P: Required<Pose>, muscle: number, flexL: number, flexR: number, mats: SoftMats, breath: number) => {
+export const useSoftBody = (P: Required<Pose>, muscle: number, flexL: number, flexR: number, mats: SoftMats, breath: number, tank = false) => {
   const rig = useMemo(() => {
     const root = new THREE.Object3D();
     const body = mkNode(root), spine = mkNode(body);
@@ -77,7 +77,7 @@ export const useSoftBody = (P: Required<Pose>, muscle: number, flexL: number, fl
     [0, 0.12, 0.035, 0.088], [0, 0.04, 0.03, 0.09],                                             // belly
   );
   const sleeve = (sd: number): Ball[] => [[0.004 * sd, -0.004, 0, 0.06 * dl], [0.002 * sd, -0.055, 0, 0.059 * dl], [0, -0.1, 0.004, 0.057 * dl]];
-  fill(rig.shirt, SHIRT, [[rig.spine, torso], ...rig.arms.map((a) => [a.tw, sleeve(a.sd)] as [THREE.Object3D, Ball[]])]);
+  fill(rig.shirt, SHIRT, [[rig.spine, torso], ...(tank ? [] : rig.arms.map((a) => [a.tw, sleeve(a.sd)] as [THREE.Object3D, Ball[]]))]);
   // ---------- SHORTS ----------
   fill(rig.shorts, SHORTS, [
     [rig.body, [[0, 0.04, -0.005, 0.118], [0.068, -0.02, 0, 0.104], [-0.068, -0.02, 0, 0.104], [0, -0.01, -0.045, 0.108], [0, 0.0, 0.03, 0.098]]],
@@ -88,6 +88,7 @@ export const useSoftBody = (P: Required<Pose>, muscle: number, flexL: number, fl
   rig.arms.forEach((a) => {
     const fl = a.sd === 1 ? flexL : flexR;
     skin.push([a.tw, [
+      ...(tank ? [[0.01 * a.sd, 0.006, 0, 0.056 * dl], [-0.03 * a.sd, 0.03, -0.01, 0.05 * dl]] as Ball[] : []), // bare deltoid cap
       [0.004 * a.sd, -0.02, 0, 0.052 * dl], [0, -0.08, 0, 0.05 * dl],
       [0, -0.14, 0.012 + fl * 0.01, 0.047 * bi * (1 + fl * 0.1)], [0, -0.19, 0.017 + fl * 0.014, 0.045 * bi * (1 + fl * 0.16)], // biceps
       [0, -0.15, -0.016, 0.046 * (1 + m * 0.45)], [0, -0.21, -0.014, 0.042 * (1 + m * 0.35)],                                  // triceps

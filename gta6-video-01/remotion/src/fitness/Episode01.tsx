@@ -11,6 +11,7 @@ import {ALEX, DANIEL, FX} from './theme';
 import {EP1, EP1_TOTAL, sceneNew} from './ep01_timeline';
 import {SceneClock, useLocalOld} from './time';
 import {useRpmBase} from './Human';
+import {DRINK_R, OLY_A, OLY_D, SHOW_TUB, STOP_R, mixPose} from './poses';
 
 const W = 1080, H = 1920, FPS = 30;
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
@@ -24,19 +25,26 @@ const camAt = (t: number, keys: Key[]) => {
   const L = (x: V3, y: V3): V3 => [x[0] + (y[0] - x[0]) * p, x[1] + (y[1] - x[1]) * p, x[2] + (y[2] - x[2]) * p];
   return {pos: L(a.pos, b.pos), look: L(a.look, b.look), fov: (a.fov ?? 36) + ((b.fov ?? 36) - (a.fov ?? 36)) * p};
 };
-const tri = (x: number) => 0.5 - 0.5 * Math.cos(x * Math.PI * 2);
+/** Curl tempo: quicker lift (40%), slower controlled lowering (60%). */
+const tri = (x: number) => { const e = (u: number) => 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, Math.max(0, u))); return x < 0.4 ? e(x / 0.4) : 1 - e((x - 0.4) / 0.6); };
 const idle = (t: number, side: 1 | -1): Pose => ({bob: 0.004 * Math.sin(t * 2.2), shL: [0, 0, 0.1 + 0.015 * Math.sin(t * 2.2)], shR: [0, 0, -0.1 - 0.015 * Math.sin(t * 2.2)], turn: 0.14 * side, headY: -0.05 * side});
-const curl = (c: number, base: Pose, side: 'L' | 'R' | 'B'): Pose => ({...base, ...(side !== 'R' ? {shL: [-0.12 * c, 0, 0.12] as V3, elL: 0.2 + 2.15 * c, wrL: -0.25 * c} : {}), ...(side !== 'L' ? {shR: [-0.12 * c, 0, -0.12] as V3, elR: 0.2 + 2.15 * c, wrR: -0.25 * c} : {})});
+/** Natural dumbbell curl: elbow drives, upper arm drifts forward a little, wrist curls, torso rocks back slightly and the head follows. */
+const curl = (c: number, base: Pose, side: 'L' | 'R' | 'B', cR = c): Pose => {
+  const arm = (k: number, sd: number) => ({sh: [-0.1 * k - 0.1 * k * k, 0, sd * (0.12 + 0.03 * k)] as V3, el: 0.22 + 2.1 * k, wr: -0.3 * k});
+  const L = arm(c, 1), Rr = arm(cR, -1); const both = side === 'B' ? (c + cR) / 2 : c;
+  return {...base, lean: (base.lean ?? 0) - 0.035 * both, bob: (base.bob ?? 0) - 0.004 * both, headX: (base.headX ?? 0) + 0.05 * both,
+    ...(side !== 'R' ? {shL: L.sh, elL: L.el, wrL: L.wr} : {}), ...(side !== 'L' ? {shR: Rr.sh, elR: Rr.el, wrR: Rr.wr} : {})};
+};
 const DB = <group rotation={[0, Math.PI / 2, 0]}><Dumbbell scale={0.85} /></group>;
 const POS_A: V3 = [-0.37, 0, 0], POS_D: V3 = [0.37, 0, 0];
 
 /** Full 3D gym stage with both characters; `children` adds scene-specific 3D objects. */
-const Stage: React.FC<{cam: ReturnType<typeof camAt>; a: Pose; d: Pose; muscle?: number; muscleD?: number; flexA?: [number, number]; flexD?: [number, number]; holdA?: [React.ReactNode, React.ReactNode]; holdD?: [React.ReactNode, React.ReactNode]; sweat?: number; children?: React.ReactNode; light?: number; spread?: number; smileA?: number; smileD?: number}> = ({smileA = 0.25, smileD = 0.15, spread = 0.37, cam, a, d, muscle = 0.12, muscleD, flexA = [0, 0], flexD = [0, 0], holdA = [null, null], holdD = [null, null], sweat = 0, children, light = 1}) => (
+const Stage: React.FC<{cam: ReturnType<typeof camAt>; a: Pose; d: Pose; muscle?: number; muscleD?: number; flexA?: [number, number]; flexD?: [number, number]; holdA?: [React.ReactNode, React.ReactNode]; holdD?: [React.ReactNode, React.ReactNode]; sweat?: number; children?: React.ReactNode; light?: number; spread?: number; smileA?: number; smileD?: number; tongueD?: number}> = ({tongueD = 0, smileA = 0.25, smileD = 0.15, spread = 0.37, cam, a, d, muscle = 0.12, muscleD, flexA = [0, 0], flexD = [0, 0], holdA = [null, null], holdD = [null, null], sweat = 0, children, light = 1}) => (
   <ThreeCanvas width={W} height={H} shadows>
     <Cam pos={cam.pos} look={cam.look} fov={cam.fov} />
     <Gym light={light} />
     <Character spec={ALEX} smile={smileA} position={[-spread, 0, 0]} pose={a} muscle={muscle} flexL={flexA[0]} flexR={flexA[1]} holdL={holdA[0]} holdR={holdA[1]} sweat={sweat} />
-    <Character spec={DANIEL} smile={smileD} position={[spread, 0, 0]} pose={d} muscle={muscleD ?? muscle} flexL={flexD[0]} flexR={flexD[1]} holdL={holdD[0]} holdR={holdD[1]} sweat={sweat} />
+    <Character spec={DANIEL} smile={smileD} position={[spread, 0, 0]} pose={d} muscle={muscleD ?? muscle} flexL={flexD[0]} flexR={flexD[1]} holdL={holdD[0]} holdR={holdD[1]} sweat={sweat} tongue={tongueD} />
     {children}
   </ThreeCanvas>
 );
@@ -45,7 +53,7 @@ const useT = () => useLocalOld();
 /* ====================== SCENE 1 — HOOK ====================== */
 const Hook: React.FC = () => {
   const t = useT();
-  const c = tri((t % 0.8) / 0.8);
+  const c = tri((t % 0.8) / 0.8), cR = tri(((t + 0.05) % 0.8) / 0.8); // right arm a hair behind, like a real person
   const cam = camAt(t, [
     {t: 0, pos: [0, 1.12, 1.45], look: [0, 1.08, 0], fov: 28},
     {t: 1.15, pos: [0, 1.12, 1.75], look: [0, 1.08, 0], fov: 28},
@@ -58,8 +66,9 @@ const Hook: React.FC = () => {
   const show = t >= 3.35 ? interpolate(t, [3.35, 3.8], [0, 1], clamp) : 0;
   const push = interpolate(t, [6.4, 7.2], [0, 1], {...clamp, easing: Easing.out(Easing.cubic)});
   const curling = t < 3.2;
-  const a: Pose = curling ? curl(c, idle(t, 1), 'B') : {...idle(t, 1), shL: [-1.05 * show, 0.1, 0.32 * show], elL: 0.15 + 1.35 * show, wrL: 0.2 * show};
-  const d: Pose = curling ? curl(c, idle(t, -1), 'B') : t < 6.15 ? idle(t, -1) : {...idle(t, -1), shR: [-1.4 * push, 0, -0.15], elR: 0.3 - 0.15 * push, wrR: -1.35 * push, headY: Math.sin(t * 12) * 0.18 * (t < 7.8 ? 1 : 0)};
+  const a: Pose = curling ? curl(c, idle(t, 1), 'B', cR) : mixPose(idle(t, 1), SHOW_TUB, show);
+  const d: Pose = curling ? curl(c, idle(t, -1), 'B', cR) : t < 6.15 ? idle(t, -1) : {...mixPose(idle(t, -1), STOP_R, push), handW: push, headY: Math.sin(t * 9) * 0.2 * (t < 7.8 ? 1 : 0)};
+  const tongue = interpolate(t, [6.5, 6.75, 8.2, 8.5], [0, 1, 1, 0], clamp);
   const tubX = interpolate(push, [0, 1], [0.37, 1.1]);
   if (t >= 8.59) {
     // split-screen face close-ups
@@ -86,7 +95,7 @@ const Hook: React.FC = () => {
   }
   return (
     <AbsoluteFill>
-      <Stage smileA={curling ? 0.1 : 0.55} smileD={0} cam={cam} a={a} d={d} flexA={curling ? [c, c] : [0, 0]} flexD={curling ? [c, c] : [0, 0]} holdA={[curling ? DB : <Tub scale={1.1} />, curling ? DB : null]} holdD={[curling ? DB : null, curling ? DB : null]}>
+      <Stage tongueD={tongue} smileA={curling ? 0.1 : 0.55} smileD={0} cam={cam} a={a} d={d} flexA={curling ? [c, c] : [0, 0]} flexD={curling ? [c, c] : [0, 0]} holdA={[curling ? DB : <Tub scale={1.1} />, curling ? DB : null]} holdD={[curling ? DB : null, curling ? DB : null]}>
         {!curling && t >= 6.0 && <group position={[tubX, 1.32 - push * 0.4, 0.42]} rotation={[0, push * 2, push]}><Tub scale={1.1} /></group>}
       </Stage>
       <Slam at={1.45} out={3.15} text="90 DAYS" size={230} color={FX.gold} top={1000} glow="rgba(255,194,61,.8)" />
@@ -109,7 +118,7 @@ const Day0: React.FC = () => {
       <DayBar day={0} />
       <Slam at={0.05} out={1.6} text="DAY 0" size={190} color={FX.white} top={330} />
       <NameTag at={0.95} name="ALEX" sub="78.2 KG" color={FX.blue} x={70} y={300} />
-      <NameTag at={1.15} name="DANIEL" sub="78.6 KG" color={FX.red} x={560} y={300} align="right" />
+      <NameTag at={1.15} name="DANIEL" sub="78.2 KG" color={FX.red} x={560} y={300} align="right" />
       <Chip at={3.18} text="SAME WORKOUT" icon="🏋️" x={70} y={1120} />
       <Chip at={4.79} text="SAME FOOD" icon="🍗" x={70} y={1210} />
       <Chip at={5.83} text="SAME SLEEP" icon="😴" x={520} y={1210} />
@@ -150,7 +159,7 @@ const Difference: React.FC = () => {
   const cam = camAt(lt, [{t: 0, pos: [0.4, 1.5, 2.2], look: [0.37, 1.4, 0], fov: 34}, {t: 0.85, pos: [0.3, 1.45, 2.0], look: [0.3, 1.38, 0], fov: 34}, {t: 1.25, pos: [-0.45, 1.25, 0.9], look: [-0.55, 1.2, 0], fov: 32}]);
   return (
     <AbsoluteFill>
-      <Stage cam={cam} a={idle(t, 1)} d={{...idle(t, -1), shR: [-1.0 * drink, 0, 0.55 * drink], elR: 0.2 + 2.1 * drink, wrR: 0.1 * drink, headX: -0.28 * drink}} holdD={[null, <group position={[0, -0.02, 0.04]} rotation={[Math.PI - 0.7, 0, 0]}><Bottle /></group>]} />
+      <Stage cam={cam} a={idle(t, 1)} d={{...mixPose(idle(t, -1), DRINK_R, drink), handW: drink}} holdD={[null, <Bottle />]} />
       <DayBar day={1} />
       <NameTag at={4.9} out={5.75} name="DANIEL" sub="JUST WATER" color={FX.red} x={560} y={300} align="right" />
     </AbsoluteFill>
@@ -261,7 +270,7 @@ const Day60: React.FC = () => {
       <AbsoluteFill style={{background: 'radial-gradient(circle at 50% 40%, #142030, #07090D 70%)'}}>
         <DayBar day={60} />
         <div style={{position: 'absolute', left: 90, top: 330, transform: `translateY(${(1 - k) * 60}px)`, opacity: k}}><ScaleCard kg={78.2 + 1.5 * k} delta={1.5 * k} color={FX.blue} name="ALEX" note="MOSTLY WATER" /></div>
-        <div style={{position: 'absolute', left: 570, top: 330, transform: `translateY(${(1 - k) * 60}px)`, opacity: k}}><ScaleCard kg={78.6 + 0.5 * k} delta={0.5 * k} color={FX.red} name="DANIEL" /></div>
+        <div style={{position: 'absolute', left: 570, top: 330, transform: `translateY(${(1 - k) * 60}px)`, opacity: k}}><ScaleCard kg={78.2 + 0.5 * k} delta={0.5 * k} color={FX.red} name="DANIEL" /></div>
         <div style={{position: 'absolute', left: 0, right: 0, top: 780, textAlign: 'center', fontFamily: FX.font, fontWeight: 700, fontSize: 22, color: 'rgba(255,255,255,.5)'}}>ILLUSTRATIVE NUMBERS</div>
         <Slam at={7.16} text={<span>💧 ≠ 💪</span>} size={200} top={880} />
         <Slam at={7.2} text="WATER ≠ MUSCLE" size={96} top={1120} color="#7FD3FF" glow="#1E7FD0" />
@@ -278,7 +287,8 @@ const Day90: React.FC = () => {
   const flex = interpolate(t, [1.3, 1.8], [0, 1], {...clamp, easing: Easing.out(Easing.back(1.4))});
   const ang = interpolate(t, [3.6, 7.6], [0, 0.8]);
   const cam = t < 1.3 ? camAt(t, [{t: 0, pos: [0, 1.3, 4.5], look: [0, 1.1, 0], fov: 38}, {t: 1.3, pos: [0, 1.35, 3.6], look: [0, 1.15, 0], fov: 36}]) : {pos: [Math.sin(ang) * 5.2, 1.4, Math.cos(ang) * 5.2] as V3, look: [0, 1.2, 0] as V3, fov: 38};
-  const pose = (side: 1 | -1): Pose => ({...idle(t, side), shL: [0, 0, 1.4 * flex], twL: Math.PI / 2 * flex, elL: 0.15 + 1.75 * flex, shR: [0, 0, -1.4 * flex], twR: -Math.PI / 2 * flex, elR: 0.15 + 1.75 * flex, turn: 0.1 * side});
+  // classic Olympia stage poses: Alex = arm out + side biceps, Daniel = overhead arm + open-hand flex
+  const pose = (side: 1 | -1): Pose => ({...mixPose(idle(t, side), side === 1 ? OLY_A : OLY_D, flex), handW: flex, turn: 0.1 * side});
   const stats = t >= 4.5;
   if (t >= 1.3 && t < 3.6) {
     // muscle-growth time-lapse: same 90 days, both grow; creatine adds a small extra
@@ -341,7 +351,7 @@ const Final: React.FC = () => {
   const end = t >= 6.2;
   return (
     <AbsoluteFill>
-      <Stage cam={cam} a={{...idle(t, 1), shL: [-0.5, 0.1, 0.38], elL: 1.45}} d={{...idle(t, -1), shR: [0, 0, -0.1]}} holdA={[<Tub scale={1.1} />, null]} light={end ? 0.75 : 1} muscle={0.62} muscleD={0.52} smileA={0.75} smileD={0.55} />
+      <Stage cam={cam} a={mixPose(idle(t, 1), SHOW_TUB, 1)} d={{...idle(t, -1), shR: [0, 0, -0.1]}} holdA={[<Tub scale={1.1} />, null]} light={end ? 0.75 : 1} muscle={0.62} muscleD={0.52} smileA={0.75} smileD={0.55} />
       {!end && <Slam at={0.05} out={1.6} text="ISN'T MAGIC" size={120} top={330} />}
       {!end && <>
         <Chip at={1.75} text="TRAINING" icon="🏋️" x={70} y={330} />

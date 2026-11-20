@@ -4,22 +4,23 @@ import {useCurrentFrame, useVideoConfig} from 'remotion';
 import {Character} from './Character';
 import {Cam, Gym} from './Gym';
 import {useRpmBase} from './Human';
-import {Tub} from './Props3D';
+import {Bottle, Tub} from './Props3D';
 import {ALEX, DANIEL} from './theme';
+import {DRINK_R, OLY_A, OLY_D, SHOW_TUB, STOP_R} from './poses';
 
-/* look-dev: f<10 faces, 10-19 bodies (muscle .12), 20-29 bodies (muscle .6), 30+ tub presenting */
+/* look-dev: 0 faces A, 5 face D (tongue), 10 bodies idle, 20 olympia, 30 tub+stop, 35 drink */
 export const Test3D: React.FC = () => {
   const f = useCurrentFrame(); const {width, height} = useVideoConfig();
   const ok = useRpmBase();
-  const face = f < 10;
-  const m = f < 20 ? 0.12 : 0.6;
-  const present = f >= 30;
+  const face = f < 10 || f >= 40;
+  const a = f >= 40 ? OLY_A : f >= 30 ? SHOW_TUB : f >= 20 ? OLY_A : {};
+  const d = f >= 40 ? STOP_R : f >= 35 ? {...DRINK_R, shR: [[-1.25, 0, 0.12], [-1.45, 0, 0.2], [-1.1, 0, 0.3], [-1.35, 0.3, 0.1], [-1.25, 0, 0.12]][f - 35] as [number, number, number], elR: [2.05, 2.15, 2.25, 2.0, 1.85][f - 35]} : f >= 30 ? STOP_R : f >= 20 ? OLY_D : {};
   return ok ? (
     <ThreeCanvas width={width} height={height} shadows>
-      {face ? <Cam pos={[f < 5 ? -0.42 : 0.42, 1.66, 0.85]} look={[f < 5 ? -0.42 : 0.42, 1.64, 0]} fov={24} /> : present ? <Cam pos={[-0.2, 1.4, 2.4]} look={[-0.3, 1.25, 0]} fov={36} /> : <Cam pos={[0, 1.25, 4.4]} look={[0, 1.1, 0]} fov={38} />}
+      {face ? <Cam pos={[f < 5 || f === 40 ? -0.42 : 0.42, 1.68, 0.95]} look={[f < 5 || f === 40 ? -0.42 : 0.42, 1.68, 0]} fov={26} /> : f >= 30 ? <Cam pos={[0, 1.4, 2.6]} look={[0, 1.3, 0]} fov={36} /> : <Cam pos={[0, 1.3, 4.6]} look={[0, 1.15, 0]} fov={38} />}
       <Gym />
-      <Character spec={ALEX} position={[-0.42, 0, 0]} smile={0.4} muscle={m} pose={present ? {shL: [-1.05, 0.1, 0.32], elL: 1.5, wrL: 0.2} : f >= 25 ? {shL: [0, 0, 1.4], twL: Math.PI / 2, elL: 1.85, shR: [0, 0, -1.4], twR: -Math.PI / 2, elR: 1.85} : {}} holdL={present ? <Tub scale={1.1} /> : undefined} flexL={f >= 25 ? 1 : 0} flexR={f >= 25 ? 1 : 0} />
-      <Character spec={DANIEL} position={[0.42, 0, 0]} smile={0.1} muscle={m} />
+      <Character spec={ALEX} position={[-0.45, 0, 0]} smile={0.4} muscle={f >= 20 && f < 30 ? 0.62 : 0.12} pose={a} flexL={f >= 20 && f < 30 ? 1 : 0} holdL={f >= 30 ? <Tub scale={1.1} /> : undefined} />
+      <Character spec={DANIEL} position={[0.45, 0, 0]} smile={0.1} muscle={f >= 20 && f < 30 ? 0.52 : 0.12} pose={d} flexL={f >= 20 && f < 30 ? 1 : 0} tongue={f >= 5 && f < 10 || f >= 40 || (f >= 30 && f < 35) ? 1 : 0} holdR={f >= 35 ? <Bottle /> : undefined} />
     </ThreeCanvas>
   ) : null;
 };

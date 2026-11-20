@@ -13,6 +13,6 @@ const fontCss = `@font-face{font-family:Montserrat;font-weight:900;src:url(${sta
 export const Root: React.FC = () => (
   <><style>{fontCss}</style><Composition id="GTA6Facts" component={MainVideo} durationInFrames={TOTAL_FRAMES} fps={FPS} width={W} height={H} />
     <Composition id="Creatine90" component={Episode01} durationInFrames={EP1_TOTAL} fps={FPS} width={W} height={H} />
-    <Composition id="Test3D" component={Test3D} durationInFrames={40} fps={FPS} width={W} height={H} />
+    <Composition id="Test3D" component={Test3D} durationInFrames={45} fps={FPS} width={W} height={H} />
     <Composition id="GymRest" component={GymRest} durationInFrames={GYM_TOTAL} fps={FPS} width={W} height={H} /></>
 );

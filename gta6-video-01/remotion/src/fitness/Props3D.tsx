@@ -20,7 +20,7 @@ export const Tub: React.FC<{scale?: number}> = ({scale = 1}) => {
     </group>
   );
 };
-(Tub as unknown as {upright: boolean}).upright = true; // rests upright on an open palm when held
+(Tub as unknown as {hold: string}).hold = 'wrap'; // gripped from the side, kept upright
 /** Measuring scoop with a heap of powder. */
 export const Scoop: React.FC<{tilt?: number; full?: number}> = ({tilt = 0, full = 1}) => (
   <group rotation={[0, 0, tilt]}>
@@ -47,6 +47,7 @@ export const Bottle: React.FC = () => (
     <mesh material={new THREE.MeshStandardMaterial({color: '#2E8BFF', roughness: 0.4})} position={[0, 0.115, 0]}><cylinderGeometry args={[0.018, 0.02, 0.03, 20]} /></mesh>
   </group>
 );
+(Bottle as unknown as {hold: string}).hold = 'bottle';
 /** Powder stream: particles falling from (0,0,0) down to y=-h, spreading slightly. */
 export const PowderStream: React.FC<{t: number; h?: number; on?: number}> = ({t, h = 0.25, on = 1}) => (
   <group>

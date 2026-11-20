@@ -42,8 +42,11 @@ export type Pose = {
   y?: number; bob?: number; turn?: number; lean?: number; twist?: number; side?: number; headX?: number; headY?: number;
   shL?: [number, number, number]; twL?: number; elL?: number; wrL?: number; rlL?: number; shR?: [number, number, number]; twR?: number; elR?: number; wrR?: number; rlR?: number;
   hipL?: [number, number]; kneeL?: number; hipR?: [number, number]; kneeR?: number;
+  /** hand overrides: grip 0 (open) .. 1.4 (fist); mode solves forearm roll/wrist: 'stop' = palm to camera, fingers up; 'up' = palm to sky */
+  gripL?: number; gripR?: number; handL?: HandMode; handR?: HandMode; handW?: number;
 };
-type Props = {smile?: number; talk?: number; spec: CharSpec; pose?: Pose; position?: [number, number, number]; muscle?: number; flexL?: number; flexR?: number; holdL?: React.ReactNode; holdR?: React.ReactNode; sweat?: number; mouthOpen?: number; soft?: boolean};
+type HandMode = 'stop' | 'up' | 'wrap' | 'drink';
+type Props = {smile?: number; talk?: number; spec: CharSpec; pose?: Pose; position?: [number, number, number]; muscle?: number; flexL?: number; flexR?: number; holdL?: React.ReactNode; holdR?: React.ReactNode; sweat?: number; mouthOpen?: number; soft?: boolean; tongue?: number};
 
 const lathe = (pts: [number, number][], seg = 40) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
 const limbCache = new Map<string, THREE.LatheGeometry>();
@@ -60,15 +63,33 @@ const limb = (kind: 'upper' | 'fore' | 'thigh', m: number) => {
   const geo = lathe(prof, 36); limbCache.set(key, geo); return geo;
 };
 
+const glc = (c: string) => { const k = new THREE.Color(c); return `vec3(${k.r.toFixed(4)}, ${k.g.toFixed(4)}, ${k.b.toFixed(4)})`; };
+/** Shirt material with a printed design driven by world height: Alex = two-tone tank top, Daniel = tee with a chest band. */
+const outfitMat = (spec: CharSpec) => {
+  const m = new THREE.MeshPhysicalMaterial({color: spec.shirt, roughness: 0.88, sheen: 0.55, sheenRoughness: 0.6, sheenColor: new THREE.Color(spec.shirt).lerp(new THREE.Color('#ffffff'), 0.35)});
+  const B = glc(spec.topB), L = glc(spec.topLine);
+  const band = (a: number, b: number, c: string) => `diffuseColor.rgb = mix(diffuseColor.rgb, ${c}, smoothstep(${a - 0.003}, ${a + 0.003}, hy) * (1.0 - smoothstep(${b - 0.003}, ${b + 0.003}, hy)));`;
+  const design = spec.top === 'tank'
+    ? [band(0.5, 1.125, B), band(1.125, 1.142, L), band(1.33, 1.338, L)]
+    : [band(1.255, 1.265, L), band(1.27, 1.345, B), band(1.35, 1.36, L)];
+  m.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vWY;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWY = (modelMatrix * vec4(position, 1.0)).y;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY;').replace('#include <color_fragment>', `#include <color_fragment>\n{ float hy = vWY; ${design.join(' ')} }`);
+  };
+  m.customProgramCacheKey = () => 'outfit-' + spec.name;
+  return m;
+};
+
 const useKit = (spec: CharSpec) => useMemo(() => {
   const skinC = new THREE.Color(spec.skin);
   const skin = new THREE.MeshPhysicalMaterial({color: skinC.clone().multiply(new THREE.Color(0.9, 0.84, 0.82)), roughness: 0.52, sheen: 0.35, sheenRoughness: 0.5, sheenColor: new THREE.Color('#FF9A70'), clearcoat: 0.08, clearcoatRoughness: 0.6});
   const fabric = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d')!; g.fillStyle = '#808080'; g.fillRect(0, 0, 128, 128); for (let y = 0; y < 128; y += 2) { g.fillStyle = `rgba(${y % 4 ? 255 : 0},${y % 4 ? 255 : 0},${y % 4 ? 255 : 0},0.08)`; g.fillRect(0, y, 128, 1); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6, 6); return t; })();
   return {
     skin,
-    shirtSoft: new THREE.MeshPhysicalMaterial({color: spec.shirt, roughness: 0.88, sheen: 0.55, sheenRoughness: 0.6, sheenColor: new THREE.Color(spec.shirt).lerp(new THREE.Color('#ffffff'), 0.35)}),
+    shirtSoft: outfitMat(spec),
+    stripe: new THREE.MeshStandardMaterial({color: spec.stripe, roughness: 0.6}),
     shirt: new THREE.MeshPhysicalMaterial({color: spec.shirt, roughness: 0.85, sheen: 0.4, sheenColor: new THREE.Color(spec.shirt).multiplyScalar(1.4), bumpMap: fabric, bumpScale: 0.6, side: THREE.DoubleSide}),
-    shorts: new THREE.MeshPhysicalMaterial({color: '#14161B', roughness: 0.7, sheen: 0.3, sheenColor: new THREE.Color('#5A6070'), side: THREE.DoubleSide}),
+    shorts: new THREE.MeshPhysicalMaterial({color: spec.shorts, roughness: 0.7, sheen: 0.3, sheenColor: new THREE.Color('#5A6070'), side: THREE.DoubleSide}),
     shoe: new THREE.MeshStandardMaterial({color: '#F4F4F2', roughness: 0.45}),
     sole: new THREE.MeshStandardMaterial({color: '#1E2026', roughness: 0.6}),
     accent: new THREE.MeshStandardMaterial({color: spec.rim, roughness: 0.4}),
@@ -115,26 +136,29 @@ const Hand: React.FC<{k: ReturnType<typeof useKit>; sd: number; grip: number}> =
   </group>
 );
 
-const isUpright = (n: React.ReactNode) => React.isValidElement(n) && !!(n.type as {upright?: boolean}).upright;
-/** Finds the forearm roll that turns the palm (hand −Z) to face the sky, so an object can rest on it. */
-const solveRoll = (P: Required<Pose>, sd: number, m: number) => {
+type HoldKind = 'wrap' | 'bottle' | 'fist';
+const holdKind = (n: React.ReactNode): HoldKind => (React.isValidElement(n) && (n.type as {hold?: HoldKind}).hold) || 'fist';
+/** Solves forearm roll (and wrist for 'stop') so the hand meets a goal, using the same FK as the body. Hand: palm = −Z, fingers = −Y, thumb side = −X·sd. */
+const solveHand = (P: Required<Pose>, sd: number, m: number, mode: HandMode) => {
   const body = new THREE.Object3D(), spine = new THREE.Object3D(), sh = new THREE.Object3D(), tw = new THREE.Object3D(), el = new THREE.Object3D(), rl = new THREE.Object3D(), wr = new THREE.Object3D();
   body.add(spine); spine.add(sh); sh.add(tw); tw.add(el); el.add(rl); rl.add(wr);
-  body.rotation.set(0, 0, P.side); spine.rotation.set(P.lean, P.twist, 0);
+  body.rotation.set(0, P.turn, P.side); spine.rotation.set(P.lean, P.twist, 0);
   const s = sd === 1 ? P.shL : P.shR; sh.position.set(0.205 * sd * (0.97 + m * 0.05), 0.385, 0); sh.rotation.set(s[0], s[1], s[2]);
   tw.rotation.set(0, sd === 1 ? P.twL : P.twR, 0); el.position.set(0, -0.3, 0); el.rotation.set(-(sd === 1 ? P.elL : P.elR), 0, 0);
-  wr.rotation.set(sd === 1 ? P.wrL : P.wrR, 0, 0);
-  const n = new THREE.Vector3(); let best = 0, bv = -9;
-  for (let a = -Math.PI; a < Math.PI; a += Math.PI / 90) {
-    rl.rotation.set(0, a, 0); body.updateMatrixWorld(true);
-    n.set(0, 0, -1).transformDirection(wr.matrixWorld);
-    if (n.y > bv) { bv = n.y; best = a; }
+  const palm = new THREE.Vector3(), fing = new THREE.Vector3(), thumb = new THREE.Vector3();
+  let best = {rl: 0, wr: 0}, bv = -99;
+  const wrs = mode === 'stop' ? [-1.3, -1.1, -0.9, -0.7, -0.5, -0.3, 0, 0.3] : [sd === 1 ? P.wrL : P.wrR];
+  for (const w of wrs) for (let a = -Math.PI; a < Math.PI; a += Math.PI / 72) {
+    rl.rotation.set(0, a, 0); wr.rotation.set(w, 0, 0); body.updateMatrixWorld(true);
+    palm.set(0, 0, -1).transformDirection(wr.matrixWorld); fing.set(0, -1, 0).transformDirection(wr.matrixWorld); thumb.set(-sd, 0, 0).transformDirection(wr.matrixWorld);
+    const v = mode === 'drink' ? -thumb.z + 0.35 * thumb.y : mode === 'up' ? palm.y : mode === 'wrap' ? thumb.y * 2 - Math.abs(fing.y) : -palm.z * 1.2 + fing.y - Math.abs(w) * 0.05; // stop: palm toward camera (+z), fingers up
+    if (v > bv) { bv = v; best = {rl: a, wr: w}; }
   }
   return best;
 };
 
 /** Procedural rigged athlete (~1.77 m), forward kinematics. muscle 0..1 thickens arms/shoulders/chest; flex 0..1 peaks the biceps. */
-export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose = {}, position = [0, 0, 0], muscle = 0.2, flexL = 0, flexR = 0, holdL, holdR, sweat = 0, mouthOpen = 0, soft = true}) => {
+export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose = {}, position = [0, 0, 0], muscle = 0.2, flexL = 0, flexR = 0, holdL, holdR, sweat = 0, mouthOpen = 0, soft = true, tongue = 0}) => {
   const k = useKit(spec);
   const frame = useCurrentFrame(); const {fps} = useVideoConfig(); const tt = frame / fps;
   const seed = spec.name;
@@ -147,18 +171,31 @@ export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose =
   const look = gazeAt(seed, tt + ph);
   const smileLive = Math.max(0, smile + 0.07 * Math.sin(tt * 0.9 + ph) + 0.03 * Math.sin(tt * 2.3));
   const openLive = Math.max(talk, mouthOpen) + 0.035 * (0.5 + 0.5 * breath);
-  const upL = isUpright(holdL), upR = isUpright(holdR);
-  if (upL) P.rlL = solveRoll(P, 1, muscle); if (upR) P.rlR = solveRoll(P, -1, muscle);
-  const rig = useSoftBody(P, muscle, flexL, flexR, {skin: k.skin, shirt: k.shirtSoft, shorts: k.shorts}, breath);
+  const kindL = holdL ? holdKind(holdL) : null, kindR = holdR ? holdKind(holdR) : null;
+  // natural forearm roll: hanging arms → palms face the thighs; bending the elbow supinates (palm up, like a real curl)
+  const natRoll = (sd: number, el: number) => sd * (1.35 + (Math.PI - 1.35) * Math.min(1, Math.max(0, (el - 0.35) / 1.3)));
+  ([1, -1] as const).forEach((sd) => {
+    const mode = (sd === 1 ? P.handL : P.handR) ?? ((sd === 1 ? kindL : kindR) === 'wrap' ? 'wrap' : undefined);
+    const el = sd === 1 ? P.elL : P.elR, nat = natRoll(sd, el);
+    let rl = (sd === 1 ? P0.rlL : P0.rlR) ?? nat, wr = sd === 1 ? P.wrL : P.wrR;
+    if (mode) {
+      const sol = solveHand(P, sd, muscle, mode); const w = P.handW ?? 1;
+      let d = sol.rl - rl; d = Math.atan2(Math.sin(d), Math.cos(d)); // shortest way round
+      rl = rl + d * w; if (mode === 'stop') wr = wr + (sol.wr - wr) * w;
+    }
+    if (sd === 1) { P.rlL = rl; P.wrL = wr; } else { P.rlR = rl; P.wrR = wr; }
+  });
+  const rig = useSoftBody(P, muscle, flexL, flexR, {skin: k.skin, shirt: k.shirtSoft, shorts: k.shorts}, breath, spec.top === 'tank');
   const mu = 1 + muscle * 0.42, bi = 1 + muscle * 0.75, dl = 1 + muscle * 0.38, lg = 1 + muscle * 0.22;
   const V = !soft; // primitive body parts only in legacy mode
   const arm = (sd: 1 | -1) => {
-    const tw = sd === 1 ? P.twL : P.twR, sh = sd === 1 ? P.shL : P.shR, el = sd === 1 ? P.elL : P.elR, wr = sd === 1 ? P.wrL : P.wrR, rl0 = sd === 1 ? P.rlL : P.rlR, fl = sd === 1 ? flexL : flexR, hold = sd === 1 ? holdL : holdR, up = sd === 1 ? upL : upR;
-    // relaxed arms: palms turn toward the thighs; bent / holding arms keep the curl orientation
-    const rl = rl0 ?? (hold ? 0 : -sd * 1.3 * Math.max(0, 1 - el / 1.1));
+    const tw = sd === 1 ? P.twL : P.twR, sh = sd === 1 ? P.shL : P.shR, el = sd === 1 ? P.elL : P.elR, wr = sd === 1 ? P.wrL : P.wrR, rl = sd === 1 ? P.rlL : P.rlR, fl = sd === 1 ? flexL : flexR, hold = sd === 1 ? holdL : holdR, kind = sd === 1 ? kindL : kindR;
+    const gripP = sd === 1 ? P.gripL : P.gripR;
+    const grip = gripP ?? (kind === 'wrap' ? 0.9 : kind ? 1.3 : 0.4 + fl * 1.3);
+    const sc = hold && React.isValidElement(hold) ? ((hold.props as {scale?: number}).scale ?? 1) : 1;
     return (
       <group position={[0.205 * sd * (0.97 + muscle * 0.05), 0.385, 0]} rotation={sh as unknown as THREE.Euler}><group rotation={[0, tw, 0]}>
-        {soft && <mesh material={k.shirtSoft} position={[0, -0.122, 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow><torusGeometry args={[0.051 * dl + 0.002, 0.0085, 10, 40]} /></mesh>}
+        {soft && spec.top !== 'tank' && <mesh material={k.shirtSoft} position={[0, -0.122, 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow><torusGeometry args={[0.051 * dl + 0.002, 0.0085, 10, 40]} /></mesh>}
         {V && <M g={sph(0.062 * dl)} mat={k.shirt} p={[0.004 * sd, -0.01, 0]} s={[1.05, 1, 1]} />}
         {V && <M g={cyl(0.062 * dl, 0.058 * mu, 0.12, true)} mat={k.shirt} p={[0.002 * sd, -0.065, 0]} />}
         {V && <mesh geometry={limb('upper', muscle)} material={k.skin} castShadow receiveShadow />}
@@ -169,10 +206,14 @@ export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose =
           {V && <mesh geometry={limb('fore', muscle)} material={k.skin} scale={[1.05, 1, 0.92]} castShadow receiveShadow />}
           {V && <M g={sph(0.042 * (1 + muscle * 0.35))} mat={k.skin} p={[0, -0.06, 0.005]} s={[1.05, 1.4, 0.95]} />}
           <group position={[0, -0.248, 0]} rotation={[0, rl, 0]}><group rotation={[wr, 0, 0]}>
-            <Hand k={k} sd={sd} grip={hold ? (up ? 0.38 : 1.35) : 0.45 + fl * 1.25} />
-            {hold && (up
-              ? <group position={[0, -0.05, -0.016]}><Upright lift={(hold as React.ReactElement<{scale?: number}>).props.scale ? 0.1 * ((hold as React.ReactElement<{scale?: number}>).props.scale ?? 1) + 0.006 : 0.1} yaw={0.5 * sd}>{hold}</Upright></group>
-              : <group position={[0, -0.075, 0.02]}>{hold}</group>)}
+            <Hand k={k} sd={sd} grip={grip} />
+            {hold && (kind === 'wrap'
+              // jar held from the side: palm and curled fingers against the tub wall, tub kept upright
+              ? <group position={[0, -0.06, -(0.0755 * sc + 0.018)]}><Upright lift={0} yaw={-0.35 * sd}>{hold}</Upright></group>
+              : kind === 'bottle'
+              // bottle runs through the fist, cap on the thumb side
+              ? <group position={[sd * 0.035, -0.072, -0.016]} rotation={[0, 0, sd * Math.PI / 2]}>{hold}</group>
+              : <group position={[0, -0.072, -0.014]}>{hold}</group>)}
           </group></group>
         </group>
       </group></group>
@@ -183,6 +224,7 @@ export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose =
     return (
       <group position={[0.093 * sd, -0.03, 0]} rotation={[-hp[0], 0, hp[1]]}>
         {soft && <mesh material={k.shorts} position={[0, -0.236, 0.012]} rotation={[Math.PI / 2, 0, 0]} castShadow><torusGeometry args={[0.091 * lg + 0.004, 0.012, 10, 44]} /></mesh>}
+        {soft && <mesh material={k.stripe} position={[sd * (0.091 * lg + 0.004), -0.115, 0.004]} rotation={[0, 0, -sd * 0.04]}><boxGeometry args={[0.008, 0.215, 0.026]} /></mesh>}
         {V && <M g={cyl(0.1 * lg + 0.004, 0.09 * lg + 0.004, 0.24, true)} mat={k.shorts} p={[0, -0.1, 0]} />}
         {V && <mesh geometry={limb('thigh', muscle)} material={k.skin} position={[0, 0.0, 0.004]} castShadow receiveShadow />}
         {V && <M g={sph(0.068 * lg)} mat={k.skin} p={[0, -0.34, 0.03]} s={[0.95, 1.4, 0.75]} />}
@@ -201,7 +243,7 @@ export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose =
   };
   const head = (
     <group position={[0, 0.628, 0.01]} rotation={[P.headX, P.headY, 0]} scale={[spec.beard ? 1.04 : 1, 1, 1]}>
-      <RpmHead spec={spec} smile={smileLive} open={openLive} look={look} blink={blink} />
+      <RpmHead spec={spec} smile={smileLive} open={Math.max(openLive, tongue * 0.55)} look={look} blink={blink} tongue={tongue} />
       {sweat > 0 && <M g={sph(0.0065)} mat={k.sweat} p={[0.05, 0.05 - sweat * 0.08, 0.085]} s={[1, 1.5, 1]} shadow={false} />}
     </group>
   );
