@@ -120,17 +120,17 @@ const Hunger: React.FC = () => {
   const t = useCurrentFrame() / FPS, s0 = SC.hunger[0];
   if (t < at(8, s0)) return <HormoneCard t={t} />;
   const lt = t - at(8, s0);
-  const cam = camAt(lt, [{t: 0, pos: [0.37, 1.5, 2.3], look: [0.37, 1.3, 0], fov: 34}, {t: 5.9, pos: [0.37, 1.5, 1.9], look: [0.37, 1.32, 0], fov: 34}]);
+  const cam = camAt(lt, [{t: 0, pos: [0.37, 1.45, 2.7], look: [0.37, 1.3, 0], fov: 34}, {t: 5.9, pos: [0.37, 1.45, 2.3], look: [0.37, 1.32, 0], fov: 34}]);
   const p24 = interpolate(lt, [1.6, 1.85], [0, 1], clamp);
   return (
     <AbsoluteFill>
       <Stage cam={cam} a={idle(t, 1)} d={{...idle(t, -1, 0.6), headX: 0.05, headY: Math.sin(lt * 2) * 0.12}} tiredD={0.8} smileD={0.35 * interpolate(lt, [3.2, 4], [0, 1], clamp)} openD={0.15 * interpolate(lt, [3.2, 4], [0, 1], clamp)} />
       <Cravings t={lt} />
-      <div style={{position: 'absolute', left: 0, right: 0, top: 300, textAlign: 'center', opacity: p24, transform: `scale(${1.6 - 0.6 * p24})`}}>
+      <div style={{position: 'absolute', left: 0, right: 0, top: 150, textAlign: 'center', opacity: p24, transform: `scale(${1.6 - 0.6 * p24})`}}>
         <div style={{fontFamily: FX.font, fontWeight: 900, fontSize: 200, color: '#FF8A3D', textShadow: '0 0 50px #FF8A3D'}}>+24%</div>
         <div style={{fontFamily: FX.font, fontWeight: 900, fontSize: 56, color: '#fff', letterSpacing: 6}}>HUNGER</div>
       </div>
-      <Source text="SPIEGEL ET AL. · ANNALS OF INTERNAL MEDICINE 2004 · 2 NIGHTS AT 4 H" top={1290} o={p24} />
+      <Source text="SPIEGEL ET AL. · ANN INTERN MED 2004" top={1290} o={p24} />
     </AbsoluteFill>
   );
 };
