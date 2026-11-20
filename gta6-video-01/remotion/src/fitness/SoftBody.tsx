@@ -81,7 +81,7 @@ export const useSoftBody = (P: Required<Pose>, muscle: number, flexL: number, fl
   // ---------- SHORTS ----------
   fill(rig.shorts, SHORTS, [
     [rig.body, [[0, 0.04, -0.005, 0.118], [0.068, -0.02, 0, 0.104], [-0.068, -0.02, 0, 0.104], [0, -0.01, -0.045, 0.108], [0, 0.0, 0.03, 0.098]]],
-    ...rig.legs.map((l) => [l.hp, [[0, -0.08, 0.004, 0.094 * lg], [0, -0.16, 0.008, 0.091 * lg], [0, -0.225, 0.01, 0.089 * lg]]] as [THREE.Object3D, Ball[]]),
+    ...rig.legs.map((l) => [l.hp, [[0, -0.06, 0.006, 0.097 * lg]]] as [THREE.Object3D, Ball[]]),
   ]);
   // ---------- SKIN: neck, arms, legs ----------
   const skin: [THREE.Object3D, Ball[]][] = [[rig.spine, [[0, 0.45, -0.01, 0.05 * (1 + m * 0.15)], [0, 0.49, -0.006, 0.045 * (1 + m * 0.15)]]]];

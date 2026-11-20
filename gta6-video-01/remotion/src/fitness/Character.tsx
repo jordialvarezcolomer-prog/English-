@@ -64,19 +64,34 @@ const limb = (kind: 'upper' | 'fore' | 'thigh', m: number) => {
 };
 
 const glc = (c: string) => { const k = new THREE.Color(c); return `vec3(${k.r.toFixed(4)}, ${k.g.toFixed(4)}, ${k.b.toFixed(4)})`; };
-/** Shirt material with a printed design driven by world height: Alex = two-tone tank top, Daniel = tee with a chest band. */
+/** Chest print artwork (transparent canvas). */
+const printTex = (spec: CharSpec) => {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d')!;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '900 120px Montserrat, "Arial Black", sans-serif';
+  let big = 150; g.font = `900 ${big}px Montserrat, "Arial Black", sans-serif`;
+  while (g.measureText(spec.print).width > 470 && big > 40) { big -= 4; g.font = `900 ${big}px Montserrat, "Arial Black", sans-serif`; }
+  if (spec.printInk !== '#FFFFFF') { g.lineWidth = 10; g.strokeStyle = '#FFFFFF'; g.strokeText(spec.print, 256, 112); }
+  g.fillStyle = spec.printInk; g.fillText(spec.print, 256, 112);
+  g.font = '800 38px Montserrat, "Arial Black", sans-serif'; g.fillStyle = spec.printInk === '#FFFFFF' ? 'rgba(255,255,255,.85)' : '#FFFFFF';
+  g.fillText(spec.printSub, 256, 212);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+};
+/** Shirt material with a chest print projected from the front (in character space, so it stays on the chest). */
 const outfitMat = (spec: CharSpec) => {
-  const m = new THREE.MeshPhysicalMaterial({color: spec.shirt, roughness: 0.88, sheen: 0.55, sheenRoughness: 0.6, sheenColor: new THREE.Color(spec.shirt).lerp(new THREE.Color('#ffffff'), 0.35)});
-  const B = glc(spec.topB), L = glc(spec.topLine);
-  const band = (a: number, b: number, c: string) => `diffuseColor.rgb = mix(diffuseColor.rgb, ${c}, smoothstep(${a - 0.003}, ${a + 0.003}, hy) * (1.0 - smoothstep(${b - 0.003}, ${b + 0.003}, hy)));`;
-  const design = spec.top === 'tank'
-    ? [band(0.5, 1.125, B), band(1.125, 1.142, L), band(1.33, 1.338, L)]
-    : [band(1.255, 1.265, L), band(1.27, 1.345, B), band(1.35, 1.36, L)];
+  const m = new THREE.MeshPhysicalMaterial({color: spec.shirt, roughness: 0.9, sheen: 0.6, sheenRoughness: 0.65, sheenColor: new THREE.Color(spec.shirt).lerp(new THREE.Color('#ffffff'), 0.3)});
+  const tex = printTex(spec);
   m.onBeforeCompile = (sh) => {
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vWY;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWY = (modelMatrix * vec4(position, 1.0)).y;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY;').replace('#include <color_fragment>', `#include <color_fragment>\n{ float hy = vWY; ${design.join(' ')} }`);
+    sh.uniforms.printMap = {value: tex};
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vCL; varying float vFront;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCL = vec3(0.0, 1.3, 0.0) + 0.64 * position; vFront = normal.z;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vCL; varying float vFront; uniform sampler2D printMap;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+      { vec2 puv = vec2((vCL.x + 0.105) / 0.21, (vCL.y - 1.255) / 0.105);
+        if (puv.x > 0.0 && puv.x < 1.0 && puv.y > 0.0 && puv.y < 1.0 && vCL.z > 0.0) {
+          vec4 pc = texture2D(printMap, puv); diffuseColor.rgb = mix(diffuseColor.rgb, pc.rgb * 0.92, pc.a * smoothstep(0.35, 0.6, vFront)); } }`);
   };
-  m.customProgramCacheKey = () => 'outfit-' + spec.name;
+  m.customProgramCacheKey = () => 'outfit2-' + spec.name;
   return m;
 };
 
@@ -87,6 +102,8 @@ const useKit = (spec: CharSpec) => useMemo(() => {
   return {
     skin,
     shirtSoft: outfitMat(spec),
+    shirtPlain: new THREE.MeshPhysicalMaterial({color: spec.shirt, roughness: 0.9, sheen: 0.6, sheenColor: new THREE.Color(spec.shirt).lerp(new THREE.Color('#ffffff'), 0.3)}),
+    shortsTube: lathe([[0.097, 0.0], [0.1, -0.08], [0.106, -0.18], [0.113, -0.272], [0.115, -0.284], [0.108, -0.29], [0.104, -0.282]], 48),
     stripe: new THREE.MeshStandardMaterial({color: spec.stripe, roughness: 0.6}),
     shirt: new THREE.MeshPhysicalMaterial({color: spec.shirt, roughness: 0.85, sheen: 0.4, sheenColor: new THREE.Color(spec.shirt).multiplyScalar(1.4), bumpMap: fabric, bumpScale: 0.6, side: THREE.DoubleSide}),
     shorts: new THREE.MeshPhysicalMaterial({color: spec.shorts, roughness: 0.7, sheen: 0.3, sheenColor: new THREE.Color('#5A6070'), side: THREE.DoubleSide}),
@@ -195,7 +212,7 @@ export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose =
     const sc = hold && React.isValidElement(hold) ? ((hold.props as {scale?: number}).scale ?? 1) : 1;
     return (
       <group position={[0.205 * sd * (0.97 + muscle * 0.05), 0.385, 0]} rotation={sh as unknown as THREE.Euler}><group rotation={[0, tw, 0]}>
-        {soft && spec.top !== 'tank' && <mesh material={k.shirtSoft} position={[0, -0.122, 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow><torusGeometry args={[0.051 * dl + 0.002, 0.0085, 10, 40]} /></mesh>}
+        {soft && spec.top !== 'tank' && <mesh material={k.shirtPlain} position={[0, -0.122, 0.004]} rotation={[Math.PI / 2, 0, 0]} castShadow><torusGeometry args={[0.051 * dl + 0.002, 0.0085, 10, 40]} /></mesh>}
         {V && <M g={sph(0.062 * dl)} mat={k.shirt} p={[0.004 * sd, -0.01, 0]} s={[1.05, 1, 1]} />}
         {V && <M g={cyl(0.062 * dl, 0.058 * mu, 0.12, true)} mat={k.shirt} p={[0.002 * sd, -0.065, 0]} />}
         {V && <mesh geometry={limb('upper', muscle)} material={k.skin} castShadow receiveShadow />}
@@ -223,8 +240,9 @@ export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose =
     const hp = sd === 1 ? P.hipL : P.hipR, kn = sd === 1 ? P.kneeL : P.kneeR;
     return (
       <group position={[0.093 * sd, -0.03, 0]} rotation={[-hp[0], 0, hp[1]]}>
-        {soft && <mesh material={k.shorts} position={[0, -0.236, 0.012]} rotation={[Math.PI / 2, 0, 0]} castShadow><torusGeometry args={[0.091 * lg + 0.004, 0.012, 10, 44]} /></mesh>}
-        {soft && <mesh material={k.stripe} position={[sd * (0.091 * lg + 0.004), -0.115, 0.004]} rotation={[0, 0, -sd * 0.04]}><boxGeometry args={[0.008, 0.215, 0.026]} /></mesh>}
+        {/* loose athletic shorts leg: open flared tube with a rolled hem, hanging off the hip */}
+        {soft && <mesh geometry={k.shortsTube} material={k.shorts} position={[0, -0.01, 0.008]} scale={[1 + muscle * 0.12, 1, 1 + muscle * 0.12]} castShadow receiveShadow />}
+        {soft && <mesh material={k.stripe} position={[sd * (0.107 * (1 + muscle * 0.12) + 0.002), -0.15, 0.008]} rotation={[0, 0, sd * 0.06]}><boxGeometry args={[0.006, 0.26, 0.024]} /></mesh>}
         {V && <M g={cyl(0.1 * lg + 0.004, 0.09 * lg + 0.004, 0.24, true)} mat={k.shorts} p={[0, -0.1, 0]} />}
         {V && <mesh geometry={limb('thigh', muscle)} material={k.skin} position={[0, 0.0, 0.004]} castShadow receiveShadow />}
         {V && <M g={sph(0.068 * lg)} mat={k.skin} p={[0, -0.34, 0.03]} s={[0.95, 1.4, 0.75]} />}
@@ -243,7 +261,7 @@ export const Character: React.FC<Props> = ({smile = 0.15, talk = 0, spec, pose =
   };
   const head = (
     <group position={[0, 0.628, 0.01]} rotation={[P.headX, P.headY, 0]} scale={[spec.beard ? 1.04 : 1, 1, 1]}>
-      <RpmHead spec={spec} smile={smileLive} open={Math.max(openLive, tongue * 0.55)} look={look} blink={blink} tongue={tongue} />
+      <RpmHead spec={spec} smile={smileLive} open={Math.max(openLive, tongue)} look={look} blink={blink} tongue={tongue} />
       {sweat > 0 && <M g={sph(0.0065)} mat={k.sweat} p={[0.05, 0.05 - sweat * 0.08, 0.085]} s={[1, 1.5, 1]} shadow={false} />}
     </group>
   );

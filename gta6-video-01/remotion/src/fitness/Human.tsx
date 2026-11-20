@@ -30,7 +30,7 @@ const strand = (() => { let t: THREE.CanvasTexture | null = null; return () => {
 
 /** Builds a shell (hair / beard) from the head mesh: keeps triangles where keep()>0 and pushes them out along the normal. */
 const shell = (src: THREE.BufferGeometry, keep: (n: THREE.Vector3, p: THREE.Vector3) => number, off: (n: THREE.Vector3, k: number) => number) => {
-  const geo = src.clone(); geo.deleteAttribute('skinIndex'); geo.deleteAttribute('skinWeight'); geo.morphAttributes = {};
+  const geo = src.clone(); geo.deleteAttribute('skinIndex'); geo.deleteAttribute('skinWeight'); geo.morphAttributes = {position: src.morphAttributes.position ?? []}; // keep mouth morphs so beard/hair follow the jaw
   geo.computeVertexNormals();
   const pos = geo.attributes.position as THREE.BufferAttribute, nor = geo.attributes.normal as THREE.BufferAttribute;
   const kv: number[] = [];
@@ -53,7 +53,7 @@ export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; l
     if (!BASE) return null;
     const c = SkeletonUtils.clone(BASE) as THREE.Group;
     const morphs: THREE.Mesh[] = [];
-    let headGeo: THREE.BufferGeometry | null = null; let lidMat: THREE.Material | null = null;
+    let headGeo: THREE.BufferGeometry | null = null; let headDict: {[k: string]: number} | undefined; let lidMat: THREE.Material | null = null;
     const tint = new THREE.Color('#ffffff').lerp(new THREE.Color(spec.skin).multiply(new THREE.Color(1 / 0.94, 1 / 0.78, 1 / 0.7)), 0.55);
     c.traverse((o) => {
       const m = o as THREE.Mesh; o.frustumCulled = false;
@@ -61,7 +61,7 @@ export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; l
       m.castShadow = true; m.receiveShadow = true;
       const keepVis = /^(Wolf3D_Head|EyeLeft|EyeRight|Wolf3D_Teeth)$/.test(o.name);
       m.visible = keepVis;
-      if (o.name === 'Wolf3D_Head') { headGeo = m.geometry; const mat = (m.material as THREE.MeshStandardMaterial).clone(); mat.color = tint; mat.roughness = 0.62; m.material = mat; lidMat = new THREE.MeshStandardMaterial({color: new THREE.Color(spec.skin).multiplyScalar(0.9), roughness: 0.55}); }
+      if (o.name === 'Wolf3D_Head') { headGeo = m.geometry; headDict = m.morphTargetDictionary; const mat = (m.material as THREE.MeshStandardMaterial).clone(); mat.color = tint; mat.roughness = 0.62; m.material = mat; lidMat = new THREE.MeshStandardMaterial({color: new THREE.Color(spec.skin).multiplyScalar(0.9), roughness: 0.55}); }
       if (/Eye(Left|Right)/.test(o.name) && spec.beard) { const mat = (m.material as THREE.MeshStandardMaterial).clone(); mat.color = new THREE.Color('#9CC7FF'); m.material = mat; }
       if (m.morphTargetDictionary) morphs.push(m);
     });
@@ -99,7 +99,9 @@ export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; l
     const beardMat = new THREE.MeshStandardMaterial({color: spec.beardColor ?? spec.hair, roughness: 0.85, bumpMap: strand(), bumpScale: 2.5});
     const sideMat = new THREE.MeshStandardMaterial({color: new THREE.Color(spec.skin).multiplyScalar(0.62).lerp(new THREE.Color('#2A1E18'), 0.35), roughness: 0.95, bumpMap: strand(), bumpScale: 1.2});
     const tongueMat = new THREE.MeshPhysicalMaterial({color: '#C9474B', roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.3});
-    return {c, morphs, hair, sides, spikes, beard, hairMat, beardMat, sideMat, tongueMat, lidMat: lidMat as THREE.Material | null, lash: new THREE.MeshStandardMaterial({color: '#2A1A14', roughness: 0.9})};
+    const mk = (geo: THREE.BufferGeometry | null, mat: THREE.Material) => { if (!geo) return null; const me = new THREE.Mesh(geo, mat); me.castShadow = true; me.frustumCulled = false; if (me.morphTargetDictionary === undefined && headDict) { me.morphTargetDictionary = headDict; me.morphTargetInfluences = new Array(Object.keys(headDict).length).fill(0); } morphs.push(me); return me; };
+    const hairMesh = mk(hair, hairMat), beardMesh = mk(beard, beardMat), sidesMesh = mk(sides, sideMat);
+    return {c, morphs, hairMesh, beardMesh, sidesMesh, spikes, hairMat, beardMat, sideMat, tongueMat, lidMat: lidMat as THREE.Material | null, lash: new THREE.MeshStandardMaterial({color: '#2A1A14', roughness: 0.9})};
   }, [spec]);
   if (!built) return null;
   built.morphs.forEach((m) => {
@@ -111,13 +113,13 @@ export const RpmHead: React.FC<{spec: CharSpec; smile?: number; open?: number; l
   return (
     <group position={[0, -EYE_Y, -0.006]}>
       <primitive object={built.c} />
-      {built.hair && <mesh geometry={built.hair} material={built.hairMat} castShadow />}
-      {built.beard && <mesh geometry={built.beard} material={built.beardMat} castShadow />}
-      {built.sides && <mesh geometry={built.sides} material={built.sideMat} />}
+      {built.hairMesh && <primitive object={built.hairMesh} />}
+      {built.beardMesh && <primitive object={built.beardMesh} />}
+      {built.sidesMesh && <primitive object={built.sidesMesh} />}
       {built.spikes.map((sp, i) => <mesh key={i} position={sp.p} quaternion={sp.q} material={built.hairMat} castShadow><coneGeometry args={[sp.r, sp.h, 10, 1, false]} /></mesh>)}
       {tongue > 0 && (
         // tongue sticking out of the open mouth (capsule along local Y, turned to point forward and a bit down)
-        <group position={[0, 1.653 - 0.004 * open, 0.113]} rotation={[Math.PI / 2 + 0.15, 0, 0]}>
+        <group position={[0, 1.6535 - 0.003 * open, 0.106]} rotation={[Math.PI / 2 + 0.42, 0, 0]}>
           <mesh material={built.tongueMat} position={[0, 0.004 + 0.016 * tongue, 0]} scale={[1.45, 1, 0.5]}><capsuleGeometry args={[0.0115, 0.022, 8, 20]} /></mesh>
         </group>
       )}
