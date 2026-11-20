@@ -1,9 +1,10 @@
 import React from 'react';
 import {AbsoluteFill, interpolate, random, spring, useCurrentFrame, useVideoConfig, Easing} from 'remotion';
 import {FX} from './theme';
+import {useLocalOld} from './time';
 
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
-export const useSec = () => useCurrentFrame() / 30;
+export const useSec = () => useLocalOld();
 
 /** Big cinematic text that slams in (scale+blur), optional sub-line. */
 export const Slam: React.FC<{at: number; out?: number; text: React.ReactNode; size?: number; color?: string; sub?: string; top?: number; glow?: string}> = ({at, out, text, size = 170, color = FX.white, sub, top = 560, glow = 'rgba(0,0,0,.6)'}) => {
@@ -20,9 +21,9 @@ export const Slam: React.FC<{at: number; out?: number; text: React.ReactNode; si
 };
 /** Character name tag with coloured bar. */
 export const NameTag: React.FC<{at: number; out?: number; name: string; sub: string; color: string; x: number; y: number; align?: 'left' | 'right'}> = ({at, out, name, sub, color, x, y, align = 'left'}) => {
-  const f = useCurrentFrame(); const {fps} = useVideoConfig(); const t = f / fps;
+  const t = useLocalOld(); const fps = 30;
   if (t < at || (out !== undefined && t > out + 0.2)) return null;
-  const p = spring({frame: f - at * fps, fps, config: {damping: 14, stiffness: 160}});
+  const p = spring({frame: (t - at) * fps, fps, config: {damping: 14, stiffness: 160}});
   const o = out === undefined ? 1 : interpolate(t, [out, out + 0.2], [1, 0], clamp);
   return (
     <div style={{position: 'absolute', left: x, top: y, opacity: p * o, transform: `translateX(${(1 - p) * (align === 'left' ? -80 : 80)}px)`, textAlign: align}}>
@@ -45,9 +46,9 @@ export const DayBar: React.FC<{day: number; show?: number}> = ({day, show = 1}) 
 );
 /** Glass pill. */
 export const Chip: React.FC<{at: number; text: string; icon?: string; color?: string; x: number; y: number; out?: number}> = ({at, text, icon, color = FX.white, x, y, out}) => {
-  const f = useCurrentFrame(); const t = f / 30;
+  const t = useLocalOld();
   if (t < at || (out !== undefined && t > out + 0.2)) return null;
-  const p = spring({frame: f - at * 30, fps: 30, config: {damping: 12, stiffness: 180}});
+  const p = spring({frame: (t - at) * 30, fps: 30, config: {damping: 12, stiffness: 180}});
   return <div style={{position: 'absolute', left: x, top: y, transform: `scale(${0.5 + 0.5 * p})`, opacity: p, display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(10,12,16,.75)', border: `2px solid ${color}`, borderRadius: 999, padding: '12px 26px', fontFamily: FX.font, fontWeight: 900, fontSize: 34, color: FX.white, letterSpacing: 1, backdropFilter: 'blur(8px)'}}>{icon && <span style={{fontSize: 38}}>{icon}</span>}{text}</div>;
 };
 /** Rep counter card. */
@@ -121,4 +122,41 @@ export const Flash: React.FC<{at: number; len?: number; color?: string}> = ({at,
   const t = useSec();
   const o = interpolate(t, [at, at + 0.03, at + len], [0, 0.85, 0], clamp);
   return o > 0 ? <AbsoluteFill style={{background: color, opacity: o}} /> : null;
+};
+
+/** Illustrative "muscle battery": ATP = quick battery that drains in a hard set; creatine = power bank that refills it faster between sets. */
+export const BatteryDuel: React.FC<{t: number}> = ({t}) => {
+  const P = 2.6, ph = (t % P) / P, cyc = Math.floor(t / P);
+  const set = ph < 0.45;
+  const startA = cyc === 0 ? 1 : 0.92, startD = cyc === 0 ? 1 : 0.62;
+  const drain = (s0: number) => Math.max(0.12, s0 - (ph / 0.45) * 0.85);
+  const lvlA = set ? drain(startA) : 0.12 + (0.92 - 0.12) * Easing.out(Easing.cubic)(Math.min(1, (ph - 0.45) / 0.35));
+  const lvlD = set ? drain(startD) : 0.12 + (0.62 - 0.12) * Math.min(1, (ph - 0.45) / 0.55);
+  const repsA = 10 + cyc * 2 + (set ? Math.floor(ph * 6) : 2), repsD = 10 + (set ? Math.floor(ph * 5) : 1);
+  const Bat: React.FC<{x: number; lvl: number; color: string; name: string; bank?: boolean}> = ({x, lvl, color, name, bank}) => {
+    const c = lvl > 0.5 ? FX.green : lvl > 0.25 ? FX.gold : FX.red;
+    return (
+      <div style={{position: 'absolute', left: x, top: 560, width: 300, textAlign: 'center'}}>
+        <div style={{fontFamily: FX.font, fontWeight: 900, fontSize: 40, color, letterSpacing: 3, marginBottom: 14}}>{name}</div>
+        <div style={{margin: '0 auto', width: 70, height: 26, background: '#D8DCE3', borderRadius: '10px 10px 0 0'}} />
+        <div style={{position: 'relative', margin: '0 auto', width: 210, height: 400, border: '10px solid #D8DCE3', borderRadius: 30, padding: 10, background: 'rgba(0,0,0,.4)', boxShadow: `0 0 50px ${c}55`}}>
+          <div style={{position: 'absolute', left: 10, right: 10, bottom: 10, height: `${lvl * 360}px`, borderRadius: 16, background: `linear-gradient(0deg, ${c}, ${c}cc)`, boxShadow: `0 0 30px ${c}`}} />
+          <div style={{position: 'absolute', left: 0, right: 0, top: 150, fontFamily: FX.font, fontWeight: 900, fontSize: 64, color: '#fff', textShadow: '0 4px 14px rgba(0,0,0,.8)'}}>{Math.round(lvl * 100)}%</div>
+          {set && <div style={{position: 'absolute', left: 60, top: -30 - (ph * 400) % 60, fontSize: 56}}>⚡</div>}
+          {bank && !set && Array.from({length: 6}).map((_, i) => { const q = ((ph - 0.45) * 6 + i / 6) % 1; return <div key={i} style={{position: 'absolute', left: 220 - q * 120, top: 60 + i * 50, width: 18, height: 18, borderRadius: 9, background: FX.gold, boxShadow: `0 0 16px ${FX.gold}`, opacity: 1 - q}} />; })}
+        </div>
+        {bank && <div style={{position: 'absolute', left: 250, top: 150, width: 90, height: 160, borderRadius: 18, background: `linear-gradient(${FX.gold}, #C98A10)`, border: '5px solid #fff', boxShadow: !set ? `0 0 40px ${FX.gold}` : 'none', fontFamily: FX.font, fontWeight: 900, fontSize: 18, color: '#3A2400', display: 'flex', alignItems: 'center', justifyContent: 'center', writingMode: 'vertical-rl', letterSpacing: 2}}>CREATINE</div>}
+        <div style={{fontFamily: FX.font, fontWeight: 900, fontSize: 34, color: '#fff', marginTop: 16}}>REPS <span style={{color}}>{name === 'ALEX' ? repsA : repsD}</span></div>
+      </div>
+    );
+  };
+  return (
+    <AbsoluteFill>
+      <div style={{position: 'absolute', left: 60, right: 140, top: 250, textAlign: 'center', fontFamily: FX.font, fontWeight: 900, fontSize: 52, color: '#fff', lineHeight: 1.1, textShadow: '0 6px 20px rgba(0,0,0,.8)'}}>ATP = YOUR MUSCLES' <span style={{color: FX.gold}}>QUICK BATTERY</span></div>
+      <div style={{position: 'absolute', left: 0, right: 0, top: 420, textAlign: 'center', fontFamily: FX.font, fontWeight: 900, fontSize: 70, color: set ? FX.red : FX.green, letterSpacing: 6, textShadow: `0 0 30px ${set ? FX.red : FX.green}`}}>{set ? 'HARD SET' : 'REST'}</div>
+      <Bat x={90} lvl={lvlA} color={FX.blue} name="ALEX" bank />
+      <Bat x={640} lvl={lvlD} color={FX.red} name="DANIEL" />
+      <div style={{position: 'absolute', left: 0, right: 0, top: 1200, textAlign: 'center', fontFamily: FX.font, fontWeight: 700, fontSize: 22, color: 'rgba(255,255,255,.55)', letterSpacing: 2}}>SIMPLIFIED · ILLUSTRATIVE</div>
+    </AbsoluteFill>
+  );
 };

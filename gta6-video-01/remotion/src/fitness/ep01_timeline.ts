@@ -1,9 +1,13 @@
-/** Episode 1 (creatine) — scene boundaries & caption phrases, measured from public/audio/creatine_voice.mp3. */
+import {toNew, NEW_VOICE_END} from './time';
+/** Episode 1 (creatine) — ORIGINAL-clock scene boundaries & captions (measured on creatine_voice.mp3). */
 export const EP1 = {
   hook: [0, 11.28], day0: [11.28, 18.2], difference: [18.2, 24.23], inside: [24.23, 37.1],
   weeks: [37.1, 46.14], day60: [46.14, 55.44], day90: [55.44, 63.03], final: [63.03, 73.6],
 } as const;
-export const EP1_TOTAL = Math.round(73.6 * 30);
+export const EP1_END = NEW_VOICE_END + 2.6;
+export const EP1_TOTAL = Math.round(EP1_END * 30);
+/** Scene start/end on the tightened clock. */
+export const sceneNew = (k: keyof typeof EP1): [number, number] => [toNew(EP1[k][0]), k === 'final' ? EP1_END : toNew(EP1[k][1])];
 /** [start, end, text, highlight words] */
 export const EP1_CAPTIONS: [number, number, string, string[]][] = [
   [0.02, 2.95, 'These two guys are about to train for NINETY days.', ['NINETY', 'days.']], [3.35, 5.73, 'One takes creatine every single day.', ['creatine']], [6.15, 8.07, 'The other takes absolutely nothing.', ['nothing.']], [8.59, 9.47, 'And the results...', []], [9.88, 10.86, 'might surprise you.', ['surprise']],

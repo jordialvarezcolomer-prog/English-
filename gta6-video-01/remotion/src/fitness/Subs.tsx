@@ -2,11 +2,13 @@ import React from 'react';
 import {interpolate, useCurrentFrame} from 'remotion';
 import {EP1_CAPTIONS} from './ep01_timeline';
 import {FX} from './theme';
+import {toNew} from './time';
 
 type Card = {t0: number; t1: number; words: {w: string; a: number; hl: boolean}[]};
 const build = (): Card[] => {
   const out: Card[] = [];
-  for (const [a, b, text, hl] of EP1_CAPTIONS) {
+  for (const [a0, b0, text, hl] of EP1_CAPTIONS) {
+    const a = toNew(a0), b = toNew(b0);
     const w = text.split(' '); const k = Math.ceil(w.length / 3); const size = Math.ceil(w.length / k);
     const chunks: string[][] = []; for (let i = 0; i < w.length; i += size) chunks.push(w.slice(i, i + size));
     const tot = chunks.reduce((s, c) => s + c.join(' ').length + 1, 0); let t = a;

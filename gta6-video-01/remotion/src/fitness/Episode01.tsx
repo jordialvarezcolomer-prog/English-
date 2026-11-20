@@ -5,10 +5,12 @@ import {Character, Pose} from './Character';
 import {Cam, Dumbbell, Gym} from './Gym';
 import {Bottle, PowderStream, Scoop, Shaker, Tub} from './Props3D';
 import {Cells, FiberWorld} from './Micro';
-import {AtpCycle, Calendar, Chip, DayBar, Finish, Flash, NameTag, Reps, ScaleCard, Slam} from './Overlays';
+import {BatteryDuel, Calendar, Chip, DayBar, Finish, Flash, NameTag, Reps, ScaleCard, Slam} from './Overlays';
 import {Subs} from './Subs';
 import {ALEX, DANIEL, FX} from './theme';
-import {EP1, EP1_TOTAL} from './ep01_timeline';
+import {EP1, EP1_TOTAL, sceneNew} from './ep01_timeline';
+import {SceneClock, useLocalOld} from './time';
+import {useRpmBase} from './Human';
 
 const W = 1080, H = 1920, FPS = 30;
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
@@ -29,16 +31,16 @@ const DB = <group rotation={[0, Math.PI / 2, 0]}><Dumbbell scale={0.85} /></grou
 const POS_A: V3 = [-0.37, 0, 0], POS_D: V3 = [0.37, 0, 0];
 
 /** Full 3D gym stage with both characters; `children` adds scene-specific 3D objects. */
-const Stage: React.FC<{cam: ReturnType<typeof camAt>; a: Pose; d: Pose; muscle?: number; muscleD?: number; flexA?: [number, number]; flexD?: [number, number]; holdA?: [React.ReactNode, React.ReactNode]; holdD?: [React.ReactNode, React.ReactNode]; sweat?: number; children?: React.ReactNode; light?: number; spread?: number}> = ({spread = 0.37, cam, a, d, muscle = 0.12, muscleD, flexA = [0, 0], flexD = [0, 0], holdA = [null, null], holdD = [null, null], sweat = 0, children, light = 1}) => (
+const Stage: React.FC<{cam: ReturnType<typeof camAt>; a: Pose; d: Pose; muscle?: number; muscleD?: number; flexA?: [number, number]; flexD?: [number, number]; holdA?: [React.ReactNode, React.ReactNode]; holdD?: [React.ReactNode, React.ReactNode]; sweat?: number; children?: React.ReactNode; light?: number; spread?: number; smileA?: number; smileD?: number}> = ({smileA = 0.25, smileD = 0.15, spread = 0.37, cam, a, d, muscle = 0.12, muscleD, flexA = [0, 0], flexD = [0, 0], holdA = [null, null], holdD = [null, null], sweat = 0, children, light = 1}) => (
   <ThreeCanvas width={W} height={H} shadows>
     <Cam pos={cam.pos} look={cam.look} fov={cam.fov} />
     <Gym light={light} />
-    <Character spec={ALEX} position={[-spread, 0, 0]} pose={a} muscle={muscle} flexL={flexA[0]} flexR={flexA[1]} holdL={holdA[0]} holdR={holdA[1]} sweat={sweat} />
-    <Character spec={DANIEL} position={[spread, 0, 0]} pose={d} muscle={muscleD ?? muscle} flexL={flexD[0]} flexR={flexD[1]} holdL={holdD[0]} holdR={holdD[1]} sweat={sweat} />
+    <Character spec={ALEX} smile={smileA} position={[-spread, 0, 0]} pose={a} muscle={muscle} flexL={flexA[0]} flexR={flexA[1]} holdL={holdA[0]} holdR={holdA[1]} sweat={sweat} />
+    <Character spec={DANIEL} smile={smileD} position={[spread, 0, 0]} pose={d} muscle={muscleD ?? muscle} flexL={flexD[0]} flexR={flexD[1]} holdL={holdD[0]} holdR={holdD[1]} sweat={sweat} />
     {children}
   </ThreeCanvas>
 );
-const useT = () => useCurrentFrame() / FPS;
+const useT = () => useLocalOld();
 
 /* ====================== SCENE 1 — HOOK ====================== */
 const Hook: React.FC = () => {
@@ -84,7 +86,7 @@ const Hook: React.FC = () => {
   }
   return (
     <AbsoluteFill>
-      <Stage cam={cam} a={a} d={d} flexA={curling ? [c, c] : [0, 0]} flexD={curling ? [c, c] : [0, 0]} holdA={[curling ? DB : <group rotation={[0, 0, 0]}><Tub scale={1.1} /></group>, curling ? DB : null]} holdD={[curling ? DB : null, curling ? DB : null]}>
+      <Stage smileA={curling ? 0.1 : 0.55} smileD={0} cam={cam} a={a} d={d} flexA={curling ? [c, c] : [0, 0]} flexD={curling ? [c, c] : [0, 0]} holdA={[curling ? DB : <group rotation={[0, 0, 0]}><Tub scale={1.1} /></group>, curling ? DB : null]} holdD={[curling ? DB : null, curling ? DB : null]}>
         {!curling && t >= 6.0 && <group position={[tubX, 1.32 - push * 0.4, 0.42]} rotation={[0, push * 2, push]}><Tub scale={1.1} /></group>}
       </Stage>
       <Slam at={1.45} out={3.15} text="90 DAYS" size={230} color={FX.gold} top={1000} glow="rgba(255,194,61,.8)" />
@@ -176,9 +178,8 @@ const Inside: React.FC = () => {
         <div style={{position: 'absolute', left: 70, top: 1286, fontFamily: FX.font, fontWeight: 700, fontSize: 22, color: 'rgba(255,255,255,.6)', letterSpacing: 2}}>MUSCLE CREATINE STORES · ILLUSTRATIVE</div>
       </>}
       {atp && <>
-        <AbsoluteFill style={{background: 'rgba(8,4,10,.45)'}} />
-        <AtpCycle t={t} />
-        <Chip at={9.2} text="SHORT, INTENSE EFFORTS" icon="💥" color={FX.gold} x={140} y={1180} />
+        <AbsoluteFill style={{background: 'rgba(8,4,10,.7)'}} />
+        <BatteryDuel t={t - 6.53} />
       </>}
       <Flash at={1.15} len={0.3} color="#FF8C9A" /><Flash at={6.53} len={0.2} />
     </AbsoluteFill>
@@ -312,7 +313,7 @@ const Day90: React.FC = () => {
   }
   return (
     <AbsoluteFill>
-      <Stage spread={0.64} cam={cam} a={pose(1)} d={pose(-1)} muscle={0.62} muscleD={0.52} flexA={[flex, flex]} flexD={[flex, flex]} light={1.1} />
+      <Stage smileA={0.8} smileD={0.7} spread={0.64} cam={cam} a={pose(1)} d={pose(-1)} muscle={0.62} muscleD={0.52} flexA={[flex, flex]} flexD={[flex, flex]} light={1.1} />
       <DayBar day={interpolate(t, [0, 0.8], [60, 90], clamp)} />
       <Slam at={0.05} out={1.25} text="DAY 90" size={240} color={FX.gold} top={360} glow="rgba(255,194,61,.8)" />
       {!stats && <>
@@ -340,7 +341,7 @@ const Final: React.FC = () => {
   const end = t >= 6.2;
   return (
     <AbsoluteFill>
-      <Stage cam={cam} a={{...idle(t, 1), shL: [-0.9, 0.1, 0.3], elL: 1.4}} d={{...idle(t, -1), shR: [0, 0, -0.1]}} holdA={[<Tub scale={1.1} />, null]} light={end ? 0.75 : 1} muscle={0.62} muscleD={0.52} />
+      <Stage cam={cam} a={{...idle(t, 1), shL: [-0.9, 0.1, 0.3], elL: 1.4}} d={{...idle(t, -1), shR: [0, 0, -0.1]}} holdA={[<Tub scale={1.1} />, null]} light={end ? 0.75 : 1} muscle={0.62} muscleD={0.52} smileA={0.75} smileD={0.55} />
       {!end && <Slam at={0.05} out={1.6} text="ISN'T MAGIC" size={120} top={330} />}
       {!end && <>
         <Chip at={1.75} text="TRAINING" icon="🏋️" x={70} y={330} />
@@ -359,13 +360,16 @@ const Final: React.FC = () => {
 };
 
 const scenes: [keyof typeof EP1, React.FC][] = [['hook', Hook], ['day0', Day0], ['difference', Difference], ['inside', Inside], ['weeks', Weeks], ['day60', Day60], ['day90', Day90], ['final', Final]];
-export const Episode01: React.FC = () => (
+export const Episode01: React.FC = () => {
+  const ok = useRpmBase();
+  return (
   <AbsoluteFill style={{background: FX.bg}}>
-    {scenes.map(([k, C]) => <Sequence key={k} from={Math.round(EP1[k][0] * FPS)} durationInFrames={Math.round((EP1[k][1] - EP1[k][0]) * FPS)}><C /></Sequence>)}
+    {ok && scenes.map(([k, C]) => { const [a, b] = sceneNew(k); const from = Math.round(a * FPS); return <Sequence key={k} from={from} durationInFrames={Math.round(b * FPS) - from}><SceneClock newStart={from / FPS} oldStart={EP1[k][0]}><C /></SceneClock></Sequence>; })}
     <Finish />
     <Subs />
-    <Audio src={staticFile('audio/creatine_voice.mp3')} />
+    <Audio src={staticFile('audio/creatine_voice_tight.wav')} />
     <Audio src={staticFile('audio/creatine_music.wav')} volume={(f) => 0.3 * interpolate(f, [0, 8, EP1_TOTAL - 45, EP1_TOTAL], [0, 1, 1, 0], clamp)} />
     <Audio src={staticFile('audio/creatine_sfx.wav')} volume={0.6} />
   </AbsoluteFill>
-);
+  );
+};
