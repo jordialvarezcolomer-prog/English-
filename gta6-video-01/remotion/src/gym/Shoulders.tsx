@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Easing, Sequence, interpolate, random, staticFile, useCurrentFrame} from 'remotion';
 import {BG, FONT, FrontPerson, G, OL, Person, Pose, V} from './kit';
-import {Arrow, Badge, BlackTag, Cable, DeltCap, DeltPill, DeltSide, GOLD, GOLD_D, GOLD_L, GoldDefs, Machine, RedTag, Strain, Triangle, frontGeom, machinePulley, sideGeom, triFrame, triGrip} from './ShoulderKit';
+import {Arrow, Badge, BlackTag, Cable, DeltCap, DeltPill, DeltSide, GOLD, GOLD_D, GOLD_L, GoldDefs, Inset, Machine, RedTag, Sparks, Strain, Triangle, frontGeom, machinePulley, sideGeom, triFrame, triGrip} from './ShoulderKit';
 import {FPS} from '../theme';
 import SEG from './ep03_segments.json';
 
@@ -64,8 +64,19 @@ const Floor: React.FC<{y?: number}> = ({y = FLOOR}) => <div style={{position: 'a
 
 /* ---------------- character helpers ---------------- */
 const ALEX = {shirt: BLUE, hair: 'short' as const};
-const AlexF: React.FC<{x: number; y: number; s: number; handL: V; handR: V; mood?: 'smile' | 'flat' | 'worry' | 'strain'; crouch?: number; fists?: boolean; blink?: number; sweat?: number}> = ({x, y, s, handL, handR, mood = 'flat', crouch, fists, blink, sweat}) => (
-  <FrontPerson shirt={ALEX.shirt} hair={ALEX.hair} phones={false} mood={mood} s={s} x={x} y={y} handL={handL} handR={handR} crouch={crouch} fists={fists} blink={blink} sweat={sweat} />
+/** The hero: red mohawk, beard, royal-blue tee. Breathes a little so he is never frozen. */
+const AlexF: React.FC<{x: number; y: number; s: number; handL: V; handR: V; mood?: 'smile' | 'flat' | 'worry' | 'strain'; crouch?: number; fists?: boolean; blink?: number; sweat?: number}> = ({x, y, s, handL, handR, mood = 'flat', crouch, fists, blink, sweat}) => {
+  const t = useT();
+  return <FrontPerson shirt={ALEX.shirt} cap beard phones={false} mood={mood} s={s} x={x} y={y} handL={handL} handR={handR} crouch={(crouch ?? 0) + 0.02 * Math.sin(t * 3.4)} fists={fists} blink={blink} sweat={sweat} />;
+};
+/** Back of the head: shaved scalp + red crest (no face). */
+const BackHead: React.FC<{head: V; s: number}> = ({head, s}) => (
+  <g>
+    
+    <circle cx={head[0]} cy={head[1]} r={48 * s} fill="#E2AA84" stroke={OL} strokeWidth={4.5} />
+    <polygon points={[[182, 106], [172, 64], [188, 80], [190, 40], [200, 64], [210, 38], [212, 80], [228, 62], [218, 106]].map(([x, y]) => `${head[0] + (x - 200) * s},${head[1] + (y - 140) * s}`).join(' ')} fill="#E5383B" stroke={OL} strokeWidth={4} strokeLinejoin="round" />
+    <path d={`M${head[0] - 40 * s} ${head[1] + 18 * s} Q${head[0]} ${head[1] + 46 * s} ${head[0] + 40 * s} ${head[1] + 18 * s}`} fill="none" stroke="#3B2A20" strokeWidth={5 * s} opacity={0.6} />
+  </g>
 );
 const holdTri = (pulley: V, hand: V, gx: number, s: number) => {
   let apex: V = [hand[0], hand[1] - 100 * s], ang = 0;
@@ -83,7 +94,8 @@ const holdTri2 = (pulley: V, c: V, s: number, spread = 34) => {
 /** 1 — lateral raise, front view, tower left, pulley low. u: 0 rest .. 1 arm at shoulder height. */
 const Rig1: React.FC<{u: number; t: number; strain?: number; delt?: number; arrow?: boolean}> = ({u, t, strain = 0, delt, arrow}) => {
   const s = 1.4, x = 360, y = FLOOR - 572 * s;
-  const handR: V = lerpV([273, 382], [408, 238], u), handL: V = [127, 382];
+  const phi = (lerp(14, 90, u) * Math.PI) / 180;
+  const handR: V = [260 + 155 * Math.sin(phi), 226 + 155 * Math.cos(phi)], handL: V = [118, 378];
   const g = frontGeom({x, y, s, handL, handR});
   const pulley = machinePulley(30, 230, FLOOR - 90, true);
   const {apex, ang} = holdTri(pulley, g.hR, 46, 0.8);
@@ -99,6 +111,7 @@ const Rig1: React.FC<{u: number; t: number; strain?: number; delt?: number; arro
         <DeltCap p={g.shL} q={g.eL} s={s} act={0} t={t} /><DeltCap p={g.shR} q={g.eR} s={s} act={act} t={t} />
         <Triangle apex={apex} ang={ang} s={0.8} />
         {strain > 0 && <Strain p={g.hR} t={t} r={strain} />}
+        {u > 0.82 && <Sparks p={g.hR} t={t} n={8} />}
         {arrow && <Arrow a={[470, 1236]} b={[400, 1190]} />}
       </svg>
     </>
@@ -106,6 +119,7 @@ const Rig1: React.FC<{u: number; t: number; strain?: number; delt?: number; arro
 };
 
 /** 2 — face pull, profile facing LEFT, tower left, pulley at eye level. u: 0 arms forward .. 1 hands at the face. */
+const reachClamp = (sh: V, h: V, r = 138): V => { const dx = h[0] - sh[0], dy = h[1] - sh[1], d = Math.hypot(dx, dy); return d > r ? [sh[0] + (dx * r) / d, sh[1] + (dy * r) / d] : h; };
 const SIDE_STAND: Pose = {hip: [200, 365], sh: [206, 215], head: [214, 160], handL: [330, 205], handR: [330, 205], footL: [214, 565], footR: [188, 565], legBend: 1, armBend: -1};
 const Rig2: React.FC<{u: number; t: number; strain?: number; delt?: number}> = ({u, t, strain = 0, delt}) => {
   const s = 1.5, x0 = 380, y0 = FLOOR - 585 * s;
@@ -113,14 +127,14 @@ const Rig2: React.FC<{u: number; t: number; strain?: number; delt?: number}> = (
   const pulley = machinePulley(30, 230, y0 + 158 * s, true);
   const c = lerpV(P([335, 196]), P([268, 168]), u);
   const ts = 0.8, h = holdTri2(pulley, c, ts, 32);
-  const pose: Pose = {...SIDE_STAND, handL: inv(h.g1), handR: inv(h.g2), head: [214 - 4 * u, 160]};
+  const pose: Pose = {...SIDE_STAND, handL: reachClamp(SIDE_STAND.sh, inv(h.g1)), handR: reachClamp(SIDE_STAND.sh, inv(h.g2)), head: [214 - 4 * u, 160]};
   const geo = sideGeom({x: x0, y: y0, s, sh: pose.sh, handL: pose.handL, handR: pose.handR, head: pose.head, flip: true});
   const act = delt ?? u, len = Math.hypot(h.apex[0] - pulley[0], h.apex[1] - pulley[1]);
   return (
     <>
       <Machine x={30} floor={FLOOR} top={420} carriageY={pulley[1]} faceRight lift={Math.max(0, (len - 430) * 0.4)} t={t} glow={0.5 + 0.4 * act} />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Cable a={pulley} b={h.apex} tension={0.3 + 0.7 * act} t={t} /></svg>
-      <Person pose={pose} shirt={BLUE} phones={false} flip s={s} x={x0} y={y0} mood={u > 0.3 ? 'strain' : 'flat'} fists />
+      <Person pose={pose} shirt={BLUE} cap beard phones={false} flip s={s} x={x0} y={y0} mood={u > 0.3 ? 'strain' : 'flat'} fists />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         <DeltSide sh={geo.sh} el={geo.eL} s={s} acts={[0.1 * act, 0.5 * act, act]} t={t} dir={-1} />
         <Triangle apex={h.apex} ang={h.ang} s={ts} />
@@ -135,16 +149,16 @@ const Rig3: React.FC<{u: number; t: number; strain?: number}> = ({u, t, strain =
   const s = 1.5, x0 = 420, y0 = FLOOR - 585 * s;
   const P = (v: V): V => [x0 + v[0] * s, y0 + v[1] * s], inv = (p: V): V => [(p[0] - x0) / s, (p[1] - y0) / s];
   const pulley = machinePulley(30, 230, FLOOR - 90, true);
-  const c = lerpV(P([272, 352]), P([338, 170]), u);
+  const c = lerpV(P([262, 338]), P([336, 172]), u);
   const ts = 0.8, h = holdTri2(pulley, c, ts, 32);
-  const pose: Pose = {...SIDE_STAND, handL: inv(h.g1), handR: inv(h.g2), head: [214, 160]};
+  const pose: Pose = {...SIDE_STAND, handL: reachClamp(SIDE_STAND.sh, inv(h.g1)), handR: reachClamp(SIDE_STAND.sh, inv(h.g2)), head: [214, 160]};
   const geo = sideGeom({x: x0, y: y0, s, sh: pose.sh, handL: pose.handL, handR: pose.handR, head: pose.head});
   const len = Math.hypot(h.apex[0] - pulley[0], h.apex[1] - pulley[1]);
   return (
     <>
       <Machine x={30} floor={FLOOR} top={420} carriageY={FLOOR - 90} faceRight lift={Math.max(0, (len - 470) * 0.45)} t={t} glow={0.3 + 0.5 * u} />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Cable a={pulley} b={h.apex} tension={0.25 + 0.75 * u} t={t} /></svg>
-      <Person pose={pose} shirt={BLUE} phones={false} s={s} x={x0} y={y0} mood={u > 0.4 ? 'strain' : 'flat'} fists />
+      <Person pose={pose} shirt={BLUE} cap beard phones={false} s={s} x={x0} y={y0} mood={u > 0.4 ? 'strain' : 'flat'} fists />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         <DeltSide sh={geo.sh} el={geo.eL} s={s} acts={[u, 0.4 * u, 0]} t={t} dir={1} />
         <Triangle apex={h.apex} ang={h.ang} s={ts} />
@@ -178,7 +192,8 @@ const Rig4: React.FC<{phase: 'A' | 'B' | 'C'; u: number; t: number; strain?: num
   }
   // back view: tower on the RIGHT, working arm = screen-left, swings out to the side
   const x = 230, y = FLOOR - 572 * s;
-  const handL: V = lerpV([127, 382], [-8, 240], u), handR: V = [273, 382];
+  const phiC = (lerp(14, 88, u) * Math.PI) / 180;
+  const handL: V = [140 - 155 * Math.sin(phiC), 226 + 155 * Math.cos(phiC)], handR: V = [282, 378];
   const g = frontGeom({x, y, s, handL, handR});
   const pulley = machinePulley(780, 230, FLOOR - 90, false);
   const {apex, ang} = holdTri(pulley, g.hL, 46, 0.8);
@@ -191,8 +206,8 @@ const Rig4: React.FC<{phase: 'A' | 'B' | 'C'; u: number; t: number; strain?: num
       <AlexF x={x} y={y} s={s} handL={handL} handR={handR} fists />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         {/* back of the head + collar: hide the face and neckline */}
-        <circle cx={head[0]} cy={head[1]} r={48 * s} fill="#3B2A20" stroke={OL} strokeWidth={4.5} />
-        <circle cx={head[0] - 48 * s} cy={head[1] + 6 * s} r={11 * s} fill={SKIN} stroke={OL} strokeWidth={4} /><circle cx={head[0] + 48 * s} cy={head[1] + 6 * s} r={11 * s} fill={SKIN} stroke={OL} strokeWidth={4} />
+        <BackHead head={head} s={s} />
+        
         <path d={`M${g.P([184, 205])[0]} ${g.P([184, 205])[1]} Q${g.P([200, 214])[0]} ${g.P([200, 214])[1]} ${g.P([216, 205])[0]} ${g.P([216, 205])[1]}`} fill="none" stroke={BLUE} strokeWidth={8} />
         <DeltCap p={g.shL} q={g.eL} s={s} act={u} t={t} rear /><DeltCap p={g.shR} q={g.eR} s={s} act={0} t={t} rear />
         <Triangle apex={apex} ang={ang} s={0.8} />
@@ -204,7 +219,7 @@ const Rig4: React.FC<{phase: 'A' | 'B' | 'C'; u: number; t: number; strain?: num
 
 /* =============================== SCENES =============================== */
 const rel = (i: number, s0: number) => T(i) - s0;
-const rep = (t: number, period: number, phase = 0) => tri(((t / period + phase) % 1 + 1) % 1);
+const rep = (t: number, period: number, phase = 0) => { const x = ((t / period + phase) % 1 + 1) % 1; return x < 0.38 ? eo(x / 0.38) : 1 - eio((x - 0.38) / 0.62); };
 
 /* ---- hook: lateral raise → "1 PULLEY" pull-back → triangle close-up ---- */
 const Triangle2: React.FC<{x: number; y: number; s: number; sway?: number}> = ({x, y, s, sway = 0}) => (
@@ -214,7 +229,7 @@ const Triangle2: React.FC<{x: number; y: number; s: number; sway?: number}> = ({
 );
 const Hook: React.FC = () => {
   const t = useT();
-  const u = 0.5 + 0.5 * Math.sin(t * 4.2 + 1.0);
+  const u = rep(t, 1.1, 0.55);
   const zr = interpolate(t, [1.9, 2.5], [1.7, 1], {...clamp, easing: eio});
   const toTri = interpolate(t, [3.0, 3.25], [0, 1], clamp);
   return (
@@ -223,7 +238,7 @@ const Hook: React.FC = () => {
         <Zoom z={zr} fx={lerp(560, 540, interpolate(t, [1.9, 2.5], [0, 1], clamp))} fy={lerp(900, 870, interpolate(t, [1.9, 2.5], [0, 1], clamp))} cy={lerp(900, 880, interpolate(t, [1.9, 2.5], [0, 1], clamp))}>
           <Floor /><Rig1 u={0.15 + 0.85 * u} t={t} strain={u > 0.8 ? 1 : 0} />
         </Zoom>
-        {t < 1.9 && <Pop at={0.05} style={{left: 0, right: 0, top: 360, display: 'flex', justifyContent: 'center'}}><BlackTag text="FULL SHOULDERS" size={38} /></Pop>}
+        {t < 1.9 && <Pop at={0.05} style={{left: 0, right: 0, top: 296, display: 'flex', justifyContent: 'center'}}><BlackTag text="FULL SHOULDERS" size={38} /></Pop>}
         {t >= 2.0 && <Pop at={2.0} style={{left: 70, top: 380}}><div style={{background: '#fff', border: '6px solid #17181C', borderRadius: 14, padding: '6px 26px', fontFamily: FONT, fontWeight: 900, fontSize: 84, color: '#17181C', boxShadow: '0 8px 0 rgba(0,0,0,.15)'}}>1 PULLEY</div></Pop>}
       </div>
       {toTri > 0 && <div style={{position: 'absolute', inset: 0, opacity: toTri, background: '#ECECE8'}}><BG /><Triangle2 x={540} y={760 + 14 * Math.sin(t * 3)} s={2.6} sway={Math.sin(t * 3) * 1.4} /><div style={{position: 'absolute', left: 0, right: 0, top: 1215, display: 'flex', justifyContent: 'center'}}><BlackTag text="THE CABLE ROW TRIANGLE" size={30} /></div></div>}
@@ -395,14 +410,16 @@ const Ex1: React.FC = () => {
   let z = 1, fx = 540, fy = 900, cy = 900;
   if (t >= a7 + 0.1 && t < a7 + 1.15) { z = zP; fx = 286; fy = 1180; cy = 1000; }
   else if (t >= a7 + 1.15 && t < a7 + 3.2) { z = lerp(1, 2.1, zOut + 0 * toG); fx = lerp(540, 740, zOut); fy = lerp(900, 1040, zOut); cy = lerp(900, 1000, zOut); }
+  else if (t >= a7 + 3.2) { z = 1 + 0.12 * Math.min(1, (t - a7 - 3.2) / 4.5); fx = 600; fy = 880; cy = 900; }
   const raise = interpolate(t, [a7 + 3.0, a7 + 4.5], [0, 1], {...clamp, easing: eio});
-  const reps = t >= a8 ? rep(t - a8, 1.7) : raise;
+  const reps = t >= a8 ? rep(t - a8, 1.25) : raise;
   const u = t < a7 + 1.6 ? 0 : reps;
   const done = t > a8 + 4.4;
   const grip = t >= a7 + 1.15 && t < a7 + 3.0;
   return (
     <ExFrame n={1} tag="LATERAL RAISE" pills={[false, done, false]} active={done ? -1 : 1}>
       <Zoom z={z} fx={fx} fy={fy} cy={cy}><Rig1 u={u} t={t} strain={grip ? 0.8 : u > 0.85 ? 1 : 0} arrow={t > a8 + 0.2 && t < a8 + 2.2} /></Zoom>
+      {t >= a8 - 0.4 && <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Inset x={925} y={725} r={105} act={u} t={t} label="SIDE DELT" /></svg>}
       {t >= a7 + 0.5 && t < a7 + 1.4 && <Pop at={a7 + 0.5} style={{left: 0, right: 0, top: 548, display: 'flex', justifyContent: 'center'}}><BlackTag text="LOW PULLEY" size={28} /></Pop>}
       {t >= a7 + 1.4 && t < a7 + 3.0 && <Pop at={a7 + 1.4} style={{left: 0, right: 0, top: 548, display: 'flex', justifyContent: 'center'}}><BlackTag text="ONE SIDE OF THE TRIANGLE" size={26} /></Pop>}
       {t >= a7 + 3.3 && t < a8 && <Pop at={a7 + 3.3} style={{left: 0, right: 0, top: 548, display: 'flex', justifyContent: 'center'}}><RedTag text="UP TO SHOULDER HEIGHT" size={26} /></Pop>}
@@ -416,12 +433,13 @@ const Ex2: React.FC = () => {
   const a10 = rel(10, s0);
   const back = t >= a10 + 2.15;
   const zH = interpolate(t, [a10 + 0.5, a10 + 0.8, a10 + 1.7, a10 + 2.1], [1, 1.75, 1.75, 1], {...clamp, easing: eio});
-  const u = back ? 0 : t < a10 ? 0.2 + 0.8 * tri(Math.min(1, t / 2.4)) * 0 + 0.1 : rep(t - a10, 1.5, 0.0);
+  const u = back ? 0 : t < a10 ? 0.2 + 0.8 * tri(Math.min(1, t / 2.4)) * 0 + 0.1 : rep(t - a10, 1.15, 0.0);
   const bu = interpolate(t, [a10 + 2.15, a10 + 2.6], [0, 1], {...clamp, easing: eo});
   return (
     <ExFrame n={2} tag="FACE PULL" pills={[false, true, back && t > a10 + 3.3]} active={2} banner>
       {!back && <Zoom z={zH} fx={t < a10 + 0.5 ? 540 : 610} fy={t < a10 + 0.5 ? 880 : 740} cy={880}><Rig2 u={Math.max(0.1, u)} t={t} strain={zH > 1.5 ? 0.8 : u > 0.85 ? 1 : 0} /></Zoom>}
       {back && <BackElbows t={t - (a10 + 2.15)} u={bu} />}
+      {t >= a10 - 0.3 && <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Inset x={925} y={725} r={105} act={back ? bu : Math.max(0.1, u)} t={t} label="REAR DELT" /></svg>}
       {!back && t >= a10 && t < a10 + 0.6 && <Pop at={a10} style={{left: 560, top: 560}}><RedTag text="EYE LEVEL" size={24} /></Pop>}
       {!back && t >= a10 + 0.8 && t < a10 + 1.9 && <Pop at={a10 + 0.8} style={{left: 0, right: 0, top: 548, display: 'flex', justifyContent: 'center'}}><BlackTag text="BOTH HANDS" size={30} /></Pop>}
       {back && <Pop at={a10 + 2.3} style={{left: 0, right: 0, top: 548, display: 'flex', justifyContent: 'center'}}><RedTag text="ELBOWS OUT WIDE" size={28} /></Pop>}
@@ -438,7 +456,7 @@ const BackElbows: React.FC<{t: number; u: number}> = ({t, u}) => {
     <>
       <AlexF x={x} y={y} s={s} handL={handL} handR={handR} fists mood="flat" />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-        <circle cx={head[0]} cy={head[1]} r={48 * s} fill="#3B2A20" stroke={OL} strokeWidth={4.5} /><circle cx={head[0] - 48 * s} cy={head[1] + 6 * s} r={11 * s} fill={SKIN} stroke={OL} strokeWidth={4} /><circle cx={head[0] + 48 * s} cy={head[1] + 6 * s} r={11 * s} fill={SKIN} stroke={OL} strokeWidth={4} />
+        <BackHead head={head} s={s} />
         <DeltCap p={g.shL} q={g.eL} s={s} act={u} t={t} rear /><DeltCap p={g.shR} q={g.eR} s={s} act={u} t={t} rear />
         <Arrow a={[g.eL[0] + 20, g.eL[1]]} b={[g.eL[0] - 140 - 30 * Math.sin(t * 6), g.eL[1]]} /><Arrow a={[g.eR[0] - 20, g.eR[1]]} b={[g.eR[0] + 140 + 30 * Math.sin(t * 6), g.eR[1]]} />
       </svg>
@@ -448,11 +466,12 @@ const BackElbows: React.FC<{t: number; u: number}> = ({t, u}) => {
 const Ex3: React.FC = () => {
   const t = useT();
   const z = interpolate(t, [0.2, 0.55, 1.2, 1.6], [1, 1.65, 1.65, 1], {...clamp, easing: eio});
-  const u = t < 1.6 ? 0.2 + 0.8 * interpolate(t, [0.2, 1.6], [0, 1], clamp) : 0.55 + 0.45 * rep(t - 1.6, 1.4);
+  const u = t < 1.6 ? 0.2 + 0.8 * interpolate(t, [0.2, 1.6], [0, 1], clamp) : 0.55 + 0.45 * rep(t - 1.6, 1.1);
   const done = t > 2.6;
   return (
     <ExFrame n={3} tag="FRONT RAISE" pills={[done, true, true]} active={done ? -1 : 0}>
       <Zoom z={z} fx={t < 0.2 ? 540 : 690} fy={t < 0.2 ? 880 : 730} cy={870}><Rig3 u={u} t={t} strain={z > 1.5 ? 0.9 : u > 0.9 ? 1 : 0} /></Zoom>
+      {t > 0.2 && <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Inset x={925} y={725} r={105} act={u} t={t} label="FRONT DELT" /></svg>}
       {t > 0.3 && t < 1.3 && <Pop at={0.3} style={{left: 0, right: 0, top: 548, display: 'flex', justifyContent: 'center'}}><BlackTag text="BOTH HANDS" size={30} /></Pop>}
       {t > 1.5 && <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}><line x1={760} y1={650} x2={1040} y2={650} stroke={G.red} strokeWidth={5} strokeDasharray="14 12" /></svg>}
       {t > 1.5 && <Pop at={1.5} style={{left: 780, top: 580}}><RedTag text="TO EYE LEVEL" size={24} /></Pop>}
@@ -462,10 +481,11 @@ const Ex3: React.FC = () => {
 const Ex4: React.FC = () => {
   const t = useT();
   const phase: 'A' | 'B' | 'C' = t < 1.7 ? 'A' : t < 3.3 ? 'B' : 'C';
-  const u = phase === 'A' ? 0 : phase === 'B' ? interpolate(t, [1.9, 2.9], [0, 1], {...clamp, easing: eio}) : rep(t - 3.3, 1.5, 0.0) * 0.8 + 0.2;
+  const u = phase === 'A' ? 0 : phase === 'B' ? interpolate(t, [1.9, 2.9], [0, 1], {...clamp, easing: eio}) : rep(t - 3.3, 1.15, 0.0) * 0.8 + 0.2;
   return (
     <ExFrame n={4} tag="REAR DELT FLY" pills={[true, true, phase === 'C' && t > 5.0]} active={phase === 'C' ? 2 : -1}>
       <Rig4 phase={phase} u={u} t={t} strain={phase === 'B' ? 0.9 : phase === 'C' && u > 0.8 ? 1 : 0} />
+      {phase === 'C' && <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Inset x={925} y={725} r={105} act={u} t={t} label="REAR DELT" /></svg>}
       {phase === 'A' && <><Pop at={0.2} style={{left: 640, top: 660}}><RedTag text="SIDE-ON" size={28} /></Pop><svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}><Arrow a={[760, 760]} b={[890, 760]} /></svg></>}
       {phase === 'B' && <Pop at={1.75} style={{left: 0, right: 0, top: 548, display: 'flex', justifyContent: 'center'}}><BlackTag text="ARM ACROSS THE FRONT" size={26} /></Pop>}
       {phase === 'C' && <Pop at={3.4} style={{left: 0, right: 0, top: 548, display: 'flex', justifyContent: 'center'}}><RedTag text="OPEN IT OUT BEHIND YOU" size={26} /></Pop>}
@@ -493,7 +513,7 @@ const Sum: React.FC = () => {
   );
 };
 const DanielF: React.FC<{x: number; y: number; s: number; handL: V; handR: V; mood?: 'smile' | 'flat' | 'worry' | 'strain'; blink?: number}> = ({x, y, s, handL, handR, mood, blink}) => (
-  <FrontPerson shirt={ORANGE} cap beard mood={mood} s={s} x={x} y={y} handL={handL} handR={handR} fists blink={blink} />
+  <FrontPerson shirt={ORANGE} hair="short" phones={false} mood={mood} s={s} x={x} y={y} handL={handL} handR={handR} fists blink={blink} />
 );
 const Mate: React.FC = () => {
   const t = useT(); const s = 1.05, fl = 1180, y = fl - 572 * s;
@@ -603,15 +623,30 @@ const SubsBar: React.FC = () => {
   );
 };
 
-const SC: React.FC<{k: BK; children: React.ReactNode; hits?: number[]; dark?: boolean; noHeader?: boolean; bg?: boolean}> = ({k, children, hits = [0], dark, noHeader, bg = true}) => {
-  const from = Math.round(B[k][0] * FPS), len = Math.round(B[k][1] * FPS) - from;
+const MBG: React.FC = () => {
+  const t = useT();
+  return <div style={{position: 'absolute', inset: 0, background: G.bg, backgroundImage: `linear-gradient(${G.grid} 1px, transparent 1px), linear-gradient(90deg, ${G.grid} 1px, transparent 1px)`, backgroundSize: '60px 60px', backgroundPosition: `${-t * 24}px ${-t * 14}px`}} />;
+};
+const Drift: React.FC<{len: number; k: number; children: React.ReactNode}> = ({len, k, children}) => {
+  const t = useT();
+  return <AbsoluteFill style={{transform: `scale(${1 + 0.045 * Math.min(1, t / len)}) rotate(${Math.sin(t * 0.8 + k) * 0.3}deg)`}}>{children}</AbsoluteFill>;
+};
+/** Quick diagonal bar that sweeps across at every cut. */
+const Slash: React.FC<{k: number}> = ({k}) => {
+  const t = useT(), p = t / 0.34; if (p >= 1) return null;
+  const x = interpolate(p, [0, 1], [-640, 1220], {easing: Easing.inOut(Easing.quad)}), left = k % 2 ? x : 1080 - x - 560;
+  return <div style={{position: 'absolute', left, top: -40, width: 560, height: 2000, transform: 'skewX(-14deg)', background: 'linear-gradient(90deg, #17181C 0 12%, #F6B93B 12% 88%, #17181C 88%)', opacity: 0.95, pointerEvents: 'none'}} />;
+};
+const SC: React.FC<{k: BK; children: React.ReactNode; hits?: number[]; dark?: boolean; noHeader?: boolean; bg?: boolean; noSlash?: boolean}> = ({k, children, hits = [0], dark, noHeader, bg = true, noSlash}) => {
+  const from = Math.round(B[k][0] * FPS), len = Math.round(B[k][1] * FPS) - from, idx = Object.keys(B).indexOf(k);
   return (
     <Sequence from={from} durationInFrames={len}>
       <AbsoluteFill>
         <Impact at={hits}>
-          {bg && !dark && <BG />}
-          {children}
+          {bg && !dark && <MBG />}
+          <Drift len={len / FPS} k={idx}>{children}</Drift>
           {!noHeader && <Header dark={dark} />}
+          {!noSlash && <Slash k={idx} />}
         </Impact>
       </AbsoluteFill>
     </Sequence>
@@ -620,7 +655,7 @@ const SC: React.FC<{k: BK; children: React.ReactNode; hits?: number[]; dark?: bo
 export const ShouldersUK: React.FC = () => (
   <AbsoluteFill style={{background: G.bg}}>
     <GoldDefs />
-    <SC k="hook" hits={[0.02, 2.0, 3.0]}><Hook /></SC>
+    <SC k="hook" hits={[0.02, 2.0, 3.0]} noSlash><Hook /></SC>
     <SC k="nodumb" hits={[0.7, 1.7]}><NoDumb /></SC>
     <SC k="grid" hits={[0.15, rel(3, B.grid[0])]}><Grid /></SC>
     <SC k="blue" dark hits={[0.05]}><Blue /></SC>

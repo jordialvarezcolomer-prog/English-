@@ -19,44 +19,71 @@ export const sideGeom = (o: {x: number; y: number; s: number; sh: V; handL: V; h
 };
 
 /* ---------- golden deltoid overlay ---------- */
-/** Front/back view: one cap per shoulder, oriented along the upper arm. act 0..1 lights it up with pulsing rings. */
+const capPath = (s: number, L: number) => `M${-34 * s} ${-2 * s} C${-38 * s} ${-52 * s} ${34 * s} ${-62 * s} ${L} ${-27 * s} L${L} ${27 * s} C${34 * s} ${56 * s} ${-36 * s} ${50 * s} ${-34 * s} ${4 * s} Z`;
+const Fibres: React.FC<{s: number; L: number; on: boolean; act: number}> = ({s, L, on, act}) => (
+  <g fill="none" strokeLinecap="round">
+    {[0, 1, 2, 3, 4, 5, 6].map((i) => { const y1 = (-30 + i * 10) * s, y2 = (-22 + i * 7.3) * s; return <path key={i} d={`M${-26 * s} ${y1 * 0.85} Q${L * 0.35} ${(y1 + y2) / 2 * (1.12 + 0.1 * act)} ${L - 6 * s} ${y2}`} stroke={on ? GOLD_D : GOLD} strokeWidth={on ? 3 : 2.4} opacity={on ? 0.85 : 0.28} />; })}
+    {[-11, 11].map((y, i) => <path key={'h' + i} d={`M${-28 * s} ${y * 1.5 * s} Q${L * 0.4} ${y * 1.7 * s} ${L - 4 * s} ${y * 1.05 * s}`} stroke={OL} strokeWidth={2.6} opacity={0.55} />)}
+  </g>
+);
+/** Front/back view: one cap per shoulder, wrapping the joint and tapering down the upper arm. act 0..1 lights it up with pulsing rings. */
 export const DeltCap: React.FC<{p: V; q: V; s: number; act: number; t: number; rear?: boolean}> = ({p, q, s, act, t, rear}) => {
-  const ang = (Math.atan2(q[1] - p[1], q[0] - p[0]) * 180) / Math.PI;
-  const c: V = [p[0] + (q[0] - p[0]) * 0.28, p[1] + (q[1] - p[1]) * 0.28];
-  const base = 0.5 + 0.5 * act;
+  const ang = (Math.atan2(q[1] - p[1], q[0] - p[0]) * 180) / Math.PI, L = 58 * s, on = act > 0.05;
+  const ca = Math.cos((ang * Math.PI) / 180), sa = Math.sin((ang * Math.PI) / 180), c: V = [p[0] + ca * L * 0.35, p[1] + sa * L * 0.35];
   return (
     <g>
-      {act > 0.05 && <circle cx={c[0]} cy={c[1]} r={(105 + 14 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={act} />}
-      {act > 0.3 && [0, 1].map((k) => { const ph = (t * 1.6 + k * 0.5) % 1; return <circle key={k} cx={c[0]} cy={c[1]} r={(34 + 70 * ph) * s} fill="none" stroke={GOLD} strokeWidth={5 * (1 - ph)} opacity={0.9 * (1 - ph) * act} />; })}
-      <g transform={`translate(${c[0]} ${c[1]}) rotate(${ang})`} opacity={base}>
-        <ellipse rx={44 * s} ry={30 * s} fill={act > 0.05 ? GOLD : '#E9CE93'} stroke={OL} strokeWidth={3} />
-        {[-18, -6, 6, 18].map((y, i) => <path key={i} d={`M${-34 * s} ${y * s * 0.9} Q0 ${(y - 5) * s} ${34 * s} ${y * s * 0.9}`} fill="none" stroke={GOLD_D} strokeWidth={2.6} opacity={0.8} />)}
-        <path d={`M${-30 * s} ${-14 * s} Q0 ${-30 * s} ${30 * s} ${-14 * s}`} fill="none" stroke={GOLD_L} strokeWidth={4} strokeLinecap="round" opacity={0.8} />
-        {rear && <path d={`M${-34 * s} ${14 * s} Q0 ${30 * s} ${34 * s} ${14 * s}`} fill="none" stroke={GOLD_D} strokeWidth={3} opacity={0.6} />}
+      {on && <circle cx={c[0]} cy={c[1]} r={(110 + 14 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={act} />}
+      {act > 0.3 && [0, 1].map((k) => { const ph = (t * 1.8 + k * 0.5) % 1; return <circle key={k} cx={c[0]} cy={c[1]} r={(36 + 74 * ph) * s} fill="none" stroke={GOLD} strokeWidth={5 * (1 - ph)} opacity={0.9 * (1 - ph) * act} />; })}
+      <g transform={`translate(${p[0]} ${p[1]}) rotate(${ang})`}>
+        <path d={capPath(s, L)} fill={GOLD} fillOpacity={on ? 0.5 + 0.5 * act : 0.05} stroke={on ? OL : GOLD_D} strokeWidth={on ? 3.6 : 3} strokeOpacity={on ? 1 : 0.35} strokeLinejoin="round" />
+        <Fibres s={s} L={L} on={on} act={act} />
+        {on && <path d={`M${-24 * s} ${-26 * s} Q${10 * s} ${-44 * s} ${L * 0.7} ${-22 * s}`} fill="none" stroke={GOLD_L} strokeWidth={4.5} strokeLinecap="round" opacity={0.9} />}
+        {rear && on && <path d={`M${-20 * s} ${22 * s} Q${14 * s} ${40 * s} ${L * 0.7} ${20 * s}`} fill="none" stroke={GOLD_D} strokeWidth={3} opacity={0.7} />}
       </g>
     </g>
   );
 };
-/** Profile view: the cap is split into front / side / rear heads; `acts` = [front, side, rear]. dir = +1 facing right. */
+/** Profile view: same cap, split into front / side / rear heads; `acts` = [front, side, rear]. dir = +1 facing right. */
 export const DeltSide: React.FC<{sh: V; el: V; s: number; acts: [number, number, number]; t: number; dir: 1 | -1}> = ({sh, el, s, acts, t, dir}) => {
   const id = useId().replace(/:/g, '');
-  const ang = (Math.atan2(el[1] - sh[1], el[0] - sh[0]) * 180) / Math.PI - 90;
-  const any = Math.max(...acts);
-  const bands = [[9, 30], [-9, 9], [-30, -9]]; // front, side, rear along the body's forward axis
+  const ang = (Math.atan2(el[1] - sh[1], el[0] - sh[0]) * 180) / Math.PI, L = 52 * s, any = Math.max(...acts);
+  const ca = Math.cos((ang * Math.PI) / 180), sa = Math.sin((ang * Math.PI) / 180), c: V = [sh[0] + ca * L * 0.35, sh[1] + sa * L * 0.35];
+  const fy = dir > 0 ? -1 : 1; // sign of the "front" side in the arm's local frame (arm hanging down, facing right → front is local -y)
+  const bands: [number, number][] = [[10, 70], [-10, 10], [-70, -10]]; // front, side, rear
   return (
     <g>
-      {any > 0.05 && <circle cx={sh[0]} cy={sh[1] + 10 * s} r={(100 + 12 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={any} />}
-      {any > 0.3 && [0, 1].map((k) => { const ph = (t * 1.6 + k * 0.5) % 1; return <circle key={k} cx={sh[0]} cy={sh[1] + 10 * s} r={(30 + 70 * ph) * s} fill="none" stroke={GOLD} strokeWidth={5 * (1 - ph)} opacity={0.9 * (1 - ph) * any} />; })}
+      {any > 0.05 && <circle cx={c[0]} cy={c[1]} r={(105 + 12 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={any} />}
+      {any > 0.3 && [0, 1].map((k) => { const ph = (t * 1.8 + k * 0.5) % 1; return <circle key={k} cx={c[0]} cy={c[1]} r={(34 + 74 * ph) * s} fill="none" stroke={GOLD} strokeWidth={5 * (1 - ph)} opacity={0.9 * (1 - ph) * any} />; })}
       <g transform={`translate(${sh[0]} ${sh[1]}) rotate(${ang})`}>
-        <clipPath id={id}><ellipse cx={0} cy={16 * s} rx={30 * s} ry={42 * s} /></clipPath>
-        {bands.map(([a, b], i) => <rect key={i} clipPath={`url(#${id})`} x={(dir > 0 ? a : -b) * s} y={-30 * s} width={(b - a) * s} height={100 * s} fill={acts[i] > 0.05 ? GOLD : '#E9CE93'} opacity={0.45 + 0.55 * acts[i]} />)}
-        <ellipse cx={0} cy={16 * s} rx={30 * s} ry={42 * s} fill="none" stroke={OL} strokeWidth={3} />
-        {[-9, 9].map((x, i) => <line key={i} x1={x * s * dir} y1={-26 * s} x2={x * s * dir} y2={58 * s} stroke={OL} strokeWidth={2} opacity={0.5} />)}
-        {[-14, 0, 14].map((x, i) => <path key={i} d={`M${x * s} ${-10 * s} Q${(x + 3) * s} ${20 * s} ${x * s} ${50 * s}`} fill="none" stroke={GOLD_D} strokeWidth={2.2} opacity={0.65} />)}
+        <clipPath id={id}><path d={capPath(s, L)} /></clipPath>
+        {bands.map(([a, b], i) => { const lo = Math.min(a * fy, b * fy), hi = Math.max(a * fy, b * fy); return <rect key={i} clipPath={`url(#${id})`} x={-40 * s} y={lo * s} width={L + 50 * s} height={(hi - lo) * s} fill={GOLD} opacity={acts[i] > 0.05 ? 0.5 + 0.5 * acts[i] : 0.06} />; })}
+        <path d={capPath(s, L)} fill="none" stroke={any > 0.05 ? OL : GOLD_D} strokeWidth={3.4} strokeOpacity={any > 0.05 ? 1 : 0.55} strokeLinejoin="round" />
+        <Fibres s={s} L={L} on={any > 0.05} act={any} />
       </g>
     </g>
   );
 };
+/** Round "microscope" inset: a deltoid head's fibres shortening and thickening as it contracts. */
+export const Inset: React.FC<{x: number; y: number; r?: number; act: number; t: number; label: string}> = ({x, y, r = 150, act, t, label}) => {
+  const W = 2 * r, c = act;
+  return (
+    <g>
+      <circle cx={x} cy={y} r={r + 8} fill="#fff" stroke={OL} strokeWidth={6} />
+      <clipPath id={`ins${label.replace(/\W/g, '')}`}><circle cx={x} cy={y} r={r} /></clipPath>
+      <g clipPath={`url(#ins${label.replace(/\W/g, '')})`}>
+        <rect x={x - r} y={y - r} width={W} height={W} fill="#0B1E3F" />
+        <circle cx={x} cy={y} r={r * (0.55 + 0.25 * c)} fill="url(#goldGlow)" opacity={0.5 + 0.5 * c} />
+        {Array.from({length: 9}).map((_, i) => { const yy = y - r * 0.62 + i * (r * 0.155), bow = (1 - c) * 0 + c * (Math.sin(i * 0.9) * 10 + (i - 4) * 4); const x1 = x - r * (0.9 - 0.26 * c), x2 = x + r * (0.9 - 0.26 * c); return <path key={i} d={`M${x1} ${yy} Q${x} ${yy + bow - c * 14 * Math.sin(i + t * 12)} ${x2} ${yy}`} fill="none" stroke={c > 0.3 ? GOLD : '#6CC4FF'} strokeWidth={6 + 6 * c} strokeLinecap="round" opacity={0.95} />; })}
+        <rect x={x - r} y={y - r} width={r * 0.2} height={W} fill="#1B3A6B" /><rect x={x + r * 0.8} y={y - r} width={r * 0.2} height={W} fill="#1B3A6B" />
+      </g>
+      <rect x={x - 80} y={y + r - 6} width={160} height={40} rx={20} fill="#17181C" /><text x={x} y={y + r + 22} textAnchor="middle" fill="#fff" fontFamily={MONO} fontWeight={700} fontSize={22} letterSpacing={2}>{label}</text>
+    </g>
+  );
+};
+/** Gold sparks / speed lines emitted from a point. */
+export const Sparks: React.FC<{p: V; t: number; n?: number; rate?: number; spread?: number}> = ({p, t, n = 10, rate = 2.2, spread = 140}) => (
+  <g>{Array.from({length: n}).map((_, i) => { const ph = (t * rate + i / n) % 1, a = (i * 2.4 + 0.7) % (Math.PI * 2), r = 20 + spread * ph; return <path key={i} d={`M${p[0] + Math.cos(a) * r} ${p[1] + Math.sin(a) * r} l${Math.cos(a) * 18} ${Math.sin(a) * 18}`} stroke={i % 3 ? GOLD : GOLD_L} strokeWidth={6 * (1 - ph)} strokeLinecap="round" opacity={1 - ph} />; })}</g>
+);
 export const GoldDefs: React.FC = () => (
   <svg width={0} height={0} style={{position: 'absolute'}}><defs><radialGradient id="goldGlow"><stop offset="0" stopColor="#FFD560" stopOpacity={0.75} /><stop offset="0.6" stopColor="#FFC93C" stopOpacity={0.28} /><stop offset="1" stopColor="#FFC93C" stopOpacity={0} /></radialGradient></defs></svg>
 );

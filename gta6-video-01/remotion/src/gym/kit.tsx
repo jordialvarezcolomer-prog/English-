@@ -143,9 +143,9 @@ export const Person: React.FC<PersonProps> = ({phones, whistle = false, scroll =
   );
   const arm = (elb: V, hand: V, far: boolean) => (
     <g>
-      <Limb a={pose.sh} b={elb} wa={33} wb={25} c={far ? skD : SK} /><Limb a={elb} b={hand} wa={25} wb={17} bulge={0.12} c={far ? skD : SK} />
-      <Hand p={hand} from={elb} c={far ? skD : SK} fist={fists ?? (plate > 0 || phone || stopwatch)} side={1} r={0.95} />
-      <Limb a={pose.sh} b={lp(pose.sh, elb, 0.55)} wa={42} wb={37} c={far ? shirtD : shirt} />
+      <Limb a={pose.sh} b={elb} wa={46} wb={34} bulge={0.08} c={far ? skD : SK} /><Limb a={elb} b={hand} wa={34} wb={22} bulge={0.2} c={far ? skD : SK} />
+      <Hand p={hand} from={elb} c={far ? skD : SK} fist={fists ?? (plate > 0 || phone || stopwatch)} side={1} r={1.2} />
+      <Limb a={pose.sh} b={lp(pose.sh, elb, 0.5)} wa={54} wb={47} c={far ? shirtD : shirt} />
     </g>
   );
   const eyeY = h[1] - 2;
@@ -277,9 +277,9 @@ export const FrontPerson: React.FC<FrontProps> = ({phones, bicep = 0, pumpGlow =
   );
   const arm = (sh: V, e: V, hd: V, sd: number) => (
     <g>
-      <Limb a={sh} b={e} wa={36 * gw} wb={27} bulge={0.05} c={SK} /><Limb a={e} b={hd} wa={27} wb={17} bulge={0.14} c={SK} />
-      <Hand p={hd} from={e} c={SK} fist={fist} side={(sd > 0 ? 1 : -1) as 1 | -1} r={1.05} />
-      <Limb a={sh} b={lp(sh, e, 0.5)} wa={44 * gw} wb={40 * gw} c={shirt} />
+      <Limb a={sh} b={e} wa={47 * gw} wb={35} bulge={0.08} c={SK} /><Limb a={e} b={hd} wa={35} wb={22} bulge={0.2} c={SK} />
+      <Hand p={hd} from={e} c={SK} fist={fist} side={(sd > 0 ? 1 : -1) as 1 | -1} r={1.3} />
+      <Limb a={sh} b={lp(sh, e, 0.46)} wa={56 * gw} wb={49 * gw} c={shirt} />
     </g>
   );
   const torso = `M${gx(138)} 224 Q${gx(148)} 204 ${gx(174)} 202 L${gx(226)} 202 Q${gx(252)} 204 ${gx(262)} 224 Q${gx(258) } 262 ${gx(251)} 300 Q${gx(247)} 332 ${gx(254)} 368 Q200 380 ${gx(146)} 368 Q${gx(153)} 332 ${gx(149)} 300 Q${gx(142)} 262 ${gx(138)} 224 Z`;
