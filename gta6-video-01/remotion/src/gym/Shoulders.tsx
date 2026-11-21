@@ -82,10 +82,10 @@ const holdTri = (pulley: V, hand: V, gx: number, s: number) => {
   return {apex, ang};
 };
 /** Triangle held by two hands, centre of the grip bar at c; returns apex, angle and the two grip points. */
-const holdTri2 = (pulley: V, c: V, s: number, spread = 34) => {
+const holdTri2 = (pulley: V, c: V, s: number, spread = 34, tilt = 1, sx = 1) => {
   let apex: V = [c[0], c[1] - 118 * s], ang = 0;
-  for (let i = 0; i < 3; i++) { ang = triFrame(apex, pulley); const g = triGrip([0, 0], ang, s, 0); apex = [c[0] - g[0], c[1] - g[1]]; }
-  return {apex, ang, g1: triGrip(apex, ang, s, -spread), g2: triGrip(apex, ang, s, spread)};
+  for (let i = 0; i < 3; i++) { ang = triFrame(apex, pulley) * tilt; const g = triGrip([0, 0], ang, s, 0, sx); apex = [c[0] - g[0], c[1] - g[1]]; }
+  return {apex, ang, g1: triGrip(apex, ang, s, -spread, sx), g2: triGrip(apex, ang, s, spread, sx)};
 };
 
 /* ============================ EXERCISE RIGS ============================ */
@@ -124,9 +124,9 @@ const Rig2: React.FC<{u: number; t: number; strain?: number; delt?: number}> = (
   const P = (v: V): V => [x0 + (400 - v[0]) * s, y0 + v[1] * s], inv = (p: V): V => [400 - (p[0] - x0) / s, (p[1] - y0) / s];
   const pulley = machinePulley(30, 230, y0 + 158 * s, true);
   const c = lerpV(P([335, 196]), P([268, 168]), u);
-  const ts = 0.8, h0 = holdTri2(pulley, c, ts, 32);
+  const ts = 0.8, SX = 0.5, h0 = holdTri2(pulley, c, ts, 70, 0.5, SX);
   const hl = reachClamp(SIDE_STAND.sh, inv(h0.g1)), hr = reachClamp(SIDE_STAND.sh, inv(h0.g2));
-  const cc = lerpV(P(hl), P(hr), 0.5), h = holdTri2(pulley, cc, ts, 32); // re-seat the triangle on the (reach-limited) hands
+  const cc = lerpV(P(hl), P(hr), 0.5), h = holdTri2(pulley, cc, ts, 70, 0.5, SX); // re-seat the triangle on the (reach-limited) hands
   const pose: Pose = {...SIDE_STAND, handL: hl, handR: hr, head: [214 - 4 * u, 160]};
   const geo = sideGeom({x: x0, y: y0, s, sh: pose.sh, handL: pose.handL, handR: pose.handR, head: pose.head, flip: true});
   const act = delt ?? u, len = Math.hypot(h.apex[0] - pulley[0], h.apex[1] - pulley[1]);
@@ -137,7 +137,7 @@ const Rig2: React.FC<{u: number; t: number; strain?: number; delt?: number}> = (
       <Person pose={pose} shirt={BLUE} cap beard phones={false} flip s={s} x={x0} y={y0} mood={u > 0.3 ? 'strain' : 'flat'} fists />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         <DeltSide sh={geo.sh} el={geo.eL} s={s} acts={[0.1 * act, 0.5 * act, act]} t={t} dir={-1} />
-        <Triangle apex={h.apex} ang={h.ang} s={ts} /><Grip p={h.g1} ang={h.ang} s={ts} thumb={1} /><Grip p={h.g2} ang={h.ang} s={ts} thumb={-1} />
+        <Triangle apex={h.apex} ang={h.ang} s={ts} sx={SX} /><Grip p={h.g1} ang={h.ang} s={ts} sx={SX} thumb={1} /><Grip p={h.g2} ang={h.ang} s={ts} sx={SX} thumb={-1} />
         {strain > 0 && <Strain p={cc} t={t} r={strain} />}
       </svg>
     </>
@@ -150,9 +150,9 @@ const Rig3: React.FC<{u: number; t: number; strain?: number}> = ({u, t, strain =
   const P = (v: V): V => [x0 + v[0] * s, y0 + v[1] * s], inv = (p: V): V => [(p[0] - x0) / s, (p[1] - y0) / s];
   const pulley = machinePulley(30, 230, FLOOR - 90, true);
   const c = lerpV(P([262, 338]), P([336, 172]), u);
-  const ts = 0.8, h0 = holdTri2(pulley, c, ts, 32);
+  const ts = 0.8, SX = 0.5, h0 = holdTri2(pulley, c, ts, 70, 0.5, SX);
   const hl = reachClamp(SIDE_STAND.sh, inv(h0.g1), 140), hr = reachClamp(SIDE_STAND.sh, inv(h0.g2), 140);
-  const cc = lerpV(P(hl), P(hr), 0.5), h = holdTri2(pulley, cc, ts, 32);
+  const cc = lerpV(P(hl), P(hr), 0.5), h = holdTri2(pulley, cc, ts, 70, 0.5, SX);
   const pose: Pose = {...SIDE_STAND, handL: hl, handR: hr, head: [214, 160]};
   const geo = sideGeom({x: x0, y: y0, s, sh: pose.sh, handL: pose.handL, handR: pose.handR, head: pose.head});
   const len = Math.hypot(h.apex[0] - pulley[0], h.apex[1] - pulley[1]);
@@ -163,7 +163,7 @@ const Rig3: React.FC<{u: number; t: number; strain?: number}> = ({u, t, strain =
       <Person pose={pose} shirt={BLUE} cap beard phones={false} s={s} x={x0} y={y0} mood={u > 0.4 ? 'strain' : 'flat'} fists straightArm />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         <DeltSide sh={geo.sh} el={geo.eL} s={s} acts={[u, 0.4 * u, 0]} t={t} dir={1} />
-        <Triangle apex={h.apex} ang={h.ang} s={ts} /><Grip p={h.g1} ang={h.ang} s={ts} thumb={1} /><Grip p={h.g2} ang={h.ang} s={ts} thumb={-1} />
+        <Triangle apex={h.apex} ang={h.ang} s={ts} sx={SX} /><Grip p={h.g1} ang={h.ang} s={ts} sx={SX} thumb={1} /><Grip p={h.g2} ang={h.ang} s={ts} sx={SX} thumb={-1} />
         {strain > 0 && <Strain p={cc} t={t} r={strain} />}
       </svg>
     </>
@@ -234,18 +234,18 @@ const Hook: React.FC = () => {
   const t = useT(), end = T(1);
   const u = rep(t, 0.95, 0.5);
   // 0-0.5 extreme close-up (grimace) | 0.5-1.3 pull back, rings + both deltoids ignite | 1.3-2.1 reps | 2.1-2.9 whip-pan to the pulley | 2.9+ triangle swings in
-  const zoom = t < 0.5 ? lerp(1.6, 1.5, t / 0.5) : t < 1.3 ? lerp(2.1, 1, eio((t - 0.5) / 0.8)) : t < 2.1 ? 1 : t < 2.9 ? lerp(1, 1.75, eio((t - 2.1) / 0.8)) : 1.75;
-  const fxx = t < 1.3 ? lerp(690, 540, clamp01((t - 0.5) / 0.8)) : t < 2.1 ? 540 : lerp(540, 250, eio(clamp01((t - 2.1) / 0.8)));
-  const fyy = t < 0.5 ? 760 : t < 1.3 ? lerp(760, 880, eio(clamp01((t - 0.5) / 0.8))) : t < 2.1 ? 880 : lerp(880, 1050, eio(clamp01((t - 2.1) / 0.8)));
-  const ig = clamp01((t - 0.55) / 0.5);
+  const zoom = t < 1.9 ? 1 : t < 2.9 ? lerp(1, 1.75, eio((t - 1.9) / 1.0)) : 1.75;
+  const fxx = t < 1.9 ? 540 : lerp(540, 250, eio(clamp01((t - 1.9) / 1.0)));
+  const fyy = t < 1.9 ? 880 : lerp(880, 1050, eio(clamp01((t - 1.9) / 1.0)));
+  const ig = clamp01((t - 0.45) / 0.5);
   const toTri = interpolate(t, [2.95, 3.12], [0, 1], clamp);
   const arm = 0.14 + 0.78 * rep(t, 0.95, 0.12); // already moving at frame 0, no static pose
   return (
     <AbsoluteFill>
       <div style={{position: 'absolute', inset: 0, opacity: 1 - toTri}}>
-        <Zoom z={zoom} fx={fxx} fy={fyy} cy={t < 0.5 ? 860 : 900}>
+        <Zoom z={zoom} fx={fxx} fy={fyy} cy={900}>
           <Floor />
-          <Rig1 u={arm} t={t} both delt={ig} strain={arm > 0.85 ? 1 : 0} mood={t < 0.5 || (t > 1.3 && t < 2.1 && u > 0.5) ? 'strain' : 'smile'} />
+          <Rig1 u={arm} t={t} both delt={ig} strain={arm > 0.85 ? 1 : 0} mood={u > 0.55 ? 'strain' : 'smile'} />
         </Zoom>
         <div style={{position: 'absolute', left: 0, right: 0, top: 296, display: 'flex', justifyContent: 'center', transform: `scale(${t < 0.12 ? 1.3 - 0.3 * t / 0.12 : 1})`}}><BlackTag text="FULL SHOULDERS" size={40} /></div>
         {t >= 2.2 && <Pop at={2.2} style={{left: 70, top: 380}}><div style={{background: '#fff', border: '6px solid #17181C', borderRadius: 14, padding: '6px 26px', fontFamily: FONT, fontWeight: 900, fontSize: 84, color: '#17181C', boxShadow: '0 8px 0 rgba(0,0,0,.15)'}}>1 PULLEY</div></Pop>}
@@ -293,10 +293,10 @@ const NoDumb: React.FC = () => {
 
 /* ---- 4 cards + 3 x 12 ---- */
 const CARDS: {n: number; label: string; pill: string; at: number; Mini: React.FC<{t: number}>}[] = [
-  {n: 1, label: 'LATERAL RAISE', pill: 'SIDE', at: 0.15, Mini: ({t}) => <Rig1 u={rep(t, 1.6)} t={t} />},
-  {n: 2, label: 'FACE PULL', pill: 'REAR', at: 0.95, Mini: ({t}) => <Rig2 u={rep(t, 1.6, 0.25)} t={t} />},
-  {n: 3, label: 'FRONT RAISE', pill: 'FRONT', at: 1.75, Mini: ({t}) => <Rig3 u={rep(t, 1.6, 0.5)} t={t} />},
-  {n: 4, label: 'REAR DELT FLY', pill: 'REAR', at: 2.55, Mini: ({t}) => <Rig4 phase="C" u={rep(t, 1.6, 0.75)} t={t} />},
+  {n: 1, label: 'LATERAL RAISE', pill: 'SIDE', at: 0.1, Mini: ({t}) => <Rig1 u={rep(t, 1.6)} t={t} />},
+  {n: 2, label: 'FACE PULL', pill: 'REAR', at: 0.65, Mini: ({t}) => <Rig2 u={rep(t, 1.6, 0.25)} t={t} />},
+  {n: 3, label: 'FRONT RAISE', pill: 'FRONT', at: 1.2, Mini: ({t}) => <Rig3 u={rep(t, 1.6, 0.5)} t={t} />},
+  {n: 4, label: 'REAR DELT FLY', pill: 'REAR', at: 1.75, Mini: ({t}) => <Rig4 phase="C" u={rep(t, 1.6, 0.75)} t={t} />},
 ];
 const Grid: React.FC = () => {
   const t = useT(); const s3 = rel(3, B.grid[0]);
@@ -318,7 +318,7 @@ const Grid: React.FC = () => {
           </div>
         );
       })}
-      {t < 0.9 && <Pop at={0.0} style={{left: 360, top: 560}}><div style={{background: '#fff', border: '4px solid #2A2D35', borderRadius: 18, width: 300, height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, fontWeight: 900, fontSize: 340, color: G.red, transform: 'rotate(3deg)'}}>4</div></Pop>}
+      {t < 0.55 && <Pop at={0.0} style={{left: 360, top: 560}}><div style={{background: '#fff', border: '4px solid #2A2D35', borderRadius: 18, width: 300, height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, fontWeight: 900, fontSize: 340, color: G.red, transform: 'rotate(3deg)'}}>4</div></Pop>}
       {t > s3 && <Pop at={s3} style={{left: 0, right: 0, top: 760, display: 'flex', justifyContent: 'center'}}><div style={{background: '#fff', border: '5px solid #17181C', borderRadius: 16, padding: '10px 40px 8px', textAlign: 'center', boxShadow: '0 10px 0 rgba(0,0,0,.18)'}}><div style={{fontFamily: FONT, fontWeight: 900, fontSize: 110, color: G.red, lineHeight: 1}}>3 × 12</div><div style={{fontFamily: '"DejaVu Sans Mono", monospace', fontWeight: 700, fontSize: 20, letterSpacing: 3, color: '#777'}}>SETS × REPS</div></div></Pop>}
     </AbsoluteFill>
   );

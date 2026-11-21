@@ -134,9 +134,10 @@ export const Cable: React.FC<{a: V; b: V; tension?: number; t: number}> = ({a, b
 };
 /** Row triangle (V-handle). Origin = swivel ring at the apex; apex points at `toward`. grip: where a hand sits along the bar. */
 export const triFrame = (apex: V, toward: V) => { const dx = toward[0] - apex[0], dy = toward[1] - apex[1]; return (Math.atan2(dx, -dy) * 180) / Math.PI; };
-export const triGrip = (apex: V, ang: number, s: number, gx: number): V => { const a = rad(ang), lx = gx * s, ly = 118 * s; return [apex[0] + lx * Math.cos(a) - ly * Math.sin(a), apex[1] + lx * Math.sin(a) + ly * Math.cos(a)]; };
-export const Triangle: React.FC<{apex: V; ang: number; s: number}> = ({apex, ang, s}) => (
-  <g transform={`translate(${apex[0]} ${apex[1]}) rotate(${ang}) scale(${s})`}>
+export const triGrip = (apex: V, ang: number, s: number, gx: number, sx = 1): V => { const a = rad(ang), lx = gx * s * sx, ly = 118 * s; return [apex[0] + lx * Math.cos(a) - ly * Math.sin(a), apex[1] + lx * Math.sin(a) + ly * Math.cos(a)]; };
+/** sx < 1 foreshortens the handle (viewed at an angle), as when you stand in profile to a bar that runs across your body. */
+export const Triangle: React.FC<{apex: V; ang: number; s: number; sx?: number}> = ({apex, ang, s, sx = 1}) => (
+  <g transform={`translate(${apex[0]} ${apex[1]}) rotate(${ang}) scale(${s * sx} ${s})`}>
     <path d="M0 6 L-66 112 M0 6 L66 112" stroke={OL} strokeWidth={22} strokeLinecap="round" /><path d="M0 6 L-66 112 M0 6 L66 112" stroke="#6B7180" strokeWidth={12} strokeLinecap="round" />
     <rect x={-92} y={100} width={184} height={34} rx={14} fill="#1C1D22" stroke={OL} strokeWidth={5} />
     <rect x={-60} y={104} width={120} height={8} rx={4} fill="#3A3F4B" />
@@ -147,11 +148,11 @@ export const Triangle: React.FC<{apex: V; ang: number; s: number}> = ({apex, ang
 
 /* ---------- hand wrapped around a handle ---------- */
 /** Fingers curl over the front of the bar, thumb locks behind it. p = grip point on the bar centre, ang = bar rotation (deg), s = triangle scale. */
-export const Grip: React.FC<{p: V; ang: number; s: number; thumb?: 1 | -1; open?: number}> = ({p, ang, s, thumb = 1}) => {
+export const Grip: React.FC<{p: V; ang: number; s: number; thumb?: 1 | -1; open?: number; sx?: number}> = ({p, ang, s, thumb = 1, sx = 1}) => {
   const SKC = '#F3B78E', SKD = '#E2A07A';
   return (
     // y is mirrored: the back of the hand sits on the side AWAY from the pulley (cable pulls the bar into the fingers), fingers wrap round the pulley side
-    <g transform={`translate(${p[0]} ${p[1]}) rotate(${ang}) scale(${s} ${-s})`} stroke={OL} strokeLinejoin="round" strokeLinecap="round">
+    <g transform={`translate(${p[0]} ${p[1]}) rotate(${ang}) scale(${s * (sx < 1 ? 0.8 : 1)} ${-s})`} stroke={OL} strokeLinejoin="round" strokeLinecap="round">
       {/* back of the hand */}
       <rect x={-27} y={-44} width={54} height={34} rx={14} fill={SKC} strokeWidth={4.4} />
       <path d="M-12 -40 V-22 M0 -40 V-22 M12 -40 V-22" fill="none" strokeWidth={2.4} opacity={0.5} />
