@@ -19,7 +19,7 @@ export const sideGeom = (o: {x: number; y: number; s: number; sh: V; handL: V; h
 };
 
 /* ---------- golden deltoid overlay ---------- */
-const capPath = (s: number, L: number) => `M${-34 * s} ${-2 * s} C${-38 * s} ${-52 * s} ${34 * s} ${-62 * s} ${L} ${-27 * s} L${L} ${27 * s} C${34 * s} ${56 * s} ${-36 * s} ${50 * s} ${-34 * s} ${4 * s} Z`;
+const capPath = (s: number, L: number) => `M${-30 * s} 0 C${-30 * s} ${-46 * s} ${L * 0.45} ${-46 * s} ${L} ${-3 * s} C${L} ${3 * s} ${L} ${3 * s} ${L} ${3 * s} C${L * 0.45} ${46 * s} ${-30 * s} ${46 * s} ${-30 * s} 0 Z`;
 const Fibres: React.FC<{s: number; L: number; on: boolean; act: number}> = ({s, L, on, act}) => (
   <g fill="none" strokeLinecap="round">
     {[0, 1, 2, 3, 4, 5, 6].map((i) => { const y1 = (-30 + i * 10) * s, y2 = (-22 + i * 7.3) * s; return <path key={i} d={`M${-26 * s} ${y1 * 0.85} Q${L * 0.35} ${(y1 + y2) / 2 * (1.12 + 0.1 * act)} ${L - 6 * s} ${y2}`} stroke={on ? GOLD_D : GOLD} strokeWidth={on ? 3 : 2.4} opacity={on ? 0.85 : 0.28} />; })}
@@ -28,11 +28,12 @@ const Fibres: React.FC<{s: number; L: number; on: boolean; act: number}> = ({s, 
 );
 /** Front/back view: one cap per shoulder, wrapping the joint and tapering down the upper arm. act 0..1 lights it up with pulsing rings. */
 export const DeltCap: React.FC<{p: V; q: V; s: number; act: number; t: number; rear?: boolean}> = ({p, q, s, act, t, rear}) => {
-  const ang = (Math.atan2(q[1] - p[1], q[0] - p[0]) * 180) / Math.PI, L = 58 * s, on = act > 0.05;
+  const ang = (Math.atan2(q[1] - p[1], q[0] - p[0]) * 180) / Math.PI, L = 74 * s, on = act > 0.05;
   const ca = Math.cos((ang * Math.PI) / 180), sa = Math.sin((ang * Math.PI) / 180), c: V = [p[0] + ca * L * 0.35, p[1] + sa * L * 0.35];
   return (
     <g>
       {on && <circle cx={c[0]} cy={c[1]} r={(110 + 14 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={act} />}
+      {on && <circle cx={p[0]} cy={p[1] + 6 * s} r={(86 + 4 * Math.sin(t * 7)) * s} fill="none" stroke="#C0763A" strokeWidth={5} opacity={0.85 * act} />}
       {act > 0.3 && [0, 1].map((k) => { const ph = (t * 1.8 + k * 0.5) % 1; return <circle key={k} cx={c[0]} cy={c[1]} r={(36 + 74 * ph) * s} fill="none" stroke={GOLD} strokeWidth={5 * (1 - ph)} opacity={0.9 * (1 - ph) * act} />; })}
       <g transform={`translate(${p[0]} ${p[1]}) rotate(${ang})`}>
         <path d={capPath(s, L)} fill={GOLD} fillOpacity={on ? 0.5 + 0.5 * act : 0.05} stroke={on ? OL : GOLD_D} strokeWidth={on ? 3.6 : 3} strokeOpacity={on ? 1 : 0.35} strokeLinejoin="round" />
@@ -46,7 +47,7 @@ export const DeltCap: React.FC<{p: V; q: V; s: number; act: number; t: number; r
 /** Profile view: same cap, split into front / side / rear heads; `acts` = [front, side, rear]. dir = +1 facing right. */
 export const DeltSide: React.FC<{sh: V; el: V; s: number; acts: [number, number, number]; t: number; dir: 1 | -1}> = ({sh, el, s, acts, t, dir}) => {
   const id = useId().replace(/:/g, '');
-  const ang = (Math.atan2(el[1] - sh[1], el[0] - sh[0]) * 180) / Math.PI, L = 52 * s, any = Math.max(...acts);
+  const ang = (Math.atan2(el[1] - sh[1], el[0] - sh[0]) * 180) / Math.PI, L = 70 * s, any = Math.max(...acts);
   const ca = Math.cos((ang * Math.PI) / 180), sa = Math.sin((ang * Math.PI) / 180), c: V = [sh[0] + ca * L * 0.35, sh[1] + sa * L * 0.35];
   const fy = dir > 0 ? -1 : 1; // sign of the "front" side in the arm's local frame (arm hanging down, facing right → front is local -y)
   const bands: [number, number][] = [[10, 70], [-10, 10], [-70, -10]]; // front, side, rear
@@ -116,16 +117,16 @@ export const Machine: React.FC<{x: number; w?: number; floor: number; top: numbe
 
 /* ---------- cable + row triangle ---------- */
 export const Cable: React.FC<{a: V; b: V; tension?: number; t: number}> = ({a, b, tension = 0, t}) => {
-  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const dx = b[0] - a[0], dy = b[1] - a[1];
   return (
     <g>
-      <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={OL} strokeWidth={9} strokeLinecap="round" />
-      <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#5B606C" strokeWidth={4} strokeLinecap="round" />
+      <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={OL} strokeWidth={10} strokeLinecap="round" />
+      <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={tension > 0.05 ? '#F08A1E' : '#5B606C'} strokeWidth={tension > 0.05 ? 7 : 4} strokeLinecap="round" />
       {tension > 0.05 && <>
-        <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={GOLD} strokeWidth={14} strokeLinecap="round" opacity={0.35 * tension} />
-        <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={GOLD_L} strokeWidth={5} strokeLinecap="round" strokeDasharray="26 38" strokeDashoffset={-(t * 260) % 64} opacity={tension} />
+        <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={GOLD} strokeWidth={22} strokeLinecap="round" opacity={0.28 * tension} />
+        <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={GOLD_L} strokeWidth={3} strokeLinecap="round" opacity={0.9 * tension} />
+        {[0, 1, 2, 3, 4].map((i) => { const ph = (t * 0.9 + i / 5) % 1; return <circle key={i} cx={a[0] + dx * ph} cy={a[1] + dy * ph} r={16 + 8 * Math.sin(i * 2 + t * 6)} fill="#fff" opacity={0.7 * tension * Math.sin(ph * Math.PI)} style={{filter: 'blur(3px)'}} />; })}
       </>}
-      {len < 0 && null}
     </g>
   );
 };

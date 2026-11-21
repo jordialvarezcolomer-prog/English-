@@ -92,7 +92,7 @@ const holdTri2 = (pulley: V, c: V, s: number, spread = 34) => {
 
 /* ============================ EXERCISE RIGS ============================ */
 /** 1 — lateral raise, front view, tower left, pulley low. u: 0 rest .. 1 arm at shoulder height. */
-const Rig1: React.FC<{u: number; t: number; strain?: number; delt?: number; arrow?: boolean}> = ({u, t, strain = 0, delt, arrow}) => {
+const Rig1: React.FC<{u: number; t: number; strain?: number; delt?: number; arrow?: boolean; both?: boolean; mood?: 'smile' | 'strain' | 'flat'}> = ({u, t, strain = 0, delt, arrow, both, mood}) => {
   const s = 1.4, x = 360, y = FLOOR - 572 * s;
   const phi = (lerp(14, 90, u) * Math.PI) / 180;
   const handR: V = [260 + 155 * Math.sin(phi), 226 + 155 * Math.cos(phi)], handL: V = [118, 378];
@@ -106,9 +106,9 @@ const Rig1: React.FC<{u: number; t: number; strain?: number; delt?: number; arro
     <>
       <Machine x={30} floor={FLOOR} top={420} carriageY={FLOOR - 90} faceRight lift={Math.max(0, (len - len0) * 0.45)} t={t} glow={act > 0.6 ? 0.8 : 0} />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Cable a={pulley} b={apex} tension={tension} t={t} /></svg>
-      <AlexF x={x} y={y} s={s} handL={handL} handR={handR} mood={u > 0.35 ? 'strain' : 'flat'} fists blink={u > 0.35 ? 0 : undefined} />
+      <AlexF x={x} y={y} s={s} handL={handL} handR={handR} mood={mood ?? (u > 0.35 ? 'strain' : 'flat')} fists blink={u > 0.35 ? 0 : undefined} />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-        <DeltCap p={g.shL} q={g.eL} s={s} act={0} t={t} /><DeltCap p={g.shR} q={g.eR} s={s} act={act} t={t} />
+        <DeltCap p={g.shL} q={g.eL} s={s} act={both ? act : 0} t={t} /><DeltCap p={g.shR} q={g.eR} s={s} act={act} t={t} />
         <Triangle apex={apex} ang={ang} s={0.8} />
         {strain > 0 && <Strain p={g.hR} t={t} r={strain} />}
         {u > 0.82 && <Sparks p={g.hR} t={t} n={8} />}
@@ -228,23 +228,32 @@ const Triangle2: React.FC<{x: number; y: number; s: number; sway?: number}> = ({
   </svg>
 );
 const Hook: React.FC = () => {
-  const t = useT();
-  const u = rep(t, 1.1, 0.55);
-  const zr = interpolate(t, [1.9, 2.5], [1.7, 1], {...clamp, easing: eio});
-  const toTri = interpolate(t, [3.0, 3.25], [0, 1], clamp);
+  const t = useT(), end = T(1);
+  const u = rep(t, 0.95, 0.5);
+  // 0-0.5 extreme close-up (grimace) | 0.5-1.3 pull back, rings + both deltoids ignite | 1.3-2.1 reps | 2.1-2.9 whip-pan to the pulley | 2.9+ triangle swings in
+  const zoom = t < 0.5 ? lerp(2.3, 2.1, t / 0.5) : t < 1.3 ? lerp(2.1, 1, eio((t - 0.5) / 0.8)) : t < 2.1 ? 1 : t < 2.9 ? lerp(1, 1.75, eio((t - 2.1) / 0.8)) : 1.75;
+  const fxx = t < 1.3 ? lerp(560, 540, clamp01((t - 0.5) / 0.8)) : t < 2.1 ? 540 : lerp(540, 250, eio(clamp01((t - 2.1) / 0.8)));
+  const fyy = t < 0.5 ? 640 : t < 1.3 ? lerp(640, 880, eio(clamp01((t - 0.5) / 0.8))) : t < 2.1 ? 880 : lerp(880, 1050, eio(clamp01((t - 2.1) / 0.8)));
+  const ig = clamp01((t - 0.55) / 0.5);
+  const toTri = interpolate(t, [2.95, 3.12], [0, 1], clamp);
+  const arm = t < 0.5 ? 0.78 : t < 1.3 ? lerp(0.78, 0.9, clamp01((t - 0.5) / 0.8)) : 0.18 + 0.82 * u;
   return (
     <AbsoluteFill>
       <div style={{position: 'absolute', inset: 0, opacity: 1 - toTri}}>
-        <Zoom z={zr} fx={lerp(560, 540, interpolate(t, [1.9, 2.5], [0, 1], clamp))} fy={lerp(900, 870, interpolate(t, [1.9, 2.5], [0, 1], clamp))} cy={lerp(900, 880, interpolate(t, [1.9, 2.5], [0, 1], clamp))}>
-          <Floor /><Rig1 u={0.15 + 0.85 * u} t={t} strain={u > 0.8 ? 1 : 0} />
+        <Zoom z={zoom} fx={fxx} fy={fyy} cy={t < 0.5 ? 760 : 900}>
+          <Floor />
+          <Rig1 u={arm} t={t} both delt={arm > 0.5 ? Math.max(ig, 0.2) : ig} strain={arm > 0.85 ? 1 : 0} mood={t < 0.5 || (t > 1.3 && t < 2.1 && u > 0.5) ? 'strain' : 'smile'} />
         </Zoom>
-        {t < 1.9 && <Pop at={0.05} style={{left: 0, right: 0, top: 296, display: 'flex', justifyContent: 'center'}}><BlackTag text="FULL SHOULDERS" size={38} /></Pop>}
-        {t >= 2.0 && <Pop at={2.0} style={{left: 70, top: 380}}><div style={{background: '#fff', border: '6px solid #17181C', borderRadius: 14, padding: '6px 26px', fontFamily: FONT, fontWeight: 900, fontSize: 84, color: '#17181C', boxShadow: '0 8px 0 rgba(0,0,0,.15)'}}>1 PULLEY</div></Pop>}
+        <div style={{position: 'absolute', left: 0, right: 0, top: 296, display: 'flex', justifyContent: 'center', transform: `scale(${t < 0.12 ? 1.3 - 0.3 * t / 0.12 : 1})`}}><BlackTag text="FULL SHOULDERS" size={40} /></div>
+        {t >= 2.2 && <Pop at={2.2} style={{left: 70, top: 380}}><div style={{background: '#fff', border: '6px solid #17181C', borderRadius: 14, padding: '6px 26px', fontFamily: FONT, fontWeight: 900, fontSize: 84, color: '#17181C', boxShadow: '0 8px 0 rgba(0,0,0,.15)'}}>1 PULLEY</div></Pop>}
+        {t >= 2.25 && <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}><Sparks p={[286, 1200]} t={t} n={12} spread={130} /></svg>}
       </div>
-      {toTri > 0 && <div style={{position: 'absolute', inset: 0, opacity: toTri, background: '#ECECE8'}}><BG /><Triangle2 x={540} y={760 + 14 * Math.sin(t * 3)} s={2.6} sway={Math.sin(t * 3) * 1.4} /><div style={{position: 'absolute', left: 0, right: 0, top: 1215, display: 'flex', justifyContent: 'center'}}><BlackTag text="THE CABLE ROW TRIANGLE" size={30} /></div></div>}
+      {toTri > 0 && <div style={{position: 'absolute', inset: 0, opacity: toTri, background: '#ECECE8'}}><MBG /><Triangle2 x={540} y={760 + 14 * Math.sin(t * 3)} s={interpolate(t, [2.95, 3.4], [1.6, 2.6], {...clamp, easing: Easing.out(Easing.back(1.6))})} sway={Math.sin(t * 3) * 1.4 + Math.max(0, 14 - (t - 2.95) * 40)} /><svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}><Sparks p={[540, 776]} t={t} n={12} spread={150} /></svg><div style={{position: 'absolute', left: 0, right: 0, top: 1215, display: 'flex', justifyContent: 'center'}}><BlackTag text="THE CABLE ROW TRIANGLE" size={30} /></div></div>}
+      {end > 0 && null}
     </AbsoluteFill>
   );
 };
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 /* ---- no dumbbells / no waiting ---- */
 const Cross: React.FC<{x: number; y: number; w: number; at: number}> = ({x, y, w, at}) => {
@@ -670,8 +679,8 @@ export const ShouldersUK: React.FC = () => (
     <SC k="outro" noHeader><Outro /></SC>
     <SubsBar />
     <Audio src={staticFile('audio/shoulders_voice.wav')} />
-    <Audio src={staticFile('audio/gym_music.wav')} loop volume={(f) => 0.2 * interpolate(f, [0, 10, SHOULDERS_TOTAL - 50, SHOULDERS_TOTAL], [0, 1, 1, 0], clamp)} />
-    <Audio src={staticFile('audio/shoulders_sfx.wav')} volume={0.5} />
+    <Audio src={staticFile('audio/gym_music.wav')} loop volume={(f) => 0.11 * interpolate(f, [0, 10, SHOULDERS_TOTAL - 50, SHOULDERS_TOTAL], [0, 1, 1, 0], clamp)} />
+    <Audio src={staticFile('audio/shoulders_sfx.wav')} volume={0.28} />
   </AbsoluteFill>
 );
 export const SHOULDERS_BOUNDS = B;
