@@ -234,16 +234,16 @@ const Hook: React.FC = () => {
   const t = useT(), end = T(1);
   const u = rep(t, 0.95, 0.5);
   // 0-0.5 extreme close-up (grimace) | 0.5-1.3 pull back, rings + both deltoids ignite | 1.3-2.1 reps | 2.1-2.9 whip-pan to the pulley | 2.9+ triangle swings in
-  const zoom = t < 0.5 ? lerp(2.3, 2.1, t / 0.5) : t < 1.3 ? lerp(2.1, 1, eio((t - 0.5) / 0.8)) : t < 2.1 ? 1 : t < 2.9 ? lerp(1, 1.75, eio((t - 2.1) / 0.8)) : 1.75;
-  const fxx = t < 1.3 ? lerp(560, 540, clamp01((t - 0.5) / 0.8)) : t < 2.1 ? 540 : lerp(540, 250, eio(clamp01((t - 2.1) / 0.8)));
-  const fyy = t < 0.5 ? 640 : t < 1.3 ? lerp(640, 880, eio(clamp01((t - 0.5) / 0.8))) : t < 2.1 ? 880 : lerp(880, 1050, eio(clamp01((t - 2.1) / 0.8)));
+  const zoom = t < 0.5 ? lerp(1.6, 1.5, t / 0.5) : t < 1.3 ? lerp(2.1, 1, eio((t - 0.5) / 0.8)) : t < 2.1 ? 1 : t < 2.9 ? lerp(1, 1.75, eio((t - 2.1) / 0.8)) : 1.75;
+  const fxx = t < 1.3 ? lerp(690, 540, clamp01((t - 0.5) / 0.8)) : t < 2.1 ? 540 : lerp(540, 250, eio(clamp01((t - 2.1) / 0.8)));
+  const fyy = t < 0.5 ? 760 : t < 1.3 ? lerp(760, 880, eio(clamp01((t - 0.5) / 0.8))) : t < 2.1 ? 880 : lerp(880, 1050, eio(clamp01((t - 2.1) / 0.8)));
   const ig = clamp01((t - 0.55) / 0.5);
   const toTri = interpolate(t, [2.95, 3.12], [0, 1], clamp);
-  const arm = t < 0.5 ? 0.78 : t < 1.3 ? lerp(0.78, 0.9, clamp01((t - 0.5) / 0.8)) : 0.18 + 0.82 * u;
+  const arm = 0.14 + 0.78 * rep(t, 0.95, 0.12); // already moving at frame 0, no static pose
   return (
     <AbsoluteFill>
       <div style={{position: 'absolute', inset: 0, opacity: 1 - toTri}}>
-        <Zoom z={zoom} fx={fxx} fy={fyy} cy={t < 0.5 ? 760 : 900}>
+        <Zoom z={zoom} fx={fxx} fy={fyy} cy={t < 0.5 ? 860 : 900}>
           <Floor />
           <Rig1 u={arm} t={t} both delt={ig} strain={arm > 0.85 ? 1 : 0} mood={t < 0.5 || (t > 1.3 && t < 2.1 && u > 0.5) ? 'strain' : 'smile'} />
         </Zoom>
@@ -402,7 +402,7 @@ const Press: React.FC = () => {
   const t = useT(); const s = 1.3, fl = FLOOR;
   const u = rep(t, 1.35, 0.15);
   const x = 540 - 200 * s, y = fl - 572 * s, crouch = 0.9;
-  const hl: V = lerpV([96, 232], [135, 62], u), hr: V = lerpV([304, 232], [265, 62], u);
+  const hl: V = lerpV([62, 156], [126, 80], u), hr: V = lerpV([338, 156], [274, 80], u);
   const g = frontGeom({x, y, s, handL: hl, handR: hr, crouch});
   const hipY = y + (380 + crouch * 62) * s;
   const lift = u * 86;
@@ -415,13 +415,13 @@ const Press: React.FC = () => {
         <rect x={812} y={520} width={150} height={fl - 540} rx={8} fill="#4C5260" stroke={OL} strokeWidth={4} />
         {Array.from({length: 12}).map((_, i) => <rect key={i} x={822} y={560 + i * 56 - (i <= 6 ? lift * 0.6 : 0)} width={130} height={48} rx={6} fill="#2A2D35" stroke={OL} strokeWidth={3} />)}
         <rect x={822} y={560 + 6 * 56 + 22 - lift * 0.6} width={44} height={10} rx={4} fill="#F4C20D" stroke={OL} strokeWidth={2} />
-        {[g.shL[0] - 150, g.shR[0] + 150].map((px, i) => <g key={i}><rect x={px - 16} y={380} width={32} height={hipY - 340} rx={8} fill="#4C5260" stroke={OL} strokeWidth={4} /></g>)}
-        <rect x={g.shL[0] - 160} y={360} width={g.shR[0] - g.shL[0] + 320} height={38} rx={14} fill="#2F333D" stroke={OL} strokeWidth={4} />
+        {[g.shL[0] - 210, g.shR[0] + 210].map((px, i) => <g key={i}><rect x={px - 16} y={380} width={32} height={hipY - 340} rx={8} fill="#4C5260" stroke={OL} strokeWidth={4} /></g>)}
+        <rect x={g.shL[0] - 220} y={360} width={g.shR[0] - g.shL[0] + 440} height={38} rx={14} fill="#2F333D" stroke={OL} strokeWidth={4} />
         <rect x={540 - 110} y={g.shL[1] - 60} width={220} height={hipY - g.shL[1] + 90} rx={34} fill="#3A3F4B" stroke={OL} strokeWidth={5} />
         <rect x={540 - 190} y={hipY + 8} width={380} height={46} rx={20} fill="#2F333D" stroke={OL} strokeWidth={5} />
         <rect x={540 - 18} y={hipY + 54} width={36} height={fl - hipY - 78} fill="#4C5260" stroke={OL} strokeWidth={4} />
         {/* lever arms from the rails to the handles */}
-        {[g.hL, g.hR].map((h, i) => { const px = i ? g.shR[0] + 150 : g.shL[0] - 150; return <g key={i}><line x1={px} y1={h[1] - 6} x2={h[0]} y2={h[1] - 6} stroke={OL} strokeWidth={22} strokeLinecap="round" /><line x1={px} y1={h[1] - 6} x2={h[0]} y2={h[1] - 6} stroke="#6B7180" strokeWidth={12} strokeLinecap="round" /></g>; })}
+        {[g.hL, g.hR].map((h, i) => { const px = i ? g.shR[0] + 210 : g.shL[0] - 210; return <g key={i}><line x1={px} y1={h[1] - 6} x2={h[0]} y2={h[1] - 6} stroke={OL} strokeWidth={22} strokeLinecap="round" /><line x1={px} y1={h[1] - 6} x2={h[0]} y2={h[1] - 6} stroke="#6B7180" strokeWidth={12} strokeLinecap="round" /></g>; })}
       </svg>
       <AlexF x={x} y={y} s={s} handL={hl} handR={hr} crouch={crouch} mood={u > 0.5 ? 'strain' : 'flat'} fists />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>

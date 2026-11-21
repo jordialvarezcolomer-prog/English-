@@ -150,8 +150,9 @@ export const Triangle: React.FC<{apex: V; ang: number; s: number}> = ({apex, ang
 export const Grip: React.FC<{p: V; ang: number; s: number; thumb?: 1 | -1; open?: number}> = ({p, ang, s, thumb = 1}) => {
   const SKC = '#F3B78E', SKD = '#E2A07A';
   return (
-    <g transform={`translate(${p[0]} ${p[1]}) rotate(${ang}) scale(${s})`} stroke={OL} strokeLinejoin="round" strokeLinecap="round">
-      {/* back of the hand resting on top of the bar */}
+    // y is mirrored: the back of the hand sits on the side AWAY from the pulley (cable pulls the bar into the fingers), fingers wrap round the pulley side
+    <g transform={`translate(${p[0]} ${p[1]}) rotate(${ang}) scale(${s} ${-s})`} stroke={OL} strokeLinejoin="round" strokeLinecap="round">
+      {/* back of the hand */}
       <rect x={-27} y={-44} width={54} height={34} rx={14} fill={SKC} strokeWidth={4.4} />
       <path d="M-12 -40 V-22 M0 -40 V-22 M12 -40 V-22" fill="none" strokeWidth={2.4} opacity={0.5} />
       {/* four fingers wrapping around the front of the bar */}
