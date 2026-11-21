@@ -10,7 +10,7 @@ export const FONT = 'Montserrat, "DejaVu Sans", sans-serif';
 export type V = [number, number];
 
 /** Two-bone IK: returns the middle joint (knee/elbow). bend=+1 puts it on the "forward-up" side for a limb pointing down-right. */
-const ik = (a: V, b: V, l1: number, l2: number, bend: 1 | -1): V => {
+export const ik = (a: V, b: V, l1: number, l2: number, bend: 1 | -1): V => {
   const dx = b[0] - a[0], dy = b[1] - a[1];
   let d = Math.hypot(dx, dy) || 1;
   const dd = Math.min(d, l1 + l2 - 0.5);
@@ -117,9 +117,9 @@ const Mohawk: React.FC<{cx: number; cy: number; a0: number; a1: number; r: numbe
   for (let i = n * 2; i >= 0; i--) { const a = ((a0 + ((a1 - a0) * i) / (n * 2)) * Math.PI) / 180; inner.push(`${cx + (r - 6) * Math.cos(a)},${cy - (r - 6) * Math.sin(a)}`); }
   return <polygon points={[...outer, ...inner].join(' ')} fill={MOH} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />;
 };
-type PersonProps = {phones?: boolean; whistle?: boolean; scroll?: number; plate?: number; pose: Pose; shirt?: string; hair?: Hair; beard?: boolean; flip?: boolean; x?: number; y?: number; s?: number; mood?: 'smile' | 'flat' | 'worry' | 'strain'; phone?: boolean; stopwatch?: boolean; opacity?: number; rot?: number; glowThigh?: number; thighColor?: string; sweat?: number; cap?: boolean; tired?: number; blink?: number};
+type PersonProps = {phones?: boolean; whistle?: boolean; scroll?: number; plate?: number; pose: Pose; shirt?: string; hair?: Hair; beard?: boolean; flip?: boolean; x?: number; y?: number; s?: number; mood?: 'smile' | 'flat' | 'worry' | 'strain'; phone?: boolean; stopwatch?: boolean; opacity?: number; rot?: number; glowThigh?: number; thighColor?: string; sweat?: number; cap?: boolean; tired?: number; blink?: number; fists?: boolean};
 /** Side-view (facing right) outlined cartoon athlete in a 400x600 box. */
-export const Person: React.FC<PersonProps> = ({phones, whistle = false, scroll = -1, plate = 0, pose, shirt = G.blue, hair = 'short', beard = false, flip = false, x = 0, y = 0, s = 1, mood = 'flat', phone = false, stopwatch = false, opacity = 1, rot = 0, glowThigh = 0, thighColor = G.green, sweat = 0, cap = false, tired = 0, blink = 0}) => {
+export const Person: React.FC<PersonProps> = ({phones, whistle = false, scroll = -1, plate = 0, pose, shirt = G.blue, hair = 'short', beard = false, flip = false, x = 0, y = 0, s = 1, mood = 'flat', phone = false, stopwatch = false, opacity = 1, rot = 0, glowThigh = 0, thighColor = G.green, sweat = 0, cap = false, tired = 0, blink = 0, fists}) => {
   if (cap) hair = 'mohawk';
   const hp = phones ?? shirt === G.blue;
   const lb = pose.legBend ?? 1, ab = pose.armBend ?? -1;
@@ -144,7 +144,7 @@ export const Person: React.FC<PersonProps> = ({phones, whistle = false, scroll =
   const arm = (elb: V, hand: V, far: boolean) => (
     <g>
       <Limb a={pose.sh} b={elb} wa={33} wb={25} c={far ? skD : SK} /><Limb a={elb} b={hand} wa={25} wb={17} bulge={0.12} c={far ? skD : SK} />
-      <Hand p={hand} from={elb} c={far ? skD : SK} fist={plate > 0 || phone || stopwatch} side={1} r={0.95} />
+      <Hand p={hand} from={elb} c={far ? skD : SK} fist={fists ?? (plate > 0 || phone || stopwatch)} side={1} r={0.95} />
       <Limb a={pose.sh} b={lp(pose.sh, elb, 0.55)} wa={42} wb={37} c={far ? shirtD : shirt} />
     </g>
   );
@@ -244,7 +244,7 @@ export const BG: React.FC<{dark?: boolean}> = ({dark}) => (
 export const Floor: React.FC<{y: number}> = ({y}) => <div style={{position: 'absolute', left: 0, right: 0, top: y, height: 6, background: '#B9B9B5'}} />;
 
 
-const ik2 = (a: V, b: V, l1: number, l2: number): V => { const A = ik(a, b, l1, l2, 1), B = ik(a, b, l1, l2, -1); return Math.abs(A[0] - 200) >= Math.abs(B[0] - 200) ? A : B; };
+export const ik2 = (a: V, b: V, l1: number, l2: number): V => { const A = ik(a, b, l1, l2, 1), B = ik(a, b, l1, l2, -1); return Math.abs(A[0] - 200) >= Math.abs(B[0] - 200) ? A : B; };
 type FrontProps = {phones?: boolean; bicep?: number; pumpGlow?: number; curl?: number; point?: boolean; crouch?: number; barbell?: boolean; x?: number; y?: number; s?: number; shirt?: string; hair?: Hair; beard?: boolean; mood?: 'smile' | 'flat' | 'worry' | 'strain'; handL?: V; handR?: V; stopwatch?: boolean; glow?: number; glowColor?: string; opacity?: number; sweat?: number; cap?: boolean; tired?: number; blink?: number; yawn?: number; look?: number; pale?: number; girth?: number; headTilt?: number; headDy?: number; fists?: boolean; tank?: boolean};
 /** Front-facing outlined cartoon athlete (400x600 box, shoe soles at y~570). V-taper torso, tapered limbs with knees/elbows, real hands and sneakers. girth>1 = heavier. */
 export const FrontPerson: React.FC<FrontProps> = ({phones, bicep = 0, pumpGlow = 0, curl = -1, point = false, crouch = 0, barbell = false, x = 0, y = 0, s = 1, shirt = G.blue, hair = 'short', beard = false, mood = 'flat', handL = [127, 382], handR = [273, 382], stopwatch = false, glow = 0, glowColor = G.green, opacity = 1, sweat = 0, cap = false, tired = 0, blink = 0, yawn = 0, look = 1, pale = 0, girth = 1, headTilt = 0, headDy = 0, fists, tank = false}) => {
