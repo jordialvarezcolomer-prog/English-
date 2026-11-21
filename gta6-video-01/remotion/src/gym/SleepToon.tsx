@@ -130,7 +130,7 @@ const Hook: React.FC = () => {
       {panel(0)}{panel(1)}
       <div style={{position: 'absolute', left: 536, top: 120, width: 8, height: 1130, background: G.ink}} />
       {stamp(0, 0.35)}{stamp(1, 1.15)}
-      <Ring at={2.15} cx={810} cy={525} rx={130} ry={52} />
+      <Ring at={2.15} cx={810} cy={518} rx={132} ry={46} />
       {t > 2.7 && <Pop at={Math.round(2.7 * FPS)} style={{left: 700, top: 405}}><div style={{fontFamily: FONT, fontWeight: 900, fontSize: 96, color: G.red}}>?</div></Pop>}
     </AbsoluteFill>
   );
@@ -498,7 +498,7 @@ const Faces: React.FC = () => {
       <Pop at={4} style={{left: 90, top: 190}}><Pill text="8 H" color={G.blue} size={36} bg="#fff" /></Pop>
       <Pop at={8} style={{left: 640, top: 190}}><Pill text="5 H" color={G.red} size={36} bg="#fff" /></Pop>
       <Callout at={0.35} text="PALER SKIN" x={810} y={800} tx={890} ty={470} />
-      <Ring at={1.5} cx={810} cy={525} rx={135} ry={54} />
+      <Ring at={1.5} cx={810} cy={518} rx={135} ry={46} />
       <Callout at={1.6} text="DARKER CIRCLES" x={810} y={920} tx={780} ty={555} />
       <Callout at={2.9} text="DROOPY EYELIDS" x={810} y={1040} tx={840} ty={505} />
       <Pop at={Math.round(0.5 * FPS)} style={{left: 160, top: 880}}><Pill text="FRESH ✓" color={G.green} size={40} bg="#fff" /></Pop>

@@ -56,7 +56,7 @@ const Eye: React.FC<{cx: number; cy: number; lid: number; look?: number; strain?
   const h = 23 * Math.min(1, Math.max(0, lid));
   return (
     <g>
-      {tired > 0 && <ellipse cx={cx + 1} cy={cy + 15} rx={13} ry={5.5} fill="#7B5A9E" opacity={0.55 * tired} />}
+      {tired > 0 && <ellipse cx={cx + 1} cy={cy + 15} rx={15} ry={8} fill="#6A4890" opacity={0.85 * tired} />}
       <clipPath id={id}><ellipse cx={cx} cy={cy} rx={9} ry={11} /></clipPath>
       <ellipse cx={cx} cy={cy} rx={9} ry={11} fill="#fff" />
       <g clipPath={`url(#${id})`}>
