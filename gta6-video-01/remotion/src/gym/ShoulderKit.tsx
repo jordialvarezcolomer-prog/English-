@@ -8,8 +8,8 @@ const rad = (d: number) => (d * Math.PI) / 180;
 
 /* ---------- geometry helpers (mirror kit.tsx so overlays line up with the characters) ---------- */
 export const frontGeom = (o: {x: number; y: number; s: number; handL: V; handR: V; crouch?: number}) => {
-  const dy = (o.crouch ?? 0) * 62, P = (v: V): V => [o.x + v[0] * o.s, o.y + v[1] * o.s];
-  const shL: V = [140, 226 + dy], shR: V = [260, 226 + dy];
+  const dy = (o.crouch ?? 0) * 62, P = (v: V): V => [o.x + v[0] * o.s, o.y + (v[1] + dy) * o.s];
+  const shL: V = [140, 226], shR: V = [260, 226];
   return {shL: P(shL), shR: P(shR), eL: P(ik2(shL, o.handL, 82, 75)), eR: P(ik2(shR, o.handR, 82, 75)), hL: P(o.handL), hR: P(o.handR), head: P([200, 140 + dy * 0]), P};
 };
 export const sideGeom = (o: {x: number; y: number; s: number; sh: V; handL: V; handR: V; head: V; flip?: boolean; armBend?: 1 | -1}) => {
@@ -19,7 +19,7 @@ export const sideGeom = (o: {x: number; y: number; s: number; sh: V; handL: V; h
 };
 
 /* ---------- golden deltoid overlay ---------- */
-const capPath = (s: number, L: number) => `M${-30 * s} 0 C${-30 * s} ${-46 * s} ${L * 0.45} ${-46 * s} ${L} ${-3 * s} C${L} ${3 * s} ${L} ${3 * s} ${L} ${3 * s} C${L * 0.45} ${46 * s} ${-30 * s} ${46 * s} ${-30 * s} 0 Z`;
+const capPath = (s: number, L: number) => `M${-22 * s} 0 C${-22 * s} ${-34 * s} ${L * 0.45} ${-34 * s} ${L} ${-2 * s} L${L} ${2 * s} C${L * 0.45} ${34 * s} ${-22 * s} ${34 * s} ${-22 * s} 0 Z`;
 const Fibres: React.FC<{s: number; L: number; on: boolean; act: number}> = ({s, L, on, act}) => (
   <g fill="none" strokeLinecap="round">
     {[0, 1, 2, 3, 4, 5, 6].map((i) => { const y1 = (-30 + i * 10) * s, y2 = (-22 + i * 7.3) * s; return <path key={i} d={`M${-26 * s} ${y1 * 0.85} Q${L * 0.35} ${(y1 + y2) / 2 * (1.12 + 0.1 * act)} ${L - 6 * s} ${y2}`} stroke={on ? GOLD_D : GOLD} strokeWidth={on ? 3 : 2.4} opacity={on ? 0.85 : 0.28} />; })}
@@ -28,13 +28,14 @@ const Fibres: React.FC<{s: number; L: number; on: boolean; act: number}> = ({s, 
 );
 /** Front/back view: one cap per shoulder, wrapping the joint and tapering down the upper arm. act 0..1 lights it up with pulsing rings. */
 export const DeltCap: React.FC<{p: V; q: V; s: number; act: number; t: number; rear?: boolean}> = ({p, q, s, act, t, rear}) => {
-  const ang = (Math.atan2(q[1] - p[1], q[0] - p[0]) * 180) / Math.PI, L = 74 * s, on = act > 0.05;
+  const ang = (Math.atan2(q[1] - p[1], q[0] - p[0]) * 180) / Math.PI, L = 54 * s, on = act > 0.05;
   const ca = Math.cos((ang * Math.PI) / 180), sa = Math.sin((ang * Math.PI) / 180), c: V = [p[0] + ca * L * 0.35, p[1] + sa * L * 0.35];
+  if (!on) return null; // the muscle only appears once it is working
   return (
     <g>
-      {on && <circle cx={c[0]} cy={c[1]} r={(110 + 14 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={act} />}
-      {on && <circle cx={p[0]} cy={p[1] + 6 * s} r={(86 + 4 * Math.sin(t * 7)) * s} fill="none" stroke="#C0763A" strokeWidth={5} opacity={0.85 * act} />}
-      {act > 0.3 && [0, 1].map((k) => { const ph = (t * 1.8 + k * 0.5) % 1; return <circle key={k} cx={c[0]} cy={c[1]} r={(36 + 74 * ph) * s} fill="none" stroke={GOLD} strokeWidth={5 * (1 - ph)} opacity={0.9 * (1 - ph) * act} />; })}
+      <circle cx={c[0]} cy={c[1]} r={(62 + 6 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={act} />
+      <circle cx={p[0]} cy={p[1] + 4 * s} r={(52 + 3 * Math.sin(t * 7)) * s} fill="none" stroke="#C0763A" strokeWidth={4} opacity={0.85 * act} />
+      {act > 0.3 && [0, 1].map((k) => { const ph = (t * 1.8 + k * 0.5) % 1; return <circle key={k} cx={c[0]} cy={c[1]} r={(26 + 40 * ph) * s} fill="none" stroke={GOLD} strokeWidth={4 * (1 - ph)} opacity={0.9 * (1 - ph) * act} />; })}
       <g transform={`translate(${p[0]} ${p[1]}) rotate(${ang})`}>
         <path d={capPath(s, L)} fill={GOLD} fillOpacity={on ? 0.5 + 0.5 * act : 0.05} stroke={on ? OL : GOLD_D} strokeWidth={on ? 3.6 : 3} strokeOpacity={on ? 1 : 0.35} strokeLinejoin="round" />
         <Fibres s={s} L={L} on={on} act={act} />
@@ -47,14 +48,15 @@ export const DeltCap: React.FC<{p: V; q: V; s: number; act: number; t: number; r
 /** Profile view: same cap, split into front / side / rear heads; `acts` = [front, side, rear]. dir = +1 facing right. */
 export const DeltSide: React.FC<{sh: V; el: V; s: number; acts: [number, number, number]; t: number; dir: 1 | -1}> = ({sh, el, s, acts, t, dir}) => {
   const id = useId().replace(/:/g, '');
-  const ang = (Math.atan2(el[1] - sh[1], el[0] - sh[0]) * 180) / Math.PI, L = 70 * s, any = Math.max(...acts);
+  if (Math.max(...acts) <= 0.05) return null;
+  const ang = (Math.atan2(el[1] - sh[1], el[0] - sh[0]) * 180) / Math.PI, L = 52 * s, any = Math.max(...acts);
   const ca = Math.cos((ang * Math.PI) / 180), sa = Math.sin((ang * Math.PI) / 180), c: V = [sh[0] + ca * L * 0.35, sh[1] + sa * L * 0.35];
   const fy = dir > 0 ? -1 : 1; // sign of the "front" side in the arm's local frame (arm hanging down, facing right → front is local -y)
   const bands: [number, number][] = [[10, 70], [-10, 10], [-70, -10]]; // front, side, rear
   return (
     <g>
-      {any > 0.05 && <circle cx={c[0]} cy={c[1]} r={(105 + 12 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={any} />}
-      {any > 0.3 && [0, 1].map((k) => { const ph = (t * 1.8 + k * 0.5) % 1; return <circle key={k} cx={c[0]} cy={c[1]} r={(34 + 74 * ph) * s} fill="none" stroke={GOLD} strokeWidth={5 * (1 - ph)} opacity={0.9 * (1 - ph) * any} />; })}
+      {any > 0.05 && <circle cx={c[0]} cy={c[1]} r={(60 + 6 * Math.sin(t * 9)) * s} fill="url(#goldGlow)" opacity={any} />}
+      {any > 0.3 && [0, 1].map((k) => { const ph = (t * 1.8 + k * 0.5) % 1; return <circle key={k} cx={c[0]} cy={c[1]} r={(24 + 40 * ph) * s} fill="none" stroke={GOLD} strokeWidth={4 * (1 - ph)} opacity={0.9 * (1 - ph) * any} />; })}
       <g transform={`translate(${sh[0]} ${sh[1]}) rotate(${ang})`}>
         <clipPath id={id}><path d={capPath(s, L)} /></clipPath>
         {bands.map(([a, b], i) => { const lo = Math.min(a * fy, b * fy), hi = Math.max(a * fy, b * fy); return <rect key={i} clipPath={`url(#${id})`} x={-40 * s} y={lo * s} width={L + 50 * s} height={(hi - lo) * s} fill={GOLD} opacity={acts[i] > 0.05 ? 0.5 + 0.5 * acts[i] : 0.06} />; })}
@@ -142,6 +144,28 @@ export const Triangle: React.FC<{apex: V; ang: number; s: number}> = ({apex, ang
     <circle r={14} fill="#C9CDD4" stroke={OL} strokeWidth={5} /><circle r={5} fill="#2F333D" />
   </g>
 );
+
+/* ---------- hand wrapped around a handle ---------- */
+/** Fingers curl over the front of the bar, thumb locks behind it. p = grip point on the bar centre, ang = bar rotation (deg), s = triangle scale. */
+export const Grip: React.FC<{p: V; ang: number; s: number; thumb?: 1 | -1; open?: number}> = ({p, ang, s, thumb = 1}) => {
+  const SKC = '#F3B78E', SKD = '#E2A07A';
+  return (
+    <g transform={`translate(${p[0]} ${p[1]}) rotate(${ang}) scale(${s})`} stroke={OL} strokeLinejoin="round" strokeLinecap="round">
+      {/* back of the hand resting on top of the bar */}
+      <rect x={-27} y={-44} width={54} height={34} rx={14} fill={SKC} strokeWidth={4.4} />
+      <path d="M-12 -40 V-22 M0 -40 V-22 M12 -40 V-22" fill="none" strokeWidth={2.4} opacity={0.5} />
+      {/* four fingers wrapping around the front of the bar */}
+      {[-19.5, -6.5, 6.5, 19.5].map((x, i) => (
+        <g key={i}>
+          <rect x={x - 6.4} y={-20} width={12.8} height={42 - Math.abs(i - 1.5) * 3} rx={6.4} fill={SKC} strokeWidth={3.6} />
+          <path d={`M${x - 3.8} 6 H${x + 3.8}`} fill="none" strokeWidth={2} opacity={0.55} />
+        </g>
+      ))}
+      {/* thumb locked behind the bar on the inner side */}
+      <rect x={thumb > 0 ? -41 : 27} y={-26} width={14} height={30} rx={7} fill={SKD} strokeWidth={3.6} transform={`rotate(${thumb * -18} ${thumb > 0 ? -34 : 34} -10)`} />
+    </g>
+  );
+};
 
 /* ---------- HUD ---------- */
 export const BlackTag: React.FC<{text: string; size?: number; dim?: boolean}> = ({text, size = 24, dim}) => (

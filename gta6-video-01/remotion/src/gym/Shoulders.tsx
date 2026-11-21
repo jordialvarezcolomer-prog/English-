@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Easing, Sequence, interpolate, random, staticFile, useCurrentFrame} from 'remotion';
 import {BG, FONT, FrontPerson, G, OL, Person, Pose, V} from './kit';
-import {Arrow, Badge, BlackTag, Cable, DeltCap, DeltPill, DeltSide, GOLD, GOLD_D, GOLD_L, GoldDefs, Inset, Machine, RedTag, Sparks, Strain, Triangle, frontGeom, machinePulley, sideGeom, triFrame, triGrip} from './ShoulderKit';
+import {Arrow, Badge, BlackTag, Cable, DeltCap, DeltPill, DeltSide, GOLD, GOLD_D, GOLD_L, GoldDefs, Grip, Inset, Machine, RedTag, Sparks, Strain, Triangle, frontGeom, machinePulley, sideGeom, triFrame, triGrip} from './ShoulderKit';
 import {FPS} from '../theme';
 import SEG from './ep03_segments.json';
 
@@ -10,8 +10,6 @@ import SEG from './ep03_segments.json';
    Branding is neutral: edit SERIES / HANDLE / GUIDE below. Plan: docs/PLAN_shoulders_uk.md
    ===================================================================================== */
 export const SERIES = 'GYM FACTS · Nº 01';
-export const HANDLE = '@yourhandle';
-export const GUIDE = {title: 'BUILD YOUR ROUTINE', sub: 'THE SMART WAY', pages: 15, sources: 63};
 
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 const eo = Easing.out(Easing.cubic), eio = Easing.inOut(Easing.cubic);
@@ -21,11 +19,11 @@ const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 const lerpV = (a: V, b: V, k: number): V => [lerp(a[0], b[0], k), lerp(a[1], b[1], k)];
 const sec = SEG as {start: number; end: number; text: string}[];
 const T = (i: number) => sec[i].start;
-const END = sec[16].end + 3.4;
+const END = sec[21].end + 1.8;
 export const SHOULDERS_TOTAL = Math.round(END * FPS);
 const B = {
   hook: [0, T(1)], nodumb: [T(1), T(2)], grid: [T(2), T(4)], blue: [T(4), T(5) + 2.3], press: [T(5) + 2.3, T(6)],
-  ex1: [T(6), T(9)], ex2: [T(9), T(11)], ex3: [T(11), T(12)], ex4: [T(12), T(13)], sum: [T(13), T(14)], mate: [T(14), T(15)], guide: [T(15), T(16)], outro: [T(16), END],
+  ex1: [T(6), T(9)], ex2: [T(9), T(11)], ex3: [T(11), T(12)], ex4: [T(12), T(13)], sum: [T(13), T(14)], mate: [T(14), T(15)], grow: [T(15), T(21)], end: [T(21), END],
 } as const;
 type BK = keyof typeof B;
 const FLOOR = 1290;
@@ -65,9 +63,9 @@ const Floor: React.FC<{y?: number}> = ({y = FLOOR}) => <div style={{position: 'a
 /* ---------------- character helpers ---------------- */
 const ALEX = {shirt: BLUE, hair: 'short' as const};
 /** The hero: red mohawk, beard, royal-blue tee. Breathes a little so he is never frozen. */
-const AlexF: React.FC<{x: number; y: number; s: number; handL: V; handR: V; mood?: 'smile' | 'flat' | 'worry' | 'strain'; crouch?: number; fists?: boolean; blink?: number; sweat?: number}> = ({x, y, s, handL, handR, mood = 'flat', crouch, fists, blink, sweat}) => {
+const AlexF: React.FC<{x: number; y: number; s: number; handL: V; handR: V; mood?: 'smile' | 'flat' | 'worry' | 'strain'; crouch?: number; fists?: boolean; blink?: number; sweat?: number; straight?: 'L' | 'R' | 'B'; vtaper?: number; bicep?: number; pump?: number; point?: boolean; girth?: number}> = ({x, y, s, handL, handR, mood = 'flat', crouch, fists, blink, sweat, straight, vtaper, bicep, pump, point, girth}) => {
   const t = useT();
-  return <FrontPerson shirt={ALEX.shirt} cap beard phones={false} mood={mood} s={s} x={x} y={y} handL={handL} handR={handR} crouch={(crouch ?? 0) + 0.02 * Math.sin(t * 3.4)} fists={fists} blink={blink} sweat={sweat} />;
+  return <FrontPerson shirt={ALEX.shirt} cap beard phones={false} mood={mood} s={s} x={x} y={y} handL={handL} handR={handR} crouch={(crouch ?? 0) + 0.02 * Math.sin(t * 3.4)} fists={fists} blink={blink} sweat={sweat} straight={straight} vtaper={vtaper} bicep={bicep} pumpGlow={pump} point={point} girth={girth} />;
 };
 /** Back of the head: shaved scalp + red crest (no face). */
 const BackHead: React.FC<{head: V; s: number}> = ({head, s}) => (
@@ -106,10 +104,10 @@ const Rig1: React.FC<{u: number; t: number; strain?: number; delt?: number; arro
     <>
       <Machine x={30} floor={FLOOR} top={420} carriageY={FLOOR - 90} faceRight lift={Math.max(0, (len - len0) * 0.45)} t={t} glow={act > 0.6 ? 0.8 : 0} />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Cable a={pulley} b={apex} tension={tension} t={t} /></svg>
-      <AlexF x={x} y={y} s={s} handL={handL} handR={handR} mood={mood ?? (u > 0.35 ? 'strain' : 'flat')} fists blink={u > 0.35 ? 0 : undefined} />
+      <AlexF x={x} y={y} s={s} handL={handL} handR={handR} straight="R" mood={mood ?? (u > 0.35 ? 'strain' : 'flat')} fists blink={u > 0.35 ? 0 : undefined} />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         <DeltCap p={g.shL} q={g.eL} s={s} act={both ? act : 0} t={t} /><DeltCap p={g.shR} q={g.eR} s={s} act={act} t={t} />
-        <Triangle apex={apex} ang={ang} s={0.8} />
+        <Triangle apex={apex} ang={ang} s={0.8} /><Grip p={g.hR} ang={ang} s={0.8} thumb={-1} />
         {strain > 0 && <Strain p={g.hR} t={t} r={strain} />}
         {u > 0.82 && <Sparks p={g.hR} t={t} n={8} />}
         {arrow && <Arrow a={[470, 1236]} b={[400, 1190]} />}
@@ -126,8 +124,10 @@ const Rig2: React.FC<{u: number; t: number; strain?: number; delt?: number}> = (
   const P = (v: V): V => [x0 + (400 - v[0]) * s, y0 + v[1] * s], inv = (p: V): V => [400 - (p[0] - x0) / s, (p[1] - y0) / s];
   const pulley = machinePulley(30, 230, y0 + 158 * s, true);
   const c = lerpV(P([335, 196]), P([268, 168]), u);
-  const ts = 0.8, h = holdTri2(pulley, c, ts, 32);
-  const pose: Pose = {...SIDE_STAND, handL: reachClamp(SIDE_STAND.sh, inv(h.g1)), handR: reachClamp(SIDE_STAND.sh, inv(h.g2)), head: [214 - 4 * u, 160]};
+  const ts = 0.8, h0 = holdTri2(pulley, c, ts, 32);
+  const hl = reachClamp(SIDE_STAND.sh, inv(h0.g1)), hr = reachClamp(SIDE_STAND.sh, inv(h0.g2));
+  const cc = lerpV(P(hl), P(hr), 0.5), h = holdTri2(pulley, cc, ts, 32); // re-seat the triangle on the (reach-limited) hands
+  const pose: Pose = {...SIDE_STAND, handL: hl, handR: hr, head: [214 - 4 * u, 160]};
   const geo = sideGeom({x: x0, y: y0, s, sh: pose.sh, handL: pose.handL, handR: pose.handR, head: pose.head, flip: true});
   const act = delt ?? u, len = Math.hypot(h.apex[0] - pulley[0], h.apex[1] - pulley[1]);
   return (
@@ -137,8 +137,8 @@ const Rig2: React.FC<{u: number; t: number; strain?: number; delt?: number}> = (
       <Person pose={pose} shirt={BLUE} cap beard phones={false} flip s={s} x={x0} y={y0} mood={u > 0.3 ? 'strain' : 'flat'} fists />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         <DeltSide sh={geo.sh} el={geo.eL} s={s} acts={[0.1 * act, 0.5 * act, act]} t={t} dir={-1} />
-        <Triangle apex={h.apex} ang={h.ang} s={ts} />
-        {strain > 0 && <Strain p={c} t={t} r={strain} />}
+        <Triangle apex={h.apex} ang={h.ang} s={ts} /><Grip p={h.g1} ang={h.ang} s={ts} thumb={1} /><Grip p={h.g2} ang={h.ang} s={ts} thumb={-1} />
+        {strain > 0 && <Strain p={cc} t={t} r={strain} />}
       </svg>
     </>
   );
@@ -150,19 +150,21 @@ const Rig3: React.FC<{u: number; t: number; strain?: number}> = ({u, t, strain =
   const P = (v: V): V => [x0 + v[0] * s, y0 + v[1] * s], inv = (p: V): V => [(p[0] - x0) / s, (p[1] - y0) / s];
   const pulley = machinePulley(30, 230, FLOOR - 90, true);
   const c = lerpV(P([262, 338]), P([336, 172]), u);
-  const ts = 0.8, h = holdTri2(pulley, c, ts, 32);
-  const pose: Pose = {...SIDE_STAND, handL: reachClamp(SIDE_STAND.sh, inv(h.g1)), handR: reachClamp(SIDE_STAND.sh, inv(h.g2)), head: [214, 160]};
+  const ts = 0.8, h0 = holdTri2(pulley, c, ts, 32);
+  const hl = reachClamp(SIDE_STAND.sh, inv(h0.g1), 140), hr = reachClamp(SIDE_STAND.sh, inv(h0.g2), 140);
+  const cc = lerpV(P(hl), P(hr), 0.5), h = holdTri2(pulley, cc, ts, 32);
+  const pose: Pose = {...SIDE_STAND, handL: hl, handR: hr, head: [214, 160]};
   const geo = sideGeom({x: x0, y: y0, s, sh: pose.sh, handL: pose.handL, handR: pose.handR, head: pose.head});
   const len = Math.hypot(h.apex[0] - pulley[0], h.apex[1] - pulley[1]);
   return (
     <>
       <Machine x={30} floor={FLOOR} top={420} carriageY={FLOOR - 90} faceRight lift={Math.max(0, (len - 470) * 0.45)} t={t} glow={0.3 + 0.5 * u} />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Cable a={pulley} b={h.apex} tension={0.25 + 0.75 * u} t={t} /></svg>
-      <Person pose={pose} shirt={BLUE} cap beard phones={false} s={s} x={x0} y={y0} mood={u > 0.4 ? 'strain' : 'flat'} fists />
+      <Person pose={pose} shirt={BLUE} cap beard phones={false} s={s} x={x0} y={y0} mood={u > 0.4 ? 'strain' : 'flat'} fists straightArm />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         <DeltSide sh={geo.sh} el={geo.eL} s={s} acts={[u, 0.4 * u, 0]} t={t} dir={1} />
-        <Triangle apex={h.apex} ang={h.ang} s={ts} />
-        {strain > 0 && <Strain p={c} t={t} r={strain} />}
+        <Triangle apex={h.apex} ang={h.ang} s={ts} /><Grip p={h.g1} ang={h.ang} s={ts} thumb={1} /><Grip p={h.g2} ang={h.ang} s={ts} thumb={-1} />
+        {strain > 0 && <Strain p={cc} t={t} r={strain} />}
       </svg>
     </>
   );
@@ -173,7 +175,8 @@ const Rig4: React.FC<{phase: 'A' | 'B' | 'C'; u: number; t: number; strain?: num
   const s = 1.4;
   if (phase !== 'C') {
     const x = 360, y = FLOOR - 572 * s;
-    const handR: V = phase === 'A' ? [273, 382] : lerpV([273, 382], [152, 336], u), handL: V = [127, 382];
+    const phiB = (lerp(14, -58, u) * Math.PI) / 180;
+    const handR: V = phase === 'A' ? [260 + 155 * Math.sin((14 * Math.PI) / 180), 226 + 155 * Math.cos((14 * Math.PI) / 180)] : [260 + 155 * Math.sin(phiB), 226 + 155 * Math.cos(phiB)], handL: V = [127, 382];
     const g = frontGeom({x, y, s, handL, handR});
     const pulley = machinePulley(30, 230, FLOOR - 90, true);
     const {apex, ang} = holdTri(pulley, g.hR, -40, 0.8);
@@ -181,10 +184,10 @@ const Rig4: React.FC<{phase: 'A' | 'B' | 'C'; u: number; t: number; strain?: num
       <>
         <Machine x={30} floor={FLOOR} top={420} carriageY={FLOOR - 90} faceRight lift={phase === 'B' ? 6 + 20 * u : 0} t={t} />
         <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Cable a={pulley} b={apex} tension={phase === 'B' ? 0.6 : 0.2} t={t} /></svg>
-        <AlexF x={x} y={y} s={s} handL={handL} handR={handR} mood={phase === 'B' ? 'strain' : 'flat'} fists />
+        <AlexF x={x} y={y} s={s} handL={handL} handR={handR} straight="R" mood={phase === 'B' ? 'strain' : 'flat'} fists />
         <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
           <DeltCap p={g.shL} q={g.eL} s={s} act={0} t={t} /><DeltCap p={g.shR} q={g.eR} s={s} act={phase === 'B' ? 0.5 : 0} t={t} />
-          <Triangle apex={apex} ang={ang} s={0.8} />
+          <Triangle apex={apex} ang={ang} s={0.8} /><Grip p={g.hR} ang={ang} s={0.8} thumb={-1} />
           {strain > 0 && <Strain p={g.hR} t={t} r={strain} />}
         </svg>
       </>
@@ -203,14 +206,14 @@ const Rig4: React.FC<{phase: 'A' | 'B' | 'C'; u: number; t: number; strain?: num
     <>
       <Machine x={780} floor={FLOOR} top={420} carriageY={FLOOR - 90} faceRight={false} lift={Math.max(0, (len - 380) * 0.45)} t={t} glow={u > 0.5 ? 0.8 : 0} />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Cable a={pulley} b={apex} tension={0.25 + 0.75 * u} t={t} /></svg>
-      <AlexF x={x} y={y} s={s} handL={handL} handR={handR} fists />
+      <AlexF x={x} y={y} s={s} handL={handL} handR={handR} straight="L" fists />
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         {/* back of the head + collar: hide the face and neckline */}
         <BackHead head={head} s={s} />
         
         <path d={`M${g.P([184, 205])[0]} ${g.P([184, 205])[1]} Q${g.P([200, 214])[0]} ${g.P([200, 214])[1]} ${g.P([216, 205])[0]} ${g.P([216, 205])[1]}`} fill="none" stroke={BLUE} strokeWidth={8} />
         <DeltCap p={g.shL} q={g.eL} s={s} act={u} t={t} rear /><DeltCap p={g.shR} q={g.eR} s={s} act={0} t={t} rear />
-        <Triangle apex={apex} ang={ang} s={0.8} />
+        <Triangle apex={apex} ang={ang} s={0.8} /><Grip p={g.hL} ang={ang} s={0.8} thumb={1} />
         {strain > 0 && <Strain p={g.hL} t={t} r={strain} />}
       </svg>
     </>
@@ -242,7 +245,7 @@ const Hook: React.FC = () => {
       <div style={{position: 'absolute', inset: 0, opacity: 1 - toTri}}>
         <Zoom z={zoom} fx={fxx} fy={fyy} cy={t < 0.5 ? 760 : 900}>
           <Floor />
-          <Rig1 u={arm} t={t} both delt={arm > 0.5 ? Math.max(ig, 0.2) : ig} strain={arm > 0.85 ? 1 : 0} mood={t < 0.5 || (t > 1.3 && t < 2.1 && u > 0.5) ? 'strain' : 'smile'} />
+          <Rig1 u={arm} t={t} both delt={ig} strain={arm > 0.85 ? 1 : 0} mood={t < 0.5 || (t > 1.3 && t < 2.1 && u > 0.5) ? 'strain' : 'smile'} />
         </Zoom>
         <div style={{position: 'absolute', left: 0, right: 0, top: 296, display: 'flex', justifyContent: 'center', transform: `scale(${t < 0.12 ? 1.3 - 0.3 * t / 0.12 : 1})`}}><BlackTag text="FULL SHOULDERS" size={40} /></div>
         {t >= 2.2 && <Pop at={2.2} style={{left: 70, top: 380}}><div style={{background: '#fff', border: '6px solid #17181C', borderRadius: 14, padding: '6px 26px', fontFamily: FONT, fontWeight: 900, fontSize: 84, color: '#17181C', boxShadow: '0 8px 0 rgba(0,0,0,.15)'}}>1 PULLEY</div></Pop>}
@@ -321,55 +324,69 @@ const Grid: React.FC = () => {
   );
 };
 
-/* ---- blueprint: three heads ---- */
-const Blueprint: React.FC<{t: number; hl: number; reveal: number}> = ({t, hl, reveal}) => {
-  const C = '#6CC4FF', pulse = 0.5 + 0.5 * Math.sin(t * 6);
-  const cx = 560, cy = 760; // shoulder joint
-  const fan = (a0: number, a1: number, n: number, gold: boolean, show: number) => (
-    <g opacity={show}>
-      {Array.from({length: n}).map((_, i) => { const a = ((a0 + ((a1 - a0) * i) / (n - 1)) * Math.PI) / 180, r1 = 36, r2 = 190 - Math.abs(i - (n - 1) / 2) * 6; return <line key={i} x1={cx + Math.cos(a) * r1} y1={cy + Math.sin(a) * r1} x2={cx + Math.cos(a) * r2} y2={cy + Math.sin(a) * r2} stroke={gold ? GOLD : C} strokeWidth={gold ? 12 : 9} strokeLinecap="round" opacity={gold ? 1 : 0.8} />; })}
-      <path d={`M${cx + Math.cos((a0 * Math.PI) / 180) * 36} ${cy + Math.sin((a0 * Math.PI) / 180) * 36} L${cx + Math.cos((a0 * Math.PI) / 180) * 190} ${cy + Math.sin((a0 * Math.PI) / 180) * 190} A190 190 0 0 1 ${cx + Math.cos((a1 * Math.PI) / 180) * 190} ${cy + Math.sin((a1 * Math.PI) / 180) * 190} L${cx + Math.cos((a1 * Math.PI) / 180) * 36} ${cy + Math.sin((a1 * Math.PI) / 180) * 36}Z`} fill={gold ? 'rgba(246,185,59,.45)' : 'rgba(80,170,255,.16)'} stroke={gold ? GOLD_L : C} strokeWidth={5} style={{filter: gold ? `drop-shadow(0 0 ${14 + 12 * pulse}px #FFC93C)` : undefined}} />
-    </g>
-  );
+/* ---- the three heads: exploded blueprint ---- */
+const HEADS = [
+  {key: 'front', name: 'FRONT', sub: 'PRESS · FRONT RAISE', a0: -38, a1: 42, col: '#FFC93C', at: 0.9, lx: 800, ly: 900, tx: 720, ty: 830},
+  {key: 'side', name: 'SIDE', sub: 'LATERAL RAISE', a0: -118, a1: -42, col: '#FF8A2A', at: 1.55, lx: 760, ly: 480, tx: 660, ty: 600},
+  {key: 'rear', name: 'REAR', sub: 'FACE PULL · REAR FLY', a0: 140, a1: 222, col: '#FF5A6E', at: 2.2, lx: 150, ly: 760, tx: 380, ty: 800},
+] as const;
+const Blueprint: React.FC<{t: number; focus: number}> = ({t, focus}) => {
+  const C = '#6CC4FF', cx = 540, cy = 790, R0 = 40, R1 = 250;
+  const pulse = 0.5 + 0.5 * Math.sin(t * 6);
+  const wedge = (a0: number, a1: number, r0: number, r1: number) => {
+    const p = (a: number, r: number) => `${cx + Math.cos((a * Math.PI) / 180) * r} ${cy + Math.sin((a * Math.PI) / 180) * r}`;
+    return `M${p(a0, r0)} L${p(a0, r1)} A${r1} ${r1} 0 0 1 ${p(a1, r1)} L${p(a1, r0)} A${r0} ${r0} 0 0 0 ${p(a0, r0)}Z`;
+  };
   return (
     <div style={{position: 'absolute', inset: 0}}>
-      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}>
-        <g style={{filter: 'drop-shadow(0 0 12px #3DA8FF)'}} stroke={C} strokeWidth={8} fill="none" strokeLinecap="round" strokeLinejoin="round">
-          {/* head in profile (facing right) */}
-          <path d="M470 430 Q470 330 560 326 Q652 326 658 410 Q666 440 690 470 Q676 482 664 480 L664 520 Q640 560 594 546 L560 546 L540 560" />
-          <circle cx={604} cy={430} r={22} /><path d="M600 488 Q630 500 654 484" />
-          <path d="M540 560 L540 920" strokeWidth={14} />{Array.from({length: 9}).map((_, i) => <rect key={i} x={522} y={580 + i * 38} width={36} height={24} rx={8} fill="#0F2A55" strokeWidth={5} />)}
-          {/* ribcage */}
-          {Array.from({length: 6}).map((_, i) => <path key={i} d={`M548 ${650 + i * 40} Q660 ${640 + i * 40} ${690 - i * 8} ${700 + i * 42}`} strokeWidth={6} />)}
-          <path d="M530 640 Q440 650 420 740" strokeWidth={10} />
-          {/* shoulder joint + arm */}
-          <circle cx={cx} cy={cy} r={34} fill="#DDF2FF" /><path d={`M${cx} ${cy} L${cx + 20} ${cy + 330}`} strokeWidth={18} /><circle cx={cx + 20} cy={cy + 336} r={22} fill="#DDF2FF" /><path d={`M${cx + 20} ${cy + 336} L${cx + 40} ${cy + 560}`} strokeWidth={13} />
-          <path d="M440 1010 Q540 1060 650 1010 L660 1100 Q540 1140 430 1100Z" strokeWidth={7} />
+      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+        <g style={{filter: 'drop-shadow(0 0 12px #3DA8FF)'}} stroke={C} strokeWidth={8} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
+          {/* head in profile facing right + spine + ribs + clavicle + scapula + humerus */}
+          <path d="M440 330 Q440 220 540 214 Q650 214 656 306 Q666 340 692 372 Q676 384 662 382 L662 430 Q636 476 586 462 L548 462 L526 478" />
+          <circle cx={596} cy={330} r={22} /><path d="M590 392 Q624 404 650 388" />
+          <path d="M520 478 L520 1000" strokeWidth={16} />{Array.from({length: 10}).map((_, i) => <rect key={i} x={500} y={500 + i * 44} width={40} height={28} rx={9} fill="#0F2A55" strokeWidth={5} />)}
+          {Array.from({length: 6}).map((_, i) => <path key={i} d={`M530 ${620 + i * 46} Q650 ${610 + i * 46} ${690 - i * 10} ${690 + i * 48}`} strokeWidth={6} />)}
+          <path d="M520 600 Q420 600 350 690" strokeWidth={10} /><path d="M430 690 Q380 800 430 900 Q500 880 520 780" strokeWidth={7} />
+          <circle cx={cx} cy={cy} r={34} fill="#DDF2FF" /><path d={`M${cx} ${cy} L${cx + 16} ${cy + 360}`} strokeWidth={22} /><circle cx={cx + 16} cy={cy + 366} r={24} fill="#DDF2FF" /><path d={`M${cx + 16} ${cy + 366} L${cx + 40} ${cy + 620}`} strokeWidth={15} />
         </g>
-        {/* three deltoid heads: rear / side / front */}
-        {fan(150, 200, 6, false, interpolate(t, [0.7, 1.0], [0, 1], clamp))}
-        {fan(-20, 20, 6, false, interpolate(t, [1.0, 1.3], [0, 1], clamp))}
-        {fan(55, 105, 6, hl > 0.1, interpolate(t, [0.4, 0.7], [0, 1], clamp))}
+        {HEADS.map((h, i) => {
+          const k = interpolate(t, [h.at, h.at + 0.45], [0, 1], {...clamp, easing: Easing.out(Easing.back(1.8))});
+          if (k <= 0) return null;
+          const lit = focus === 0 ? 1 : focus === 1 ? (i === 0 ? 1 : 0.18) : 0.18;
+          const amid = ((h.a0 + h.a1) / 2 * Math.PI) / 180, out = (focus >= 1 && i === 0 ? 30 : 14) * k;
+          const gold = focus >= 1 && i === 0;
+          return (
+            <g key={h.key} transform={`translate(${Math.cos(amid) * out} ${Math.sin(amid) * out})`} opacity={lit}>
+              <path d={wedge(h.a0, h.a1, R0, R1 * (0.35 + 0.65 * k))} fill={h.col} fillOpacity={gold ? 0.7 + 0.15 * pulse : 0.5} stroke={gold ? '#FFF2B8' : h.col} strokeWidth={gold ? 8 : 5} strokeLinejoin="round" style={{filter: gold ? `drop-shadow(0 0 ${16 + 14 * pulse}px #FFC93C)` : `drop-shadow(0 0 10px ${h.col})`}} />
+              {Array.from({length: 7}).map((_, f) => { const a = ((h.a0 + ((h.a1 - h.a0) * (f + 0.5)) / 7) * Math.PI) / 180; return <line key={f} x1={cx + Math.cos(a) * (R0 + 6)} y1={cy + Math.sin(a) * (R0 + 6)} x2={cx + Math.cos(a) * R1 * (0.3 + 0.62 * k)} y2={cy + Math.sin(a) * R1 * (0.3 + 0.62 * k)} stroke="#fff" strokeWidth={3} opacity={0.55} />; })}
+            </g>
+          );
+        })}
+        {HEADS.map((h) => { const k = interpolate(t, [h.at + 0.2, h.at + 0.55], [0, 1], clamp); return k > 0 ? <g key={'l' + h.key}><line x1={h.lx} y1={h.ly + 40} x2={h.lx + (h.tx - h.lx) * k} y2={h.ly + 40 + (h.ty - h.ly - 40) * k} stroke="#fff" strokeWidth={4} opacity={0.8} /><circle cx={h.tx} cy={h.ty} r={9 * k} fill="#fff" /></g> : null; })}
       </svg>
-      <div style={{position: 'absolute', left: 40, top: 620, opacity: interpolate(t, [0.8, 1.0], [0, 1], clamp)}}><DeltPill text="REAR" /></div>
-      <div style={{position: 'absolute', left: 780, top: 880, opacity: interpolate(t, [0.5, 0.7], [0, 1], clamp)}}><DeltPill text="FRONT" active={hl > 0.1} /></div>
-      <div style={{position: 'absolute', left: 840, top: 700, opacity: interpolate(t, [1.1, 1.3], [0, 1], clamp)}}><DeltPill text="SIDE" /></div>
+      {HEADS.map((h, i) => (
+        <Pop key={h.key} at={h.at + 0.15} style={{left: h.lx - 90, top: h.ly - 24, opacity: focus >= 1 && i > 0 ? 0.35 : 1}}>
+          <div><BlackTag text={h.name} size={34} /><div style={{marginTop: 8, fontFamily: '"DejaVu Sans Mono", monospace', fontWeight: 700, fontSize: 18, letterSpacing: 2, color: '#BFE3FF'}}>{h.sub}</div></div>
+        </Pop>
+      ))}
     </div>
   );
 };
 const Blue: React.FC = () => {
   const t = useT(); const s5 = T(5) - B.blue[0];
-  const reveal = interpolate(t, [0, 0.8], [0, 1], {...clamp, easing: Easing.inOut(Easing.quad)});
-  const hl = t > s5 ? 1 : 0;
+  const reveal = interpolate(t, [0, 0.7], [0, 1], {...clamp, easing: Easing.inOut(Easing.quad)});
+  const focus = t > s5 ? 1 : 0;
+  const spin = interpolate(t, [2.2, 2.9], [0, 1], clamp);
   return (
     <AbsoluteFill style={{background: '#0B1E3F'}}>
       <BG dark />
-      {/* hold the previous light scene's character cropped, wiped away by a scan line */}
-      <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, clipPath: `inset(${reveal * 100}% 0 0 0)`, background: '#ECECE8'}}><BG /><div style={{position: 'absolute', left: 340, top: 620, transform: 'scale(1.6)', transformOrigin: '0 0'}}><AlexF x={0} y={0} s={1.4} handL={[127, 382]} handR={[273, 382]} /></div></div>
+      <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, clipPath: `inset(${reveal * 100}% 0 0 0)`, background: '#ECECE8'}}><BG /><div style={{position: 'absolute', left: 300, top: 560, transform: 'scale(1.7)', transformOrigin: '0 0'}}><AlexF x={0} y={0} s={1.4} handL={[127, 382]} handR={[273, 382]} /></div></div>
       {reveal < 1 && <div style={{position: 'absolute', left: 0, right: 0, top: reveal * 1920 - 4, height: 8, background: '#9BE2FF', boxShadow: '0 0 40px 10px rgba(80,200,255,.8)'}} />}
-      <div style={{position: 'absolute', inset: 0, clipPath: `inset(0 0 ${(1 - reveal) * 100}% 0)`}}><Blueprint t={t} hl={hl} reveal={reveal} /></div>
-      {t > 0.9 && t < s5 + 0.0 && <Pop at={1.0} style={{left: 0, right: 0, top: 1040, display: 'flex', justifyContent: 'center'}}><div style={{background: '#fff', border: '5px solid #17181C', borderRadius: 12, padding: '4px 34px', fontFamily: FONT, fontWeight: 900, fontSize: 80, color: '#17181C'}}>3 PIECES</div></Pop>}
-      {t > s5 && <Pop at={s5} style={{left: 0, right: 0, top: 1040, display: 'flex', justifyContent: 'center'}}><div style={{background: '#fff', border: '5px solid #17181C', borderRadius: 12, padding: '4px 34px', fontFamily: FONT, fontWeight: 900, fontSize: 80, color: G.red}}>1 OF 3</div></Pop>}
+      <div style={{position: 'absolute', inset: 0, clipPath: `inset(0 0 ${(1 - reveal) * 100}% 0)`}}><Blueprint t={t} focus={focus} /></div>
+      {t > 0.6 && t < s5 && <Pop at={0.9} style={{left: 0, right: 0, top: 1130, display: 'flex', justifyContent: 'center'}}><div style={{background: '#fff', border: '5px solid #17181C', borderRadius: 12, padding: '4px 34px', fontFamily: FONT, fontWeight: 900, fontSize: 80, color: '#17181C', transform: `scale(${1 + 0.06 * Math.sin(spin * 9)})`}}>3 PIECES</div></Pop>}
+      {t > s5 && <Pop at={s5} style={{left: 0, right: 0, top: 1130, display: 'flex', justifyContent: 'center'}}><div style={{background: '#fff', border: '5px solid #17181C', borderRadius: 12, padding: '4px 34px', fontFamily: FONT, fontWeight: 900, fontSize: 70, color: G.red}}>1 OF 3 GETS ALL THE LOVE</div></Pop>}
+      {t > s5 + 0.3 && <Pop at={s5 + 0.3} style={{left: 90, top: 1010}}><RedTag text="MOST PEOPLE" size={28} /></Pop>}
+      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, pointerEvents: 'none'}}>{t > s5 + 0.3 && <Arrow a={[330, 1030]} b={[690, 880]} color="#FFC93C" />}</svg>
     </AbsoluteFill>
   );
 };
@@ -382,18 +399,38 @@ const Barbell: React.FC<{y: number; x0?: number; x1?: number}> = ({y, x0 = 60, x
   </svg>
 );
 const Press: React.FC = () => {
-  const t = useT(); const s = 1.4, x = 340, y = FLOOR - 572 * s;
-  const u = interpolate(t, [0, 0.5], [0, 1], {...clamp, easing: eo});
-  const hl: V = lerpV([127, 300], [137, 74], u), hr: V = lerpV([273, 300], [263, 74], u);
-  const g = frontGeom({x, y, s, handL: hl, handR: hr});
-  const by = lerp(g.hL[1] - 10, g.hL[1] - 24, 1);
+  const t = useT(); const s = 1.3, fl = FLOOR;
+  const u = rep(t, 1.35, 0.15);
+  const x = 540 - 200 * s, y = fl - 572 * s, crouch = 0.9;
+  const hl: V = lerpV([96, 232], [135, 62], u), hr: V = lerpV([304, 232], [265, 62], u);
+  const g = frontGeom({x, y, s, handL: hl, handR: hr, crouch});
+  const hipY = y + (380 + crouch * 62) * s;
+  const lift = u * 86;
   return (
     <AbsoluteFill>
       <Floor />
-      <AlexF x={x} y={y} s={s} handL={hl} handR={hr} mood="strain" fists />
-      <Barbell y={by} x0={70} x1={1010} />
-      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><DeltCap p={g.shL} q={g.eL} s={s} act={0.9} t={t} /><DeltCap p={g.shR} q={g.eR} s={s} act={0.9} t={t} /></svg>
-      <Pop at={0.1} style={{left: 0, right: 0, top: 360, display: 'flex', justifyContent: 'center'}}><RedTag text="PRESS = MOSTLY FRONT" size={32} /></Pop>
+      {/* machine: base, rails, backrest, weight stack */}
+      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+        <rect x={250} y={fl - 24} width={580} height={24} rx={8} fill="#3A3F4B" stroke={OL} strokeWidth={4} />
+        <rect x={812} y={520} width={150} height={fl - 540} rx={8} fill="#4C5260" stroke={OL} strokeWidth={4} />
+        {Array.from({length: 12}).map((_, i) => <rect key={i} x={822} y={560 + i * 56 - (i <= 6 ? lift * 0.6 : 0)} width={130} height={48} rx={6} fill="#2A2D35" stroke={OL} strokeWidth={3} />)}
+        <rect x={822} y={560 + 6 * 56 + 22 - lift * 0.6} width={44} height={10} rx={4} fill="#F4C20D" stroke={OL} strokeWidth={2} />
+        {[g.shL[0] - 150, g.shR[0] + 150].map((px, i) => <g key={i}><rect x={px - 16} y={380} width={32} height={hipY - 340} rx={8} fill="#4C5260" stroke={OL} strokeWidth={4} /></g>)}
+        <rect x={g.shL[0] - 160} y={360} width={g.shR[0] - g.shL[0] + 320} height={38} rx={14} fill="#2F333D" stroke={OL} strokeWidth={4} />
+        <rect x={540 - 110} y={g.shL[1] - 60} width={220} height={hipY - g.shL[1] + 90} rx={34} fill="#3A3F4B" stroke={OL} strokeWidth={5} />
+        <rect x={540 - 190} y={hipY + 8} width={380} height={46} rx={20} fill="#2F333D" stroke={OL} strokeWidth={5} />
+        <rect x={540 - 18} y={hipY + 54} width={36} height={fl - hipY - 78} fill="#4C5260" stroke={OL} strokeWidth={4} />
+        {/* lever arms from the rails to the handles */}
+        {[g.hL, g.hR].map((h, i) => { const px = i ? g.shR[0] + 150 : g.shL[0] - 150; return <g key={i}><line x1={px} y1={h[1] - 6} x2={h[0]} y2={h[1] - 6} stroke={OL} strokeWidth={22} strokeLinecap="round" /><line x1={px} y1={h[1] - 6} x2={h[0]} y2={h[1] - 6} stroke="#6B7180" strokeWidth={12} strokeLinecap="round" /></g>; })}
+      </svg>
+      <AlexF x={x} y={y} s={s} handL={hl} handR={hr} crouch={crouch} mood={u > 0.5 ? 'strain' : 'flat'} fists />
+      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+        <DeltCap p={g.shL} q={g.eL} s={s} act={0.5 + 0.5 * u} t={t} /><DeltCap p={g.shR} q={g.eR} s={s} act={0.5 + 0.5 * u} t={t} />
+        {[g.hL, g.hR].map((h, i) => <g key={i}><rect x={h[0] - 44} y={h[1] - 13} width={88} height={26} rx={12} fill="#1C1D22" stroke={OL} strokeWidth={4} /><Grip p={h} ang={0} s={0.62} thumb={i ? -1 : 1} /></g>)}
+        {u > 0.8 && <Sparks p={[540, g.hL[1] - 30]} t={t} n={8} />}
+      </svg>
+      <Pop at={0.05} style={{left: 0, right: 0, top: 440, display: 'flex', justifyContent: 'center'}}><BlackTag text="SEATED SHOULDER PRESS" size={28} /></Pop>
+      <Pop at={0.3} style={{left: 0, right: 0, top: 510, display: 'flex', justifyContent: 'center'}}><RedTag text="PRESS = MOSTLY FRONT" size={32} /></Pop>
     </AbsoluteFill>
   );
 };
@@ -445,7 +482,7 @@ const Ex2: React.FC = () => {
   const u = back ? 0 : t < a10 ? 0.2 + 0.8 * tri(Math.min(1, t / 2.4)) * 0 + 0.1 : rep(t - a10, 1.15, 0.0);
   const bu = interpolate(t, [a10 + 2.15, a10 + 2.6], [0, 1], {...clamp, easing: eo});
   return (
-    <ExFrame n={2} tag="FACE PULL" pills={[false, true, back && t > a10 + 3.3]} active={2} banner>
+    <ExFrame n={2} tag="FACE PULL" pills={[false, true, back && t > a10 + 3.3]} active={2}>
       {!back && <Zoom z={zH} fx={t < a10 + 0.5 ? 540 : 610} fy={t < a10 + 0.5 ? 880 : 740} cy={880}><Rig2 u={Math.max(0.1, u)} t={t} strain={zH > 1.5 ? 0.8 : u > 0.85 ? 1 : 0} /></Zoom>}
       {back && <BackElbows t={t - (a10 + 2.15)} u={bu} />}
       {t >= a10 - 0.3 && <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><Inset x={925} y={725} r={105} act={back ? bu : Math.max(0.1, u)} t={t} label="REAR DELT" /></svg>}
@@ -550,62 +587,84 @@ const Mate: React.FC = () => {
     </AbsoluteFill>
   );
 };
-const Guide: React.FC = () => {
-  const t = useT(); const s0 = B.guide[0];
-  const type = Math.floor(interpolate(t, [rel(15, s0) + 3.45, rel(15, s0) + 4.2], [0, 7], clamp));
-  const sendAt = rel(15, s0) + 4.35, tick = t > sendAt + 0.5;
-  const p = interpolate(t, [0.1, 0.45], [0, 1], {...clamp, easing: Easing.out(Easing.back(2))});
-  const bob = Math.sin(t * 2.4) * 6;
-  const word = 'ROUTINE'.slice(0, type);
-  return (
-    <AbsoluteFill style={{background: 'rgba(60,62,68,.42)'}}>
-      <Floor y={1210} />
-      <div style={{position: 'absolute', left: 60, top: 580, opacity: 0.9}}><AlexF x={0} y={0} s={0.95} handL={[127, 382]} handR={[273, 382]} mood="smile" /></div>
-      <div style={{position: 'absolute', left: 640, top: 580, opacity: 0.9}}><DanielF x={0} y={0} s={0.95} handL={[127, 382]} handR={[273, 382]} mood="smile" /></div>
-      <div style={{position: 'absolute', left: 300, top: 400 + bob, width: 480, height: 800, borderRadius: 54, background: '#14161B', border: '8px solid #0B0C0F', boxShadow: '0 30px 60px rgba(0,0,0,.45)', transform: `scale(${p})`, overflow: 'hidden'}}>
-        <div style={{position: 'absolute', inset: 14, borderRadius: 40, background: '#fff', padding: 26}}>
-          <div style={{fontFamily: '"DejaVu Sans Mono", monospace', fontWeight: 700, fontSize: 14, letterSpacing: 3, color: '#888'}}>{SERIES}</div>
-          <div style={{fontFamily: FONT, fontWeight: 900, fontSize: 52, lineHeight: 1.0, color: '#17181C', marginTop: 16}}>{GUIDE.title}</div>
-          <div style={{display: 'inline-block', marginTop: 10, border: `3px solid ${G.red}`, color: G.red, fontFamily: '"DejaVu Sans Mono", monospace', fontWeight: 700, fontSize: 20, letterSpacing: 2, padding: '2px 12px', borderRadius: 6}}>{GUIDE.sub}</div>
-          <div style={{marginTop: 22, height: 250, borderRadius: 16, background: '#EEF1F6', border: '3px solid #17181C', position: 'relative', overflow: 'hidden'}}>
-            <div style={{position: 'absolute', left: 20, bottom: 20, width: 200, height: 90, borderRadius: 14, background: BLUE}} /><div style={{position: 'absolute', left: 60, top: 40, width: 70, height: 70, borderRadius: 35, background: SKIN, border: '4px solid #17181C'}} /><div style={{position: 'absolute', right: 20, bottom: 20, width: 150, height: 150, borderRadius: 16, background: '#fff', border: '3px solid #17181C'}} />
-          </div>
-          <div style={{marginTop: 24, display: 'flex', justifyContent: 'center'}}><BlackTag text={`${GUIDE.pages} PAGES · ${GUIDE.sources} SOURCES`} size={20} /></div>
-        </div>
-      </div>
-      {t > rel(15, s0) + 3.1 && <Pop at={rel(15, s0) + 3.1} style={{left: 50, top: 1060}}>
-        <div style={{width: 980, height: 100, borderRadius: 50, background: '#fff', border: '3px solid #D5D5D5', boxShadow: '0 12px 30px rgba(0,0,0,.25)', display: 'flex', alignItems: 'center', padding: '0 26px', gap: 20}}>
-          <div style={{width: 56, height: 56, borderRadius: 28, background: BLUE, border: '3px solid #17181C'}} />
-          <div style={{flex: 1, fontFamily: FONT, fontWeight: 800, fontSize: 44, color: '#17181C'}}>{word}<span style={{opacity: Math.sin(t * 12) > 0 ? 1 : 0}}>|</span></div>
-          <div style={{width: 64, height: 64, borderRadius: 32, background: tick ? '#1E9E55' : type >= 7 ? '#1D8CF8' : '#C8D6EE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: FONT, fontWeight: 900, fontSize: 38}}>{tick ? '✓' : '↑'}</div>
-        </div>
-      </Pop>}
-    </AbsoluteFill>
-  );
-};
-const Outro: React.FC = () => {
-  const t = useT();
-  const dark = interpolate(t, [0.9, 1.4], [0, 1], clamp);
-  const ask = interpolate(t, [0, 0.2], [0, 1], {...clamp, easing: Easing.out(Easing.back(2))});
-  const s = 1.05, fl = 1180, y = fl - 572 * s;
+/* ---- twelve weeks: how the shoulders would fill out (illustrative) ---- */
+const Grow: React.FC = () => {
+  const t = useT(), s0 = B.grow[0];
+  const w = (i: number) => rel(i, s0);
+  const s = 1.5, x = 540 - 200 * s, y = FLOOR - 572 * s;
+  const vt = interpolate(t, [w(17) - 0.3, w(17) + 1.6, w(18) + 1.8, w(19) + 2.2], [0, 0.05, 0.11, 0.19], {...clamp, easing: eio});
+  const week = Math.round(interpolate(t, [w(17), w(17) + 0.8, w(18), w(18) + 0.8, w(19), w(19) + 0.8], [0, 4, 4, 8, 8, 12], clamp));
+  const lifting = t >= w(16) && t < w(17) + 0.2;
+  const k = lifting ? rep(t - w(16), 1.1) : 0;
+  const phi = (lerp(14, 90, k) * Math.PI) / 180;
+  const flex = t >= w(19) + 0.8 && t < w(20);
+  const fl = interpolate(t, [w(19) + 0.8, w(19) + 1.4], [0, 1], {...clamp, easing: Easing.out(Easing.back(1.6))});
+  const idleL: V = [118, 378], idleR: V = [282, 378];
+  const hl: V = flex ? lerpV(idleL, [128, 142], fl) : lifting ? [140 - 155 * Math.sin(phi), 226 + 155 * Math.cos(phi)] : idleL;
+  const hr: V = flex ? lerpV(idleR, [272, 142], fl) : lifting ? [260 + 155 * Math.sin(phi), 226 + 155 * Math.cos(phi)] : idleR;
+  const capAct = t < w(16) ? 0 : lifting ? 0.35 + 0.65 * k : t < w(19) + 2 ? 0.55 : 0.9;
+  const sc = 1 + vt * 2.6;
+  const sh = (sd: number): V => [x + (200 + sd * 60 * (1 + vt)) * s, y + 226 * s];
+  const stage = t < w(17) ? 0 : t < w(18) ? 1 : t < w(19) ? 2 : 3;
+  const geo = (hand: V, sd: number) => { const S = sh(sd); const e: V = flex ? [S[0] + sd * 70 * s * 0.8, S[1] + 4 * s] : lifting ? [S[0] + (hand[0] - 200 - sd * 60) * s * 0.52 * 0 + 0, S[1] + 0] : [S[0], S[1] + 80 * s]; return {S, e}; };
+  const L = geo(hl, -1), R = geo(hr, 1);
+  const qL: V = flex ? [L.S[0] - 80, L.S[1] + 6] : lifting ? [L.S[0] - 80 * Math.sin(phi) - 0.1, L.S[1] + 80 * Math.cos(phi)] : [L.S[0] - 6, L.S[1] + 80];
+  const qR: V = flex ? [R.S[0] + 80, R.S[1] + 6] : lifting ? [R.S[0] + 80 * Math.sin(phi), R.S[1] + 80 * Math.cos(phi)] : [R.S[0] + 6, R.S[1] + 80];
+  const edgeL = x + (200 - (60 * (1 + vt) + 46)) * s, edgeR = x + (200 + (60 * (1 + vt) + 46)) * s;
+  const showWidth = t >= w(18) - 0.1 && t < w(20);
+  const compare = t >= w(20);
+  const tops = [0.08, 0.15, 0.22];
   return (
     <AbsoluteFill>
-      <div style={{position: 'absolute', inset: 0, opacity: 1 - dark}}>
-        <Floor y={fl} />
-        <AlexF x={20} y={y} s={s} handL={[127, 382]} handR={[273, 382]} mood="smile" />
-        <DanielF x={560} y={y} s={s} handL={[127, 382]} handR={[273, 382]} mood="smile" />
-        <div style={{position: 'absolute', left: 660, top: 500, opacity: ask, transform: `scale(${0.6 + 0.4 * ask})`}}><div style={{position: 'relative', background: '#fff', border: '5px solid #17181C', borderRadius: 22, padding: '8px 30px', fontFamily: FONT, fontWeight: 900, fontSize: 56}}>AND YOU?<div style={{position: 'absolute', left: 60, bottom: -30, width: 0, height: 0, borderLeft: '16px solid transparent', borderRight: '16px solid transparent', borderTop: '30px solid #17181C'}} /></div></div>
-      </div>
-      <div style={{position: 'absolute', inset: 0, background: '#0B0E14', opacity: dark, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 40}}>
-        <div style={{fontFamily: FONT, fontWeight: 900, fontSize: 64, color: '#fff', letterSpacing: 2}}>FOLLOW FOR MORE</div>
-        <div style={{width: 760, height: 96, borderRadius: 48, background: '#fff', display: 'flex', alignItems: 'center', gap: 20, padding: '0 34px', boxShadow: '0 0 0 4px #25F4EE, 6px 0 0 4px #FE2C55'}}>
-          <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="#17181C" strokeWidth={2.5} strokeLinecap="round"><circle cx={10} cy={10} r={6.5} /><path d="M15 15 L21 21" /></svg>
-          <div style={{fontFamily: FONT, fontWeight: 700, fontSize: 40, color: '#17181C'}}>{HANDLE}</div>
-        </div>
-      </div>
+      <Floor />
+      {!compare && <>
+        <AlexF x={x} y={y} s={s} handL={hl} handR={hr} fists={lifting || flex} straight={lifting ? 'B' : undefined} vtaper={vt} bicep={flex ? fl : 0} mood={flex ? 'smile' : lifting ? 'strain' : 'flat'} />
+        <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+          <DeltCap p={L.S} q={qL} s={s * sc} act={capAct} t={t} /><DeltCap p={R.S} q={qR} s={s * sc} act={capAct} t={t} />
+          {showWidth && <g><line x1={edgeL} y1={y + 150 * s} x2={edgeL} y2={y + 250 * s} stroke={G.red} strokeWidth={4} strokeDasharray="10 8" /><line x1={edgeR} y1={y + 150 * s} x2={edgeR} y2={y + 250 * s} stroke={G.red} strokeWidth={4} strokeDasharray="10 8" /><Arrow a={[540 - 10, y + 150 * s]} b={[edgeL, y + 150 * s]} /><Arrow a={[540 + 10, y + 150 * s]} b={[edgeR, y + 150 * s]} /></g>}
+          {t >= w(19) + 0.6 && t < w(20) && <polygon points={`${edgeL},${y + 232 * s} ${edgeR},${y + 232 * s} ${540 + 52 * s},${y + 374 * s} ${540 - 52 * s},${y + 374 * s}`} fill="rgba(246,185,59,.18)" stroke={GOLD} strokeWidth={5} strokeDasharray="14 10" />}
+        </svg>
+      </>}
+      {t < w(16) && <Pop at={0.05} style={{left: 0, right: 0, top: 440, display: 'flex', justifyContent: 'center'}}><div style={{background: '#fff', border: '5px solid #17181C', borderRadius: 18, padding: '8px 40px', fontFamily: FONT, fontWeight: 900, fontSize: 76, color: '#17181C', boxShadow: '0 10px 0 rgba(0,0,0,.15)'}}>12 WEEKS</div></Pop>}
+      {t >= w(16) && !compare && <div style={{position: 'absolute', left: 0, right: 0, top: 400, display: 'flex', justifyContent: 'center', gap: 24}}>
+        {['FRONT', 'SIDE', 'REAR'].map((n, i) => <Pop key={n} at={w(16) + 0.3 + i * 0.5} style={{position: 'relative'}}><DeltPill text={n} done={t > w(16) + 1.4 + i * 0.7} active /></Pop>)}
+        {t > w(16) + 2.6 && <Pop at={w(16) + 2.6} style={{position: 'relative'}}><BlackTag text="2× A WEEK" size={22} /></Pop>}
+      </div>}
+      {t >= w(17) - 0.05 && !compare && <Pop at={w(17)} style={{left: 60, top: 500}}><div style={{background: '#fff', border: '5px solid #17181C', borderRadius: 16, padding: '4px 26px', fontFamily: FONT, fontWeight: 900, fontSize: 60, color: '#17181C', boxShadow: '0 8px 0 rgba(0,0,0,.15)'}}>WEEK {week}</div></Pop>}
+      {showWidth && !compare && <Pop at={w(18) + 0.2} style={{right: 60, top: 500}}><RedTag text="WIDER ↔" size={30} /></Pop>}
+      {t >= w(19) + 0.6 && t < w(20) && <Pop at={w(19) + 0.6} style={{right: 60, top: 580}}><BlackTag text="V-TAPER" size={30} /></Pop>}
+      {compare && <>
+        <Pop at={w(20) + 0.1} style={{left: 0, right: 0, top: 410, display: 'flex', justifyContent: 'center'}}><BlackTag text="EVERYONE GROWS DIFFERENTLY" size={26} /></Pop>
+        {tops.map((v, i) => { const s2 = 0.82, x2 = 40 + i * 340, y2 = FLOOR - 572 * s2; return (
+          <React.Fragment key={i}>
+            <Pop at={w(20) + 0.3 + i * 0.35} style={{left: 0, top: 0}}><AlexF x={x2} y={y2} s={s2} handL={[118, 378]} handR={[282, 378]} vtaper={v} mood="smile" /></Pop>
+            <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}><DeltCap p={[x2 + (140 - 60 * v) * s2 + 24 * s2, y2 + 226 * s2]} q={[x2 + (140 - 60 * v) * s2 + 24 * s2, y2 + 226 * s2 + 70]} s={s2 * (1 + v * 2.6)} act={0.55 + 0.1 * i} t={t} /></svg>
+          </React.Fragment>); })}
+        {/* progressive overload: bars stepping up */}
+        <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}>
+          {[0, 1, 2, 3, 4].map((i) => { const k2 = interpolate(t, [w(20) + 1.6 + i * 0.25, w(20) + 2.0 + i * 0.25], [0, 1], clamp); return <rect key={i} x={250 + i * 120} y={700 - (60 + i * 40) * k2} width={90} height={(60 + i * 40) * k2} rx={10} fill={GOLD} stroke={OL} strokeWidth={4} />; })}
+          <text x={540} y={760} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={30} fill="#17181C" letterSpacing={3}>STEADY PROGRESS ↑</text>
+        </svg>
+      </>}
+      <SrcLine text="Illustrative · results vary" top={1318} />
     </AbsoluteFill>
   );
 };
+const End: React.FC = () => {
+  const t = useT(); const s = 1.5, x = 540 - 200 * s, y = FLOOR - 572 * s;
+  const lit = Math.floor(t * 1.8) % 3;
+  const bob = Math.abs(Math.sin(t * 5)) * 20;
+  return (
+    <AbsoluteFill>
+      <Floor />
+      <div style={{transform: `translateY(${-bob}px)`}}><AlexF x={x} y={y} s={s} handL={[118, 378]} handR={[290, 262]} point mood="smile" vtaper={0.19} straight="R" /></div>
+      <PillRow done={[false, false, false]} active={lit} />
+      <Pop at={0.1} style={{left: 0, right: 0, top: 440, display: 'flex', justifyContent: 'center'}}><div style={{background: '#fff', border: '6px solid #17181C', borderRadius: 18, padding: '10px 36px', fontFamily: FONT, fontWeight: 900, fontSize: 62, color: '#17181C', boxShadow: '0 10px 0 rgba(0,0,0,.15)', transform: 'rotate(-2deg)'}}>WHICH HEAD?</div></Pop>
+    </AbsoluteFill>
+  );
+};
+
+const SrcLine: React.FC<{text: string; top?: number}> = ({text, top = 1262}) => <div style={{position: 'absolute', left: 0, right: 0, top, textAlign: 'center', fontFamily: '"DejaVu Sans Mono", monospace', fontWeight: 700, fontSize: 22, letterSpacing: 2, color: '#8A8A86'}}>{text}</div>;
 
 /* ---------------- captions (same black bars) ---------------- */
 type Card = {t0: number; t1: number; words: {w: string; a: number}[]};
@@ -622,7 +681,7 @@ for (const sg of sec) {
 const SubsBar: React.FC = () => {
   const s = useCurrentFrame() / FPS;
   const c = cards.find((x) => s >= x.t0 && s < x.t1 + 0.04);
-  if (!c || s > sec[16].end + 0.4) return null;
+  if (!c || s > sec[21].end + 0.4) return null;
   return (
     <div style={{position: 'absolute', left: 60, width: 960, top: 1400, display: 'flex', justifyContent: 'center'}}>
       <div style={{background: '#111', borderRadius: 16, padding: '10px 28px 14px', fontFamily: FONT, fontWeight: 900, fontSize: 56, letterSpacing: -1, whiteSpace: 'nowrap', boxShadow: '0 8px 0 rgba(0,0,0,.18)'}}>
@@ -675,8 +734,8 @@ export const ShouldersUK: React.FC = () => (
     <SC k="ex4" hits={[0.0, 1.7, 3.3]}><Ex4 /></SC>
     <SC k="sum" hits={[0.0]}><Sum /></SC>
     <SC k="mate" hits={[0.0, 1.7]}><Mate /></SC>
-    <SC k="guide" hits={[0.0]} noHeader><Guide /></SC>
-    <SC k="outro" noHeader><Outro /></SC>
+    <SC k="grow" hits={[0.0, rel(17, B.grow[0]), rel(18, B.grow[0]), rel(19, B.grow[0]), rel(20, B.grow[0])]}><Grow /></SC>
+    <SC k="end" hits={[0.0]}><End /></SC>
     <SubsBar />
     <Audio src={staticFile('audio/shoulders_voice.wav')} />
     <Audio src={staticFile('audio/gym_music.wav')} loop volume={(f) => 0.11 * interpolate(f, [0, 10, SHOULDERS_TOTAL - 50, SHOULDERS_TOTAL], [0, 1, 1, 0], clamp)} />
