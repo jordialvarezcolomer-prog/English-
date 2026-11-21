@@ -48,6 +48,46 @@ const Poly: React.FC<{pts: string; c: string; r?: number}> = ({pts, c, r = 14}) 
   <><polygon points={pts} fill={OL} stroke={OL} strokeWidth={r + OW * 2} strokeLinejoin="round" /><polygon points={pts} fill={c} stroke={c} strokeWidth={r} strokeLinejoin="round" /></>
 );
 const lp = (a: V, b: V, t: number): V => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+/** Tapered, outlined limb from a (width wa) to b (width wb); `bulge` fattens the belly (calf / biceps). */
+const Limb: React.FC<{a: V; b: V; wa: number; wb: number; c: string; bulge?: number}> = ({a, b, wa, wb, c, bulge = 0}) => {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+  const ra = wa / 2, rb = wb / 2, rm = (ra * 0.55 + rb * 0.45) * (1 + bulge);
+  const m: V = [a[0] + dx * 0.42, a[1] + dy * 0.42];
+  const side = (n: number) => {
+    const p0: V = [a[0] + nx * ra * n, a[1] + ny * ra * n], p1: V = [m[0] + nx * rm * n, m[1] + ny * rm * n], p2: V = [b[0] + nx * rb * n, b[1] + ny * rb * n];
+    return {p0, p2, c1: [2 * p1[0] - (p0[0] + p2[0]) / 2, 2 * p1[1] - (p0[1] + p2[1]) / 2] as V};
+  };
+  const A = side(1), Bq = side(-1);
+  const d = `M${A.p0[0]} ${A.p0[1]} Q${A.c1[0]} ${A.c1[1]} ${A.p2[0]} ${A.p2[1]} L${Bq.p2[0]} ${Bq.p2[1]} Q${Bq.c1[0]} ${Bq.c1[1]} ${Bq.p0[0]} ${Bq.p0[1]} Z`;
+  return (
+    <>
+      <path d={d} fill={OL} stroke={OL} strokeWidth={OW * 2} strokeLinejoin="round" /><circle cx={a[0]} cy={a[1]} r={ra + OW} fill={OL} /><circle cx={b[0]} cy={b[1]} r={rb + OW} fill={OL} />
+      <path d={d} fill={c} /><circle cx={a[0]} cy={a[1]} r={ra} fill={c} /><circle cx={b[0]} cy={b[1]} r={rb} fill={c} />
+    </>
+  );
+};
+/** Cartoon hand at p; fingers point along the forearm direction (from `from`). Open (relaxed, fingers curled a bit) or fist. */
+const Hand: React.FC<{p: V; from: V; c: string; fist?: boolean; side?: 1 | -1; r?: number}> = ({p, from, c, fist, side = 1, r = 1}) => {
+  const ux = p[0] - from[0], uy = p[1] - from[1], th = (Math.atan2(-ux, uy) * 180) / Math.PI;
+  return (
+    <g transform={`translate(${p[0]} ${p[1]}) rotate(${th}) scale(${r})`} stroke={OL} strokeWidth={3} strokeLinejoin="round" strokeLinecap="round">
+      {fist ? (
+        <>
+          <rect x={-15} y={-6} width={30} height={30} rx={10} fill={c} />
+          <path d="M-8 4 V18 M0 4 V18 M8 4 V18" fill="none" strokeWidth={2.4} />
+          <path d={`M${-13 * side} -2 Q${-22 * side} 8 ${-12 * side} 18`} fill={c} strokeWidth={3} />
+        </>
+      ) : (
+        <>
+          {[-9, -3, 3, 9].map((x, i) => <path key={i} d={`M${x} 14 Q${x + (i - 1.5) * 0.9} 26 ${x + (i - 1.5) * 1.6} ${32 - (i === 1 || i === 2 ? 0 : 5)}`} fill="none" stroke={OL} strokeWidth={9} />)}
+          {[-9, -3, 3, 9].map((x, i) => <path key={'f' + i} d={`M${x} 14 Q${x + (i - 1.5) * 0.9} 26 ${x + (i - 1.5) * 1.6} ${32 - (i === 1 || i === 2 ? 0 : 5)}`} fill="none" stroke={c} strokeWidth={4.6} />)}
+          <path d={`M${-11 * side} 6 Q${-24 * side} 12 ${-20 * side} 24`} fill="none" stroke={OL} strokeWidth={10} /><path d={`M${-11 * side} 6 Q${-24 * side} 12 ${-20 * side} 24`} fill="none" stroke={c} strokeWidth={5.6} />
+          <rect x={-14} y={-8} width={28} height={28} rx={11} fill={c} />
+        </>
+      )}
+    </g>
+  );
+};
 export type Hair = 'short' | 'mohawk';
 /** Cartoon eye with heavy-lid / blink support and tired dark circle. lid 0 = open .. 1 = closed. */
 const Eye: React.FC<{cx: number; cy: number; lid: number; look?: number; strain?: boolean; tired?: number}> = ({cx, cy, lid, look = 1, strain, tired = 0}) => {
@@ -69,7 +109,7 @@ const Eye: React.FC<{cx: number; cy: number; lid: number; look?: number; strain?
   );
 };
 const ShoeSide: React.FC<{f: V; dark?: boolean}> = ({f, dark}) => (
-  <g><path d={`M${f[0] - 16} ${f[1] - 8} L${f[0] + 10} ${f[1] - 12} Q${f[0] + 40} ${f[1] - 6} ${f[0] + 44} ${f[1] + 10} L${f[0] + 44} ${f[1] + 16} L${f[0] - 18} ${f[1] + 16} Z`} fill={dark ? '#D8D8D8' : '#FFFFFF'} stroke={OL} strokeWidth={OW} strokeLinejoin="round" /><path d={`M${f[0] - 18} ${f[1] + 11} L${f[0] + 44} ${f[1] + 11}`} stroke="#D9453F" strokeWidth={5} /></g>
+  <g><path d={`M${f[0] - 16} ${f[1] - 8} L${f[0] + 10} ${f[1] - 12} Q${f[0] + 40} ${f[1] - 6} ${f[0] + 44} ${f[1] + 10} L${f[0] + 44} ${f[1] + 16} L${f[0] - 18} ${f[1] + 16} Z`} fill={dark ? '#D8D8D8' : '#FFFFFF'} stroke={OL} strokeWidth={OW} strokeLinejoin="round" /><path d={`M${f[0] - 18} ${f[1] + 11} L${f[0] + 44} ${f[1] + 11}`} stroke="#D9453F" strokeWidth={5} /><path d={`M${f[0] - 4} ${f[1] - 10} l8 8 M${f[0] + 4} ${f[1] - 11} l8 8`} stroke={OL} strokeWidth={2.4} strokeLinecap="round" /><path d={`M${f[0] + 24} ${f[1] - 4} Q${f[0] + 36} ${f[1] - 2} ${f[0] + 40} ${f[1] + 8}`} fill="none" stroke={OL} strokeWidth={2.4} /></g>
 );
 const Mohawk: React.FC<{cx: number; cy: number; a0: number; a1: number; r: number; R: number; n?: number}> = ({cx, cy, a0, a1, r, R, n = 7}) => {
   const outer: string[] = [], inner: string[] = [];
@@ -93,17 +133,19 @@ export const Person: React.FC<PersonProps> = ({phones, whistle = false, scroll =
   const shirtD = shade(shirt, 0.8), skD = shade(SK, 0.86), shortsD = shade(G.shorts, 0.8);
   const leg = (knee: V, foot: V, far: boolean) => (
     <g>
-      <Cap a={knee} b={foot} w={30} c={far ? skD : SK} />
+      <Limb a={knee} b={foot} wa={33} wb={22} bulge={0.14} c={far ? skD : SK} />
       <ShoeSide f={foot} dark={far} />
-      <Cap a={pose.hip} b={knee} w={40} c={far ? skD : SK} />
-      <Cap a={pose.hip} b={lp(pose.hip, knee, 0.68)} w={48} c={far ? shortsD : G.shorts} />
+      <Limb a={pose.hip} b={knee} wa={48} wb={35} c={far ? skD : SK} />
+      <circle cx={knee[0] + 4} cy={knee[1]} r={13} fill={far ? skD : SK} stroke={OL} strokeWidth={OW} />
+      <path d={`M${knee[0] - 1} ${knee[1] - 7} q9 3 9 11`} fill="none" stroke={OL} strokeWidth={2.4} strokeLinecap="round" opacity={0.55} />
+      <Limb a={pose.hip} b={lp(pose.hip, knee, 0.7)} wa={58} wb={52} c={far ? shortsD : G.shorts} />
     </g>
   );
   const arm = (elb: V, hand: V, far: boolean) => (
     <g>
-      <Cap a={pose.sh} b={elb} w={27} c={far ? skD : SK} /><Cap a={elb} b={hand} w={24} c={far ? skD : SK} />
-      <circle cx={hand[0]} cy={hand[1]} r={13} fill={far ? skD : SK} stroke={OL} strokeWidth={OW} />
-      <Cap a={pose.sh} b={lp(pose.sh, elb, 0.55)} w={36} c={far ? shirtD : shirt} />
+      <Limb a={pose.sh} b={elb} wa={33} wb={25} c={far ? skD : SK} /><Limb a={elb} b={hand} wa={25} wb={17} bulge={0.12} c={far ? skD : SK} />
+      <Hand p={hand} from={elb} c={far ? skD : SK} fist={plate > 0 || phone || stopwatch} side={1} r={0.95} />
+      <Limb a={pose.sh} b={lp(pose.sh, elb, 0.55)} wa={42} wb={37} c={far ? shirtD : shirt} />
     </g>
   );
   const eyeY = h[1] - 2;
@@ -203,43 +245,64 @@ export const Floor: React.FC<{y: number}> = ({y}) => <div style={{position: 'abs
 
 
 const ik2 = (a: V, b: V, l1: number, l2: number): V => { const A = ik(a, b, l1, l2, 1), B = ik(a, b, l1, l2, -1); return Math.abs(A[0] - 200) >= Math.abs(B[0] - 200) ? A : B; };
-type FrontProps = {phones?: boolean; bicep?: number; pumpGlow?: number; curl?: number; point?: boolean; crouch?: number; barbell?: boolean; x?: number; y?: number; s?: number; shirt?: string; hair?: Hair; beard?: boolean; mood?: 'smile' | 'flat' | 'worry' | 'strain'; handL?: V; handR?: V; stopwatch?: boolean; glow?: number; glowColor?: string; opacity?: number; sweat?: number; cap?: boolean; tired?: number; blink?: number; yawn?: number; look?: number};
-/** Front-facing outlined cartoon athlete (400x600 box, shoe soles at y~570). Arms use 2-bone IK from the shoulders. */
-export const FrontPerson: React.FC<FrontProps> = ({phones, bicep = 0, pumpGlow = 0, curl = -1, point = false, crouch = 0, barbell = false, x = 0, y = 0, s = 1, shirt = G.blue, hair = 'short', beard = false, mood = 'flat', handL = [118, 368], handR = [282, 368], stopwatch = false, glow = 0, glowColor = G.green, opacity = 1, sweat = 0, cap = false, tired = 0, blink = 0, yawn = 0, look = 1}) => {
+type FrontProps = {phones?: boolean; bicep?: number; pumpGlow?: number; curl?: number; point?: boolean; crouch?: number; barbell?: boolean; x?: number; y?: number; s?: number; shirt?: string; hair?: Hair; beard?: boolean; mood?: 'smile' | 'flat' | 'worry' | 'strain'; handL?: V; handR?: V; stopwatch?: boolean; glow?: number; glowColor?: string; opacity?: number; sweat?: number; cap?: boolean; tired?: number; blink?: number; yawn?: number; look?: number; pale?: number; girth?: number; headTilt?: number; headDy?: number; fists?: boolean; tank?: boolean};
+/** Front-facing outlined cartoon athlete (400x600 box, shoe soles at y~570). V-taper torso, tapered limbs with knees/elbows, real hands and sneakers. girth>1 = heavier. */
+export const FrontPerson: React.FC<FrontProps> = ({phones, bicep = 0, pumpGlow = 0, curl = -1, point = false, crouch = 0, barbell = false, x = 0, y = 0, s = 1, shirt = G.blue, hair = 'short', beard = false, mood = 'flat', handL = [127, 382], handR = [273, 382], stopwatch = false, glow = 0, glowColor = G.green, opacity = 1, sweat = 0, cap = false, tired = 0, blink = 0, yawn = 0, look = 1, pale = 0, girth = 1, headTilt = 0, headDy = 0, fists, tank = false}) => {
   if (cap) hair = 'mohawk';
   const hp = phones ?? shirt === G.blue;
   const dy = crouch * 62;
+  const g = girth, gx = (v: number) => 200 + (v - 200) * g, gw = 1 + (g - 1) * 0.8;
   if (curl >= 0) { const c = curl; handL = [118 + 34 * c, 372 - 150 * c]; handR = [282 - 34 * c, 372 - 150 * c]; }
   if (point) { handR = [290, 262]; }
   if (barbell) { handL = [104, 214 + dy]; handR = [296, 214 + dy]; }
-  const shL: V = [140, 226 + dy], shR: V = [260, 226 + dy];
-  const eL = ik2(shL, handL, 82, 74), eR = ik2(shR, handR, 82, 74);
-  const kL = ik2([172, 380 + dy], [166, 536], 84, 80), kR = ik2([228, 380 + dy], [234, 536], 84, 80);
+  const fist = fists ?? (curl >= 0 || barbell || bicep > 0.45);
+  const shL: V = [gx(140), 226 + dy], shR: V = [gx(260), 226 + dy];
+  const eL = ik2(shL, handL, 82, 75), eR = ik2(shR, handR, 82, 75);
+  const hipL: V = [gx(172), 380 + dy], hipR: V = [gx(228), 380 + dy];
+  const ankL: V = [gx(172) - 2, 538], ankR: V = [gx(228) + 2, 538];
+  const kL = ik2(hipL, ankL, 82, 78), kR = ik2(hipR, ankR, 82, 78);
   const legF = (hip: V, knee: V, ank: V, dir: number) => (
     <g>
-      <Cap a={knee} b={ank} w={30} c={SK} />
-      <g><rect x={ank[0] - 27 + dir * 6} y={ank[1] + 2} width={54} height={28} rx={13} fill="#fff" stroke={OL} strokeWidth={OW} /><rect x={ank[0] - 27 + dir * 6} y={ank[1] + 22} width={54} height={8} rx={4} fill="#D9453F" stroke={OL} strokeWidth={OW} /></g>
-      <Cap a={hip} b={knee} w={40} c={SK} />
+      <Limb a={knee} b={ank} wa={36 * gw} wb={22} bulge={0.16} c={SK} />
+      {/* sock + sneaker seen from the front, toes splayed a little */}
+      <rect x={ank[0] - 12} y={ank[1] - 16} width={24} height={16} rx={6} fill="#fff" stroke={OL} strokeWidth={OW} />
+      <g transform={`translate(${ank[0]} ${ank[1] - 5}) rotate(${dir * 6})`}>
+        <path d="M-21 6 Q-27 28 -20 36 L20 36 Q27 28 21 6 Q10 -4 0 -4 Q-10 -4 -21 6Z" fill="#fff" stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
+        <path d="M-19 26 Q0 16 19 26" fill="none" stroke={OL} strokeWidth={2.6} strokeLinecap="round" /><path d="M-8 4 H8 M-9 11 H9" stroke={OL} strokeWidth={2.6} strokeLinecap="round" />
+        <path d="M-24 30 L24 30 L24 39 Q0 43 -24 39Z" fill="#D9453F" stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
+      </g>
+      <Limb a={hip} b={knee} wa={50 * gw} wb={37 * gw} c={SK} />
+      <circle cx={knee[0]} cy={knee[1]} r={11 * gw} fill={SK} stroke={OL} strokeWidth={OW} /><path d={`M${knee[0] - 6} ${knee[1] - 2} q6 6 12 0`} fill="none" stroke={OL} strokeWidth={2.2} strokeLinecap="round" opacity={0.55} />
     </g>
   );
-  const arm = (sh: V, e: V, hd: V) => (
-    <g><Cap a={sh} b={e} w={27} c={SK} /><Cap a={e} b={hd} w={24} c={SK} /><circle cx={hd[0]} cy={hd[1]} r={14} fill={SK} stroke={OL} strokeWidth={OW} /><Cap a={sh} b={lp(sh, e, 0.55)} w={38} c={shirt} /></g>
+  const arm = (sh: V, e: V, hd: V, sd: number) => (
+    <g>
+      <Limb a={sh} b={e} wa={36 * gw} wb={27} bulge={0.05} c={SK} /><Limb a={e} b={hd} wa={27} wb={17} bulge={0.14} c={SK} />
+      <Hand p={hd} from={e} c={SK} fist={fist} side={(sd > 0 ? 1 : -1) as 1 | -1} r={1.05} />
+      <Limb a={sh} b={lp(sh, e, 0.5)} wa={44 * gw} wb={40 * gw} c={shirt} />
+    </g>
   );
+  const torso = `M${gx(138)} 224 Q${gx(148)} 204 ${gx(174)} 202 L${gx(226)} 202 Q${gx(252)} 204 ${gx(262)} 224 Q${gx(258) } 262 ${gx(251)} 300 Q${gx(247)} 332 ${gx(254)} 368 Q200 380 ${gx(146)} 368 Q${gx(153)} 332 ${gx(149)} 300 Q${gx(142)} 262 ${gx(138)} 224 Z`;
+  const shorts = `M${gx(146)} 350 L${gx(254)} 350 Q${gx(262)} 400 ${gx(272)} 458 L${gx(208)} 464 L200 420 L${gx(192)} 464 L${gx(128)} 458 Q${gx(138)} 400 ${gx(146)} 350Z`;
   return (
     <svg width={400 * s} height={600 * s} viewBox="0 0 400 600" style={{position: 'absolute', left: x, top: y, overflow: 'visible', opacity}}>
-      {legF([172, 380 + dy], kL, [166, 536], -1)}{legF([228, 380 + dy], kR, [234, 536], 1)}
+      {legF(hipL, kL, ankL, -1)}{legF(hipR, kR, ankR, 1)}
       <g transform={`translate(0 ${dy})`}>
-      <path d="M142 352 L258 352 L266 448 L210 452 L200 414 L190 452 L134 448 Z" fill={G.shorts} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
+      <path d={shorts} fill={G.shorts} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
+      <path d={`M${gx(150)} 356 L${gx(250)} 356`} stroke="#3A404E" strokeWidth={6} opacity={0.8} />
       {glow > 0 && <><ellipse cx={170} cy={420} rx={20 + 14 * glow} ry={46 + 10 * glow} fill={glowColor} opacity={0.62} stroke={OL} strokeWidth={OW} strokeOpacity={0.5} /><ellipse cx={230} cy={420} rx={20 + 14 * glow} ry={46 + 10 * glow} fill={glowColor} opacity={0.62} stroke={OL} strokeWidth={OW} strokeOpacity={0.5} /></>}
-      <Cap a={[200, 186]} b={[200, 214]} w={30} c={SK} />
-      <path d="M140 214 Q200 200 260 214 L254 362 Q200 372 146 362 Z" fill={shirt} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
-      <path d="M186 208 L200 226 L214 208" fill="none" stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
+      <Cap a={[200, 186]} b={[200, 214]} w={28} c={SK} />
+      <path d={torso} fill={shirt} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
+      {g > 1.02 && <ellipse cx={200} cy={338} rx={gx(52) - 200 + 4} ry={26 + 22 * (g - 1)} fill={shade(shirt, 0.92)} opacity={0.8} />}
+      <path d={`M${gx(165)} 252 Q200 270 ${gx(235)} 252`} fill="none" stroke={shade(shirt, 0.78)} strokeWidth={4} strokeLinecap="round" /><path d={`M${gx(176)} 300 Q200 308 ${gx(224)} 300`} fill="none" stroke={shade(shirt, 0.84)} strokeWidth={3.4} strokeLinecap="round" opacity={0.7} />
+      <path d="M184 205 L200 228 L216 205" fill="none" stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
+      {tank && <path d="M168 210 L232 210 L232 230 L168 230Z" fill="none" />}
       </g>
       {barbell && <g><line x1={20} y1={214 + dy} x2={380} y2={214 + dy} stroke={OL} strokeWidth={14} strokeLinecap="round" /><line x1={20} y1={214 + dy} x2={380} y2={214 + dy} stroke="#9AA0AA" strokeWidth={8} strokeLinecap="round" /><rect x={28} y={150 + dy} width={30} height={128} rx={8} fill="#1C1D22" stroke={OL} strokeWidth={4} /><rect x={342} y={150 + dy} width={30} height={128} rx={8} fill="#1C1D22" stroke={OL} strokeWidth={4} /><rect x={58} y={168 + dy} width={18} height={92} rx={6} fill="#1C1D22" stroke={OL} strokeWidth={4} /><rect x={324} y={168 + dy} width={18} height={92} rx={6} fill="#1C1D22" stroke={OL} strokeWidth={4} /></g>}
       <g transform={`translate(0 ${dy})`}>
-      {arm(shL, eL, handL)}{arm(shR, eR, handR)}
+      {arm(shL, eL, handL, -1)}{arm(shR, eR, handR, 1)}
       {(bicep > 0 || pumpGlow > 0) && [[shL, eL], [shR, eR]].map(([a, b], i) => { const m = lp(a as V, b as V, 0.62); return <g key={i}>{pumpGlow > 0 && <circle cx={m[0]} cy={m[1]} r={34 + 30 * bicep} fill="#FF5A3C" opacity={0.25 * pumpGlow} />}<circle cx={m[0]} cy={m[1]} r={16 + 22 * bicep} fill={pumpGlow > 0 ? '#F7A27E' : SK} stroke={OL} strokeWidth={OW} />{bicep > 0.5 && <path d={`M${m[0] - 8} ${m[1] - 6} q6 -6 12 0`} stroke="#C0392B" strokeWidth={3} fill="none" opacity={bicep} />}</g>; })}
-      {curl >= 0 && [handL, handR].map((hd, i) => <g key={i} transform={`translate(${hd[0]} ${hd[1]})`}><rect x={-30} y={-5} width={60} height={10} rx={4} fill="#9AA0AA" stroke={OL} strokeWidth={3} /><rect x={-40} y={-20} width={16} height={40} rx={5} fill="#1C1D22" stroke={OL} strokeWidth={3} /><rect x={24} y={-20} width={16} height={40} rx={5} fill="#1C1D22" stroke={OL} strokeWidth={3} /><circle r={14} fill={SK} stroke={OL} strokeWidth={OW} /></g>)}
+      {curl >= 0 && [handL, handR].map((hd, i) => <g key={i} transform={`translate(${hd[0]} ${hd[1]})`}><rect x={-30} y={-5} width={60} height={10} rx={4} fill="#9AA0AA" stroke={OL} strokeWidth={3} /><rect x={-40} y={-20} width={16} height={40} rx={5} fill="#1C1D22" stroke={OL} strokeWidth={3} /><rect x={24} y={-20} width={16} height={40} rx={5} fill="#1C1D22" stroke={OL} strokeWidth={3} /><Hand p={[0, 0]} from={[0, -20]} c={SK} fist side={1} r={1.0} /></g>)}
       {point && <g>
         <path d={`M${handR[0] - 30} ${handR[1] - 6} Q${handR[0] - 34} ${handR[1] + 30} ${handR[0]} ${handR[1] + 34} Q${handR[0] + 34} ${handR[1] + 32} ${handR[0] + 32} ${handR[1]} Q${handR[0] + 30} ${handR[1] - 30} ${handR[0]} ${handR[1] - 30} Q${handR[0] - 26} ${handR[1] - 30} ${handR[0] - 30} ${handR[1] - 6}Z`} fill={SK} stroke={OL} strokeWidth={OW} />
         <path d={`M${handR[0] - 22} ${handR[1] + 8} q10 6 20 0 M${handR[0] - 20} ${handR[1] + 20} q10 6 20 0`} stroke={OL} strokeWidth={3} fill="none" />
@@ -247,20 +310,22 @@ export const FrontPerson: React.FC<FrontProps> = ({phones, bicep = 0, pumpGlow =
         <ellipse cx={handR[0] + 8} cy={handR[1] - 12} rx={10} ry={8} fill="#FFE6D8" stroke={OL} strokeWidth={2.5} />
       </g>}
       {stopwatch && <g transform={`translate(${handL[0]} ${handL[1] - 30})`}><circle r={28} fill="#fff" stroke={OL} strokeWidth={5} /><rect x={-6} y={-38} width={12} height={9} fill={OL} /><path d="M0 0 L0 -18 M0 0 L13 6" stroke={G.red} strokeWidth={4} /></g>}
+      <g transform={`translate(0 ${headDy}) rotate(${headTilt} 200 190)`}>
       {/* head */}
       <circle cx={152} cy={146} r={11} fill={SK} stroke={OL} strokeWidth={OW} /><circle cx={248} cy={146} r={11} fill={SK} stroke={OL} strokeWidth={OW} />
       <circle cx={200} cy={140} r={48} fill={SK} stroke={OL} strokeWidth={OW} />
+      <circle cx={200} cy={140} r={46} fill="#fff" opacity={0.22 * tired + 0.32 * pale} />
       {hair === 'short' ? <path d="M152 142 Q146 90 200 88 Q254 90 248 142 Q240 112 214 110 Q196 120 172 112 Q158 120 152 142 Z" fill={HAIR} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />
         : <><path d="M154 132 Q156 96 200 92 Q244 96 246 132 Q230 112 200 110 Q170 112 154 132Z" fill="#8C7B70" opacity={0.35} /><polygon points="182,106 172,64 188,80 190,40 200,64 210,38 212,80 228,62 218,106" fill={MOH} stroke={OL} strokeWidth={OW} strokeLinejoin="round" /></>}
       {hp && <g><path d="M150 150 Q150 74 200 74 Q250 74 250 150" stroke={OL} strokeWidth={14} fill="none" strokeLinecap="round" /><path d="M150 150 Q150 74 200 74 Q250 74 250 150" stroke="#2A2D35" strokeWidth={8} fill="none" strokeLinecap="round" /><rect x={134} y={124} width={30} height={46} rx={13} fill="#2A2D35" stroke={OL} strokeWidth={OW} /><rect x={236} y={124} width={30} height={46} rx={13} fill="#2A2D35" stroke={OL} strokeWidth={OW} /><rect x={141} y={134} width={14} height={26} rx={6} fill={G.blue} /><rect x={245} y={134} width={14} height={26} rx={6} fill={G.blue} /></g>}
       {beard && <path d="M154 146 Q154 198 200 200 Q246 198 246 146 Q238 168 214 166 L200 160 L186 166 Q162 168 154 146 Z" fill={HAIR} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />}
-      <circle cx={200} cy={140} r={47} fill="#fff" opacity={0.22 * tired} />
       <Eye cx={183} cy={138} lid={Math.max(blink, yawn > 0.2 ? 0.95 : 0, tired * 0.5)} look={look} strain={mood === 'strain'} tired={tired} /><Eye cx={217} cy={138} lid={Math.max(blink, yawn > 0.2 ? 0.95 : 0, tired * 0.5)} look={look} strain={mood === 'strain'} tired={tired} />
       <path d={mood === 'worry' || mood === 'strain' || tired > 0.5 ? 'M172 120 L192 126 M228 120 L208 126' : 'M172 124 Q183 118 194 123 M206 123 Q217 118 228 124'} stroke={OL} strokeWidth={4.5} fill="none" strokeLinecap="round" />
       <path d="M200 142 Q206 156 196 160" stroke={OL} strokeWidth={3.2} fill="none" strokeLinecap="round" />
       <path d={mood === 'smile' ? 'M184 172 Q200 188 216 172' : mood === 'worry' ? 'M186 182 Q200 170 214 182' : mood === 'strain' ? 'M182 172 L218 172 L218 182 L182 182Z' : 'M188 178 L212 178'} stroke={beard ? '#fff' : OL} strokeWidth={4} fill={mood === 'strain' ? '#fff' : 'none'} strokeLinecap="round" strokeLinejoin="round" />
       {yawn > 0 && <g><ellipse cx={200} cy={176 + 6 * yawn} rx={11 + 9 * yawn} ry={4 + 17 * yawn} fill="#7A2E2A" stroke={OL} strokeWidth={OW} /><ellipse cx={200} cy={186 + 10 * yawn} rx={7 + 5 * yawn} ry={3 + 5 * yawn} fill="#D9726A" /></g>}
       {sweat > 0 && <path d={`M${248} ${104 + 24 * sweat} q-7 12 0 15 q7 -3 0 -15z`} fill="#8FD3FF" stroke={OL} strokeWidth={2.5} opacity={1 - sweat * 0.6} />}
+      </g>
       </g>
     </svg>
   );
