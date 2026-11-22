@@ -1,172 +1,144 @@
 import React from 'react';
-import {AbsoluteFill, Easing, Html5Audio, Sequence, interpolate, staticFile, useCurrentFrame} from 'remotion';
-import {COMPANIES, EVENTS, LAST, LEADER_CHANGES, MONTHS, SERIES, PRICES, leaderAt, monthLabel, valueAt} from './data';
+import {AbsoluteFill, Html5Audio, Sequence, interpolate, staticFile, useCurrentFrame} from 'remotion';
+import {COMPANIES, LAST, LEADER_CHANGES, SERIES, fmtCap, leaderAt, monthLabel, valueAt} from './data';
 
 export const FPS = 30;
-export const DURATION = 2220;
-const START = 90, END = 1980;
+export const DURATION = 825; // 27.5 s
+const START = 60, KNEE = 560, END = 660;
 const font = 'Inter, "Helvetica Neue", Arial, sans-serif';
 
 const progressAt = (f: number) =>
-  interpolate(f, [START, 1650, END], [0, 70, LAST], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.linear});
-const frameForMonth = (m: number) => {
-  let f = START; while (f < END && progressAt(f) < m) f++; return f;
-};
+  Math.max(0, Math.min(LAST, f <= KNEE ? ((f - START) / (KNEE - START)) * 119 : 119 + ((f - KNEE) / (END - KNEE)) * (LAST - 119)));
+const frameForMonth = (m: number) => { let f = START; while (f < END && progressAt(f) < m) f++; return f; };
 
-// geometría
-const PL = 170, PR = 1330, PT = 200, PB = 900;
-const YMIN = 50, YMAX = 5000;
-const X = (p: number) => PL + (p / LAST) * (PR - PL);
-const Y = (v: number) => PB - ((Math.log(v) - Math.log(YMIN)) / (Math.log(YMAX) - Math.log(YMIN))) * (PB - PT);
-const fmt = (v: number) => '$' + Math.round(v).toLocaleString('es-ES');
-
-const GRID = [50, 100, 200, 500, 1000, 2000, 5000];
+// zonas
+const LX = 70, LW = 940, LT = 1330, LB = 1640, LMAX = 5200;
+const LXp = (p: number) => LX + (p / LAST) * LW;
+const LY = (v: number) => LB - (v / LMAX) * (LB - LT);
+const ROW = 112, BAR_X = 290, BAR_MAX = 520, TOP = 560;
 
 export const Race: React.FC = () => {
   const frame = useCurrentFrame();
   const p = progressAt(frame);
   const last = Math.floor(p);
+  const vals = COMPANIES.map((_, i) => valueAt(i, p));
+  const rankAt = (i: number, pp: number) => {
+    const q = Math.max(0, pp);
+    const vi = valueAt(i, q);
+    return COMPANIES.reduce((a, _, j) => (j !== i && valueAt(j, q) > vi ? a + 1 : a), 0);
+  };
+  const pos = COMPANIES.map((_, i) => {
+    let t = 0; for (let k = 0; k < 9; k++) t += rankAt(i, p - k * 0.18);
+    return t / 9;
+  });
+  const maxV = Math.max(...vals);
+  const total = vals.reduce((a, b) => a + b, 0);
+  const {mon, year} = monthLabel(p);
+  const leader = leaderAt(Math.min(LAST, Math.round(p)));
+  const uiO = interpolate(frame, [40, 70], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const introO = interpolate(frame, [0, 10, 40, 62], [0, 1, 1, 0], {extrapolateRight: 'clamp'});
+  const outroO = interpolate(frame, [END + 10, END + 40], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const change = [...LEADER_CHANGES].reverse().find((c) => frame >= frameForMonth(c.m) && frame < frameForMonth(c.m) + 40);
+  const finals = COMPANIES.map((c, i) => ({c, i, v0: SERIES[i][0], v: SERIES[i][LAST]})).sort((a, b) => b.v - a.v);
 
-  const pathFor = (ci: number) => {
+  const linePath = (ci: number) => {
     let d = '';
-    for (let m = 0; m <= last; m++) d += `${m === 0 ? 'M' : 'L'}${X(m).toFixed(1)},${Y(SERIES[ci][m]).toFixed(1)} `;
-    if (p > last) d += `L${X(p).toFixed(1)},${Y(valueAt(ci, p)).toFixed(1)}`;
+    for (let m = 0; m <= last; m++) d += `${m ? 'L' : 'M'}${LXp(m).toFixed(1)},${LY(SERIES[ci][m]).toFixed(1)} `;
+    if (p > last) d += `L${LXp(p).toFixed(1)},${LY(vals[ci]).toFixed(1)}`;
     return d;
   };
 
-  // posición suave en el ranking
-  const vals = COMPANIES.map((_, i) => Math.log(valueAt(i, p)));
-  const pos = vals.map((vi, i) => vals.reduce((acc, vj, j) => (j === i ? acc : acc + 1 / (1 + Math.exp(-(vj - vi) / 0.07))), 0));
-  const leader = leaderAt(Math.min(LAST, Math.round(p)));
-
-  const introO = interpolate(frame, [0, 20, 70, 100], [0, 1, 1, 0], {extrapolateRight: 'clamp'});
-  const uiO = interpolate(frame, [60, 100], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
-  const outroO = interpolate(frame, [END, END + 40], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
-
-  const recentChange = [...LEADER_CHANGES].reverse().find((c) => frame >= frameForMonth(c.m) && frame < frameForMonth(c.m) + 75);
-  const ev = EVENTS.find((e) => frame >= frameForMonth(e.m) && frame < frameForMonth(e.m) + 110);
-
-  const finalOrder = COMPANIES.map((c, i) => ({c, i, v: SERIES[i][LAST]})).sort((a, b) => b.v - a.v);
-
   return (
-    <AbsoluteFill style={{background: 'radial-gradient(1200px 800px at 30% 20%, #14213d 0%, #070b16 70%)', fontFamily: font, color: '#fff'}}>
-      {/* ---- audio ---- */}
-      <Html5Audio src={staticFile('music.mp3')} volume={(f) => interpolate(f, [0, 60], [0, 0.55], {extrapolateRight: 'clamp'})} />
-      <Sequence from={0}><Html5Audio src={staticFile('whoosh.mp3')} volume={0.5} /></Sequence>
-      {Array.from({length: MONTHS - 1}, (_, m) => m + 1).map((m) => (
-        <Sequence key={m} from={frameForMonth(m)} durationInFrames={10}><Html5Audio src={staticFile('tick.mp3')} volume={0.22} /></Sequence>
-      ))}
+    <AbsoluteFill style={{background: 'radial-gradient(1400px 1100px at 50% 15%, #16254a 0%, #070b16 70%)', fontFamily: font, color: '#fff'}}>
+      <Html5Audio src={staticFile('sfx.mp3')} volume={0.9} />
       {LEADER_CHANGES.map((c) => (
-        <Sequence key={c.m} from={frameForMonth(c.m)} durationInFrames={60}><Html5Audio src={staticFile('ding.mp3')} volume={0.7} /></Sequence>
+        <Sequence key={c.m} from={frameForMonth(c.m)} durationInFrames={30}><Html5Audio src={staticFile('ding.mp3')} volume={0.4} /></Sequence>
       ))}
-      <Sequence from={END}><Html5Audio src={staticFile('chime.mp3')} volume={0.8} /></Sequence>
 
-      {/* ---- título ---- */}
-      <div style={{position: 'absolute', left: 80, top: 50, opacity: uiO}}>
-        <div style={{fontSize: 54, fontWeight: 800, letterSpacing: -1}}>La carrera de los gigantes</div>
-        <div style={{fontSize: 28, color: '#9fb0cc', marginTop: 6}}>Qué valdrían 100 $ invertidos en enero de 2020 · escala logarítmica</div>
+      {/* cabecera */}
+      <div style={{position: 'absolute', top: 150, left: 0, right: 0, textAlign: 'center', opacity: uiO}}>
+        <div style={{fontSize: 44, fontWeight: 700, letterSpacing: 6, color: '#9fb0cc'}}>BIGGEST US COMPANIES</div>
+        <div style={{fontSize: 36, color: '#6d7fa3', marginTop: 4}}>Market cap race</div>
+      </div>
+      <div style={{position: 'absolute', top: 270, left: 0, right: 0, textAlign: 'center', opacity: uiO, fontSize: 150, fontWeight: 900, letterSpacing: -4, lineHeight: 1}}>
+        {mon} <span style={{color: '#ffd166'}}>{year}</span>
+      </div>
+      <div style={{position: 'absolute', top: 440, left: 0, right: 0, textAlign: 'center', opacity: uiO}}>
+        <span style={{fontSize: 34, color: '#8696b5', letterSpacing: 3}}>COMBINED </span>
+        <span style={{fontSize: 64, fontWeight: 800, color: '#7CFFB2', fontVariantNumeric: 'tabular-nums'}}>${(total / 1000).toFixed(2)}T</span>
       </div>
 
-      {/* ---- gráfica ---- */}
-      <svg width={1920} height={1080} style={{position: 'absolute', inset: 0, opacity: uiO}}>
-        {GRID.map((g) => (
-          <g key={g}>
-            <line x1={PL} x2={PR} y1={Y(g)} y2={Y(g)} stroke={g === 100 ? '#5b6b8c' : '#1d2a47'} strokeWidth={g === 100 ? 2 : 1.5} strokeDasharray={g === 100 ? '8 8' : undefined} />
-            <text x={PL - 16} y={Y(g) + 8} fill="#8696b5" fontSize={22} textAnchor="end">{fmt(g)}</text>
-          </g>
-        ))}
-        {[0, 1, 2, 3, 4, 5, 6].map((y) => (
-          <g key={y}>
-            <line x1={X(y * 12)} x2={X(y * 12)} y1={PT} y2={PB} stroke="#16213a" strokeWidth={1.5} />
-            <text x={X(y * 12)} y={PB + 40} fill="#8696b5" fontSize={24} textAnchor="middle">{2020 + y}</text>
-          </g>
-        ))}
+      {/* barras */}
+      <div style={{position: 'absolute', left: 0, top: TOP, width: 1080, opacity: uiO}}>
         {COMPANIES.map((c, i) => {
-          const hx = X(p), hy = Y(valueAt(i, p));
-          const isLead = i === leader;
+          const w = Math.max(8, (vals[i] / Math.max(maxV, 600)) * BAR_MAX);
           return (
-            <g key={c.id}>
-              <path d={pathFor(i)} fill="none" stroke={c.color} strokeWidth={isLead ? 7 : 5} strokeLinejoin="round" strokeLinecap="round" opacity={0.95}
-                style={{filter: `drop-shadow(0 0 ${isLead ? 14 : 6}px ${c.color})`}} />
-              <circle cx={hx} cy={hy} r={isLead ? 13 : 9} fill={c.color} style={{filter: `drop-shadow(0 0 16px ${c.color})`}} />
-              <text x={hx + 22} y={hy + 8} fill={c.color} fontSize={26} fontWeight={700}>{c.name}</text>
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* fecha */}
-      <div style={{position: 'absolute', left: PL + 20, top: PT - 10, fontSize: 96, fontWeight: 800, opacity: uiO * 0.9, letterSpacing: -2, textShadow: '0 4px 30px #000'}}>
-        {monthLabel(p)}
-      </div>
-
-      {/* evento */}
-      {ev && (
-        <div style={{position: 'absolute', left: PL + 20, top: PT + 110, fontSize: 32, color: '#ffd166', fontWeight: 600,
-          opacity: interpolate(frame - frameForMonth(ev.m), [0, 12, 90, 110], [0, 1, 1, 0], {extrapolateRight: 'clamp'})}}>
-          ▸ {ev.text}
-        </div>
-      )}
-
-      {/* ---- ranking ---- */}
-      <div style={{position: 'absolute', left: 1400, top: 190, width: 450, opacity: uiO}}>
-        <div style={{fontSize: 24, color: '#8696b5', marginBottom: 14, letterSpacing: 1}}>CLASIFICACIÓN — VALOR DE 100 $</div>
-        {COMPANIES.map((c, i) => {
-          const v = valueAt(i, p);
-          return (
-            <div key={c.id} style={{position: 'absolute', top: 60 + pos[i] * 100, left: 0, width: 450, height: 86, borderRadius: 18,
-              background: 'rgba(255,255,255,0.06)', borderLeft: `10px solid ${c.color}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 22px',
-              boxShadow: i === leader ? `0 0 34px ${c.color}66` : undefined}}>
-              <div>
-                <div style={{fontSize: 34, fontWeight: 700}}>{Math.round(pos[i]) + 1}. {c.name}</div>
-                <div style={{fontSize: 21, color: '#8696b5'}}>{c.id === 'BTC' ? 'BTC' : c.id} · {fmt(PRICES[i][Math.max(0, Math.min(LAST, Math.round(p)))])}</div>
-              </div>
-              <div style={{fontSize: 38, fontWeight: 800, color: c.color, fontVariantNumeric: 'tabular-nums'}}>{fmt(v)}</div>
+            <div key={c.id} style={{position: 'absolute', left: 0, top: pos[i] * ROW, height: ROW - 18, width: 1080}}>
+              <div style={{position: 'absolute', left: 60, width: 220, top: 0, height: ROW - 18, display: 'flex', alignItems: 'center', fontSize: 38, fontWeight: 700, color: c.color}}>{c.name}</div>
+              <div style={{position: 'absolute', left: BAR_X, top: 8, height: ROW - 34, width: w, borderRadius: 14, background: `linear-gradient(90deg, ${c.color}99, ${c.color})`,
+                boxShadow: i === leader ? `0 0 40px ${c.color}99` : `0 0 18px ${c.color}44`}} />
+              <div style={{position: 'absolute', left: BAR_X + w + 16, top: 0, height: ROW - 18, display: 'flex', alignItems: 'center', fontSize: 42, fontWeight: 800, fontVariantNumeric: 'tabular-nums'}}>{fmtCap(vals[i])}</div>
             </div>
           );
         })}
       </div>
 
-      {/* cambio de líder */}
-      {recentChange && (
-        <div style={{position: 'absolute', left: 0, right: 0, bottom: 70, textAlign: 'center',
-          opacity: interpolate(frame - frameForMonth(recentChange.m), [0, 8, 60, 75], [0, 1, 1, 0], {extrapolateRight: 'clamp'}),
-          transform: `scale(${interpolate(frame - frameForMonth(recentChange.m), [0, 10], [0.85, 1], {extrapolateRight: 'clamp'})})`}}>
-          <span style={{fontSize: 52, fontWeight: 800, padding: '14px 40px', borderRadius: 60, background: COMPANIES[recentChange.ci].color, color: '#08101f'}}>
-            👑 {COMPANIES[recentChange.ci].name} toma el liderato
+      {/* línea inferior */}
+      <svg width={1080} height={1920} style={{position: 'absolute', inset: 0, opacity: uiO}}>
+        {[0, 1000, 2000, 3000, 4000, 5000].map((g) => (
+          <g key={g}>
+            <line x1={LX} x2={LX + LW} y1={LY(g)} y2={LY(g)} stroke="#1d2a47" strokeWidth={1.5} />
+            <text x={LX} y={LY(g) - 8} fill="#6d7fa3" fontSize={22}>{g ? `$${g / 1000}T` : ''}</text>
+          </g>
+        ))}
+        {[2016, 2018, 2020, 2022, 2024, 2026].map((y) => (
+          <text key={y} x={LXp((y - 2015) * 12)} y={LB + 40} fill="#6d7fa3" fontSize={24} textAnchor="middle">{y}</text>
+        ))}
+        {COMPANIES.map((c, i) => (
+          <g key={c.id}>
+            <path d={linePath(i)} fill="none" stroke={c.color} strokeWidth={5} strokeLinejoin="round" strokeLinecap="round" style={{filter: `drop-shadow(0 0 6px ${c.color})`}} />
+            <circle cx={LXp(p)} cy={LY(vals[i])} r={8} fill={c.color} />
+          </g>
+        ))}
+      </svg>
+
+      {change && (
+        <div style={{position: 'absolute', left: 0, right: 0, top: 1235, textAlign: 'center',
+          opacity: interpolate(frame - frameForMonth(change.m), [0, 5, 28, 40], [0, 1, 1, 0], {extrapolateRight: 'clamp'})}}>
+          <span style={{fontSize: 40, fontWeight: 800, padding: '8px 30px', borderRadius: 50, background: COMPANIES[change.ci].color, color: '#08101f'}}>
+            {COMPANIES[change.ci].name} takes #1
           </span>
         </div>
       )}
 
-      <div style={{position: 'absolute', left: 80, bottom: 28, fontSize: 19, color: '#5f6f8e', opacity: uiO}}>
-        Datos mensuales aproximados (cierres ajustados por splits). Los últimos meses de 2026 son estimaciones. No es consejo financiero.
+      <div style={{position: 'absolute', left: 0, right: 0, bottom: 150, textAlign: 'center', fontSize: 22, color: '#5f6f8e', opacity: uiO}}>
+        Approximate data · latest months estimated · not financial advice
       </div>
 
-      {/* ---- intro ---- */}
-      <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', opacity: introO, background: 'rgba(7,11,22,0.6)'}}>
-        <div style={{fontSize: 110, fontWeight: 900, letterSpacing: -3}}>La carrera de los gigantes</div>
-        <div style={{fontSize: 40, color: '#9fb0cc', marginTop: 10}}>NVIDIA · Microsoft · Apple · Bitcoin · Tesla · Amazon</div>
-        <div style={{fontSize: 32, color: '#ffd166', marginTop: 30}}>2020 → hoy</div>
+      {/* intro */}
+      <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', opacity: introO, background: 'rgba(7,11,22,0.55)', textAlign: 'center'}}>
+        <div style={{fontSize: 120, fontWeight: 900, lineHeight: 1.05, letterSpacing: -3}}>THE 6 BIGGEST<br />US COMPANIES</div>
+        <div style={{fontSize: 50, color: '#ffd166', marginTop: 40}}>2016 → today</div>
       </AbsoluteFill>
 
-      {/* ---- outro ---- */}
-      <AbsoluteFill style={{opacity: outroO, background: 'rgba(7,11,22,0.985)', justifyContent: 'center', alignItems: 'center'}}>
-        <div style={{fontSize: 70, fontWeight: 900, marginBottom: 10}}>Resultado final · nov 2026</div>
-        <div style={{fontSize: 30, color: '#9fb0cc', marginBottom: 40}}>100 $ de enero de 2020 se convirtieron en…</div>
-        {finalOrder.map((o, k) => {
-          const a = interpolate(frame, [END + 30 + k * 18, END + 55 + k * 18], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+      {/* outro */}
+      <AbsoluteFill style={{opacity: outroO, background: '#070b16', alignItems: 'center', paddingTop: 230}}>
+        <div style={{fontSize: 64, fontWeight: 900}}>Dec 2015 → Nov 2026</div>
+        <div style={{fontSize: 34, color: '#9fb0cc', margin: '10px 0 50px'}}>Final ranking · growth since Dec 2015</div>
+        {finals.map((o, k) => {
+          const a = interpolate(frame, [END + 30 + k * 10, END + 48 + k * 10], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+          const mult = o.v / o.v0;
           return (
-            <div key={o.c.id} style={{width: 900, height: 80, margin: '6px 0', display: 'flex', alignItems: 'center', opacity: a, transform: `translateX(${(1 - a) * 80}px)`}}>
-              <div style={{width: 60, fontSize: 40, fontWeight: 800, color: '#8696b5'}}>{k + 1}</div>
-              <div style={{width: 260, fontSize: 40, fontWeight: 700, color: o.c.color}}>{o.c.name}</div>
-              <div style={{height: 36, borderRadius: 18, background: o.c.color, width: 330 * a * (Math.log(o.v) - Math.log(50)) / (Math.log(3500) - Math.log(50))}} />
-              <div style={{marginLeft: 22, fontSize: 40, fontWeight: 800}}>{fmt(o.v)}</div>
+            <div key={o.c.id} style={{width: 900, height: 128, display: 'flex', alignItems: 'center', opacity: a, transform: `translateX(${(1 - a) * 60}px)`, borderBottom: '1px solid #1d2a47'}}>
+              <div style={{width: 70, fontSize: 46, fontWeight: 800, color: '#6d7fa3'}}>{k + 1}</div>
+              <div style={{flex: 1}}>
+                <div style={{fontSize: 46, fontWeight: 800, color: o.c.color}}>{o.c.name}</div>
+                <div style={{fontSize: 28, color: '#8696b5'}}>{fmtCap(o.v0)} → {fmtCap(o.v)}</div>
+              </div>
+              <div style={{fontSize: 56, fontWeight: 900, fontVariantNumeric: 'tabular-nums'}}>{mult >= 10 ? `${Math.round(mult)}x` : `${mult.toFixed(1)}x`}</div>
             </div>
           );
         })}
-        <div style={{fontSize: 26, color: '#ffd166', marginTop: 34, opacity: interpolate(frame, [END + 150, END + 180], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})}}>
-          Y ahora todo está cayendo… ¿quién liderará la próxima carrera?
-        </div>
       </AbsoluteFill>
     </AbsoluteFill>
   );
