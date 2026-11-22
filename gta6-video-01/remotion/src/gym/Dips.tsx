@@ -1,6 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Easing, Sequence, interpolate, random, staticFile, useCurrentFrame} from 'remotion';
-import {FONT, FrontPerson, G, OL, Person, Pose, V} from './kit';
+import {FONT, FrontPerson, G, OL, Person, Pose, V, ik} from './kit';
 import {FPS} from '../theme';
 import SEG from './ep04_segments.json';
 
@@ -17,7 +17,7 @@ const lerpV = (a: V, b: V, k: number): V => [lerp(a[0], b[0], k), lerp(a[1], b[1
 const c01 = (x: number) => Math.min(1, Math.max(0, x));
 const sec = SEG as {start: number; end: number; text: string}[];
 const T = (i: number) => sec[i].start;
-const END = sec[17].end + 4.2;
+const END = sec[21].end + 1.2;
 export const DIPS_TOTAL = Math.round(END * FPS);
 const LIME = '#B6F23C', LIME_D = '#7FB51A', CORAL = '#FF6F61', CORAL_D = '#D94A3E', AMBER = '#FFB020', INK = '#17181C';
 const MONO = '"DejaVu Sans Mono", monospace';
@@ -26,12 +26,12 @@ const FL = 1250; // floor line
 /* ---------------- time bounds of each scene ---------------- */
 const B = {
   open: [0, T(2)], setup: [T(2), T(5)], study: [T(5), T(6)], result: [T(6), T(9)], rings: [T(9), T(11)],
-  shoulder: [T(11), T(12)], scale: [T(12), T(13)], verdict: [T(13), T(17)], ask: [T(17), END],
+  shoulder: [T(11), T(12)], scale: [T(12), T(13)], verdict: [T(13), T(17)], grow: [T(17), T(20)], ask: [T(20), END],
 } as const;
 type BK = keyof typeof B;
 const rel = (i: number, k: BK) => T(i) - B[k][0];
 /** dip cycle: 0 = arms straight (top), 1 = bottom. ~1.2 s per rep, same tempo for everybody. */
-const dipK = (t: number, phase = 0) => 0.5 - 0.5 * Math.cos(2 * Math.PI * (t / 1.2 + phase));
+const dipK = (t: number, phase = 0, period = 1.2) => 0.5 - 0.5 * Math.cos(2 * Math.PI * (t / period + phase));
 
 /* ---------------- shared UI ---------------- */
 const Pop: React.FC<{at: number; out?: number; children: React.ReactNode; style?: React.CSSProperties}> = ({at, out, children, style}) => {
@@ -129,7 +129,6 @@ const Hoodie: React.FC<{p: Pose; s: number; x: number; y: number}> = ({p, s, x, 
   return (
     <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible', pointerEvents: 'none'}}>
       <path d={`M${sh[0] - 22 * s} ${sh[1] - 8 * s} Q${sh[0] - 14 * s} ${sh[1] - 42 * s} ${sh[0] + 14 * s} ${sh[1] - 30 * s} Q${sh[0] + 22 * s} ${sh[1] - 12 * s} ${sh[0] + 6 * s} ${sh[1] - 6 * s} Q${sh[0] - 8 * s} ${sh[1] - 2 * s} ${sh[0] - 22 * s} ${sh[1] - 8 * s}Z`} fill={LIME} stroke={OL} strokeWidth={3.4} strokeLinejoin="round" transform={`rotate(${ang} ${sh[0]} ${sh[1]})`} />
-      <g transform={`rotate(${ang} ${mid[0]} ${mid[1]})`}><path d={`M${mid[0] - 30 * s} ${mid[1] + 18 * s} L${mid[0] + 34 * s} ${mid[1] + 18 * s} L${mid[0] + 26 * s} ${mid[1] + 62 * s} L${mid[0] - 24 * s} ${mid[1] + 62 * s}Z`} fill={LIME_D} stroke={OL} strokeWidth={3 * s + 1} strokeLinejoin="round" /></g>
       <path d={`M${hd[0] - 4} ${hd[1] + 46 * s} L${hd[0] - 6} ${sh[1] + 36 * s} M${hd[0] + 8} ${hd[1] + 46 * s} L${hd[0] + 10} ${sh[1] + 34 * s}`} stroke="#fff" strokeWidth={3} strokeLinecap="round" />
     </svg>
   );
@@ -166,20 +165,33 @@ const Scoreboard: React.FC<{t: number; a: number; d: number; aVal?: string; dVal
 );
 
 /* ================================ SCENES ================================ */
+/** piecewise eased keyframes: [[t, value], ...] */
+const kf = (t: number, keys: [number, number][]) => {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 0; i < keys.length - 1; i++) { const [t0, v0] = keys[i], [t1, v1] = keys[i + 1]; if (t <= t1) return lerp(v0, v1, eio(c01((t - t0) / (t1 - t0)))); }
+  return keys[keys.length - 1][1];
+};
 const Open: React.FC = () => {
   const t = useT();
-  const z = interpolate(t, [0, 0.7, T(1) - B.open[0]], [1.5, 1.08, 1], {...clamp, easing: eo});
+  // "Bench dips" -> push in on Alex doing it; "or bar dips" -> slide to Daniel; then the camera pulls far away to show both
+  const z = kf(t, [[0, 1.8], [0.8, 1.8], [1.0, 1.8], [1.8, 1.8], [3.1, 1.0], [4.6, 1.05]]);
+  const fx = kf(t, [[0, 215], [0.8, 215], [1.0, 830], [1.8, 830], [3.1, 540]]);
+  const fy = kf(t, [[0, 960], [1.8, 960], [3.1, 820]]);
+  const per = t < 3.1 ? 0.9 : 1.2; // quick reps for the hook, normal tempo once we are wide
+  const k = dipK(t, 0, per);
   return (
     <AbsoluteFill>
-      <Zoom z={z} fx={540} fy={820}>
+      <Zoom z={z} fx={fx} fy={fy}>
         <Floor />
         <div style={{position: 'absolute', left: 536, top: 520, width: 8, height: 740, background: INK, opacity: 0.85}} />
-        <AlexBench x={10} y={FL - 650} s={1.15} k={dipK(t)} />
-        <DanBars x={560} y={FL - 650} s={1.15} k={dipK(t)} t={t} />
+        <AlexBench x={10} y={FL - 650} s={1.15} k={k} />
+        <DanBars x={560} y={FL - 650} s={1.15} k={k} t={t} />
       </Zoom>
       <Scoreboard t={t} a={0} d={0} />
-      <Pop at={0.15} style={{left: 70, top: 560}}><Tag text="BENCH DIPS" color={LIME} fg={INK} size={34} /></Pop>
-      <Pop at={0.4} style={{left: 640, top: 560}}><Tag text="BAR DIPS" color={CORAL} fg={INK} size={34} /></Pop>
+      <Pop at={0.05} out={0.95} style={{left: 70, top: 470}}><Tag text="BENCH DIPS" color={LIME} fg={INK} size={40} /></Pop>
+      <Pop at={1.0} out={1.85} style={{left: 640, top: 470}}><Tag text="BAR DIPS" color={CORAL} fg={INK} size={40} /></Pop>
+      {t > 2.0 && <Pop at={2.0} style={{left: 70, top: 560}}><Tag text="BENCH DIPS" color={LIME} fg={INK} size={30} /></Pop>}
+      {t > 2.2 && <Pop at={2.2} style={{left: 700, top: 560}}><Tag text="BAR DIPS" color={CORAL} fg={INK} size={30} /></Pop>}
       {t > rel(1, 'open') + 0.9 && <Pop at={rel(1, 'open') + 0.9} style={{left: 0, right: 0, top: 470, display: 'flex', justifyContent: 'center'}}><Tag text="TRICEPS · WHICH ONE WINS?" color={INK} size={26} /></Pop>}
     </AbsoluteFill>
   );
@@ -404,21 +416,98 @@ const Verdict: React.FC = () => {
   );
 };
 
-/* ---- ask ---- */
-const Ask: React.FC = () => {
+/* ---- how a muscle grows ---- */
+const Fibres: React.FC<{x: number; y: number; r: number; g: number; tension: number; t: number}> = ({x, y, r, g, tension, t}) => {
+  const n = 7, th = 8 + 18 * g;
+  return (
+    <g>
+      <circle cx={x} cy={y} r={r + 8} fill="#fff" stroke={INK} strokeWidth={6} />
+      <clipPath id="fibc"><circle cx={x} cy={y} r={r} /></clipPath>
+      <g clipPath="url(#fibc)">
+        <rect x={x - r} y={y - r} width={2 * r} height={2 * r} fill="#0E1620" />
+        {Array.from({length: n}).map((_, i) => { const yy = y - r * 0.7 + (i * r * 1.4) / (n - 1); const wob = tension * Math.sin(t * 22 + i) * 3; return <g key={i}><line x1={x - r} y1={yy + wob} x2={x + r} y2={yy - wob} stroke={CORAL_D} strokeWidth={th + 4} strokeLinecap="round" opacity={0.6} /><line x1={x - r} y1={yy + wob} x2={x + r} y2={yy - wob} stroke={CORAL} strokeWidth={th} strokeLinecap="round" /><line x1={x - r} y1={yy - th * 0.25 + wob} x2={x + r} y2={yy - th * 0.25 - wob} stroke="#fff" strokeWidth={2.5} opacity={0.45} /></g>; })}
+        {tension > 0.05 && [0, 1].map((k) => <g key={k}><path d={`M${x - r + 14} ${y + (k ? 40 : -40)} l-0 0`} /><path d={`M${x - r * 0.85} ${y + (k ? 0.5 : -0.5) * 20} L${x - r * 0.45} ${y + (k ? 0.5 : -0.5) * 20}`} stroke="#fff" strokeWidth={5} opacity={tension} strokeLinecap="round" /></g>)}
+      </g>
+    </g>
+  );
+};
+const Grow: React.FC = () => {
   const t = useT();
-  const bob = (ph: number) => Math.abs(Math.sin(t * 5 + ph)) * 18;
-  const pulse = 1 + 0.05 * Math.sin(t * 8);
+  const a17 = 0, a18 = rel(18, 'grow'), a19 = rel(19, 'grow');
+  const k = dipK(t, 0, 0.8); // fast reps: this is where the work happens
+  const s = 1.3, x = 20, y = FL - 650 * (s / 1.15) * 1.0 + 0;
+  const bx = 20, by = FL - 565 * s;
+  const pose = barPose(k);
+  const P = (v: V): V => [bx + 120 + v[0] * s, by + v[1] * s];
+  // triceps teardrop along the back of the upper arm
+  const sh = P(pose.sh), el = P(ik(pose.sh, pose.handL, 74, 68, -1));
+  const ang = (Math.atan2(el[1] - sh[1], el[0] - sh[0]) * 180) / Math.PI, len = Math.hypot(el[0] - sh[0], el[1] - sh[1]);
+  const growth = interpolate(t, [a19 + 0.5, a19 + 5.0], [0, 1], {...clamp, easing: eio});
+  const act = 0.55 + 0.45 * k;
+  const tension = t >= a18 ? Math.min(1, (t - a18) / 0.4) * (0.5 + 0.5 * k) : 0;
+  const weeks = Math.round(interpolate(t, [a19 + 0.4, a19 + 5.2], [0, 12], clamp));
+  const step = t < a18 ? 0 : t < a19 ? 1 : 2;
+  const chip = (n: number, text: string, at: number, col: string) => <Pop at={at} style={{left: 60, top: 1100 + n * 0}}><div /></Pop>;
+  void chip;
   return (
     <AbsoluteFill>
       <Floor />
-      <div style={{position: 'absolute', left: 0, top: 0, transform: `translateY(${-bob(0)}px)`}}><FrontPerson shirt={LIME} hair="short" phones mood="smile" s={1.2} x={-40} y={FL - 572 * 1.2} handL={[118, 378]} handR={[296, 252]} point straight="R" /></div>
-      <div style={{position: 'absolute', left: 0, top: 0, transform: `translateY(${-bob(1.5)}px)`}}><FrontPerson shirt={CORAL} cap beard mood="smile" s={1.2} x={560} y={FL - 572 * 1.2} handL={[104, 252]} handR={[282, 378]} point={false} /></div>
-      <Pop at={0.1} style={{left: 90, top: 480}}><div style={{background: LIME, border: `6px solid ${INK}`, borderRadius: 22, padding: '14px 40px', fontFamily: FONT, fontWeight: 900, fontSize: 66, color: INK, transform: `scale(${pulse}) rotate(-3deg)`, boxShadow: '0 10px 0 rgba(0,0,0,.2)'}}>BENCH</div></Pop>
-      <Pop at={0.3} style={{left: 640, top: 480}}><div style={{background: CORAL, border: `6px solid ${INK}`, borderRadius: 22, padding: '14px 40px', fontFamily: FONT, fontWeight: 900, fontSize: 66, color: INK, transform: `scale(${2 - pulse}) rotate(3deg)`, boxShadow: '0 10px 0 rgba(0,0,0,.2)'}}>BARS</div></Pop>
-      <Pop at={0.5} style={{left: 0, right: 0, top: 690, display: 'flex', justifyContent: 'center'}}><div style={{fontFamily: FONT, fontWeight: 900, fontSize: 52, color: INK}}>OR</div></Pop>
-      {t > 1.3 && <Pop at={1.3} style={{left: 0, right: 0, top: 1280, display: 'flex', justifyContent: 'center', transform: `translateY(${Math.sin(t * 7) * 8}px)`}}><Tag text="TELL US IN THE COMMENTS" color={INK} size={30} icon="💬" /></Pop>}
-      {t > 1.3 && <div style={{position: 'absolute', left: 520, top: 1325 + Math.sin(t * 7) * 6, fontSize: 56, color: INK}}>↓</div>}
+      <BoxSvg x={bx + 120} y={by} s={s}><BarsEq /></BoxSvg>
+      <DanSide x={bx + 120} y={by} s={s} pose={pose} mood={k > 0.5 ? 'strain' : 'flat'} sweat={k > 0.6 ? (t * 1.6) % 1 : 0} />
+      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+        <circle cx={(sh[0] + el[0]) / 2} cy={(sh[1] + el[1]) / 2} r={70 + 12 * Math.sin(t * 9)} fill={CORAL} opacity={0.18 * act} />
+        <g transform={`translate(${(sh[0] + el[0]) / 2} ${(sh[1] + el[1]) / 2}) rotate(${ang}) translate(${-10 * s} ${-12 * s})`}>
+          <ellipse rx={len * 0.55} ry={(15 + 12 * growth) * s} fill={CORAL} fillOpacity={0.55 + 0.4 * act} stroke={INK} strokeWidth={3.4} />
+          {[-8, 0, 8].map((yy, i) => <path key={i} d={`M${-len * 0.45} ${yy * s * (1 + growth * 0.5)} Q0 ${yy * s * (1 + growth * 0.5) - 3} ${len * 0.45} ${yy * s * (1 + growth * 0.5)}`} fill="none" stroke="#fff" strokeWidth={2.4} opacity={0.6} />)}
+        </g>
+        {t < a18 && <circle cx={(sh[0] + el[0]) / 2} cy={(sh[1] + el[1]) / 2} r={40 + 50 * ((t * 1.4) % 1)} fill="none" stroke={CORAL_D} strokeWidth={5 * (1 - ((t * 1.4) % 1))} />}
+        {t >= a18 && <Fibres x={800} y={640} r={150} g={growth} tension={tension} t={t} />}
+        {t >= a18 && <line x1={(sh[0] + el[0]) / 2 + 30} y1={(sh[1] + el[1]) / 2 - 12} x2={650} y2={600} stroke={INK} strokeWidth={4} strokeDasharray="10 8" />}
+      </svg>
+      <Pop at={0.1} style={{left: 60, top: 470}}><Tag text="TRICEPS" color={CORAL} fg={INK} size={36} /></Pop>
+      {t < a18 && <Pop at={0.5} style={{left: 640, top: 540}}><div style={{fontFamily: FONT, fontWeight: 900, fontSize: 200, color: CORAL_D, transform: `rotate(${Math.sin(t * 6) * 8}deg)`}}>?</div></Pop>}
+      {t >= a18 && <Pop at={a18 + 0.1} style={{left: 590, top: 830}}><Tag text="① TENSION" color={CORAL} fg={INK} size={34} /></Pop>}
+      {t >= a19 && (
+        <>
+          <Pop at={a19 + 0.05} style={{left: 590, top: 900}}><Tag text="② FOOD + SLEEP" color={LIME} fg={INK} size={30} /></Pop>
+          <Pop at={a19 + 1.6} style={{left: 590, top: 970}}><Tag text="③ THICKER FIBRES" color={AMBER} fg={INK} size={30} /></Pop>
+          <Pop at={a19 + 0.6} style={{left: 60, top: 1060}}><div style={{background: '#fff', border: `5px solid ${INK}`, borderRadius: 18, padding: '4px 24px', fontFamily: FONT, fontWeight: 900, fontSize: 52, color: INK, boxShadow: '0 8px 0 rgba(0,0,0,.15)'}}>WEEK {weeks}</div></Pop>
+          <HP x={60} y={1200} w={470} h={50} v={growth} color={LIME} dark={LIME_D} label="MUSCLE SIZE" t={t} flash={growth > 0.98 ? 1 : 0} />
+          <Pop at={a19 + 0.9} style={{left: 560, top: 1040}}><Tag text="ILLUSTRATIVE" color="#fff" fg="#777" size={18} /></Pop>
+          {[0, 1, 2].map((i) => { const at = a19 + 0.4 + i * 0.5; const p = interpolate(t, [at, at + 0.7], [0, 1], clamp); return p > 0 && p < 1 ? <div key={i} style={{position: 'absolute', left: 120 + i * 70, top: 1120 - p * 160, fontSize: 56, opacity: 1 - p}}>{['🍗', '😴', '🥚'][i]}</div> : null; })}
+        </>
+      )}
+      {step === 0 && null}
+    </AbsoluteFill>
+  );
+};
+
+/* ---- ask: fast reps, buttons, comments ---- */
+const Ask: React.FC = () => {
+  const t = useT();
+  const a21 = rel(21, 'ask');
+  const pulse = 1 + 0.05 * Math.sin(t * 9);
+  const k = dipK(t, 0, 0.55); // double-speed reps
+  const z = 1 + 0.06 * Math.min(1, t / 1.5);
+  return (
+    <AbsoluteFill>
+      <Zoom z={z} fx={540} fy={820}>
+        <Floor />
+        <div style={{position: 'absolute', left: 536, top: 520, width: 8, height: 740, background: INK, opacity: 0.85}} />
+        <AlexBench x={10} y={FL - 650} s={1.15} k={k} />
+        <DanBars x={560} y={FL - 650} s={1.15} k={k} t={t} />
+      </Zoom>
+      <Pop at={0.05} style={{left: 80, top: 440}}><div style={{background: LIME, border: `6px solid ${INK}`, borderRadius: 22, padding: '12px 36px', fontFamily: FONT, fontWeight: 900, fontSize: 62, color: INK, transform: `scale(${pulse}) rotate(-3deg)`, boxShadow: '0 10px 0 rgba(0,0,0,.2)'}}>BENCH</div></Pop>
+      <Pop at={0.25} style={{left: 650, top: 440}}><div style={{background: CORAL, border: `6px solid ${INK}`, borderRadius: 22, padding: '12px 36px', fontFamily: FONT, fontWeight: 900, fontSize: 62, color: INK, transform: `scale(${2 - pulse}) rotate(3deg)`, boxShadow: '0 10px 0 rgba(0,0,0,.2)'}}>BARS</div></Pop>
+      <Pop at={0.45} style={{left: 0, right: 0, top: 470, display: 'flex', justifyContent: 'center'}}><div style={{fontFamily: FONT, fontWeight: 900, fontSize: 50, color: INK}}>OR</div></Pop>
+      <Pop at={0.6} style={{left: 0, right: 0, top: 590, display: 'flex', justifyContent: 'center'}}><Tag text="2× SPEED" color={INK} size={26} icon="⏩" /></Pop>
+      {t > a21 && (
+        <>
+          <Pop at={a21} style={{left: 90, top: 700}}><div style={{background: '#fff', border: `5px solid ${INK}`, borderRadius: 26, padding: '14px 26px', width: 620, boxShadow: '0 10px 0 rgba(0,0,0,.18)'}}><div style={{display: 'flex', gap: 14, alignItems: 'center'}}><div style={{width: 54, height: 54, borderRadius: 27, background: LIME, border: `4px solid ${INK}`}} /><div style={{fontFamily: FONT, fontWeight: 800, fontSize: 40, color: INK}}>Bars! 💪</div></div></div></Pop>
+          <Pop at={a21 + 0.5} style={{left: 330, top: 840}}><div style={{background: '#fff', border: `5px solid ${INK}`, borderRadius: 26, padding: '14px 26px', width: 620, boxShadow: '0 10px 0 rgba(0,0,0,.18)'}}><div style={{display: 'flex', gap: 14, alignItems: 'center'}}><div style={{width: 54, height: 54, borderRadius: 27, background: CORAL, border: `4px solid ${INK}`}} /><div style={{fontFamily: FONT, fontWeight: 800, fontSize: 40, color: INK}}>Bench, feet down 🙌</div></div></div></Pop>
+          {[0, 1, 2, 3, 4].map((i) => { const ph = (t * 0.9 + i / 5) % 1; return <div key={i} style={{position: 'absolute', left: 120 + i * 170 + Math.sin(ph * 6 + i) * 20, top: 1220 - ph * 260, fontSize: 56, opacity: Math.sin(ph * Math.PI)}}>{['❤️', '👍', '🔥', '❤️', '💬'][i]}</div>; })}
+        </>
+      )}
     </AbsoluteFill>
   );
 };
@@ -438,7 +527,7 @@ for (const sg of sec) {
 const Subs: React.FC = () => {
   const s = useCurrentFrame() / FPS;
   const c = cards.find((x) => s >= x.t0 && s < x.t1 + 0.04);
-  if (!c || s > sec[17].end + 0.5) return null;
+  if (!c || s > sec[21].end + 0.5) return null;
   return (
     <div style={{position: 'absolute', left: 40, width: 1000, top: 1400, display: 'flex', justifyContent: 'center'}}>
       <div style={{background: '#111', borderRadius: 16, padding: '10px 28px 14px', fontFamily: FONT, fontWeight: 900, fontSize: 58, letterSpacing: -1, whiteSpace: 'nowrap', boxShadow: '0 8px 0 rgba(0,0,0,.18)'}}>
@@ -463,7 +552,7 @@ const SC: React.FC<{k: BK; children: React.ReactNode; hits?: number[]; noWipe?: 
           <MBG />
           {children}
           <Header />
-          {!noFooter && <Footer />}
+          
         </Impact>
         {!noWipe && <Wipe k={idx} />}
       </AbsoluteFill>
@@ -480,7 +569,8 @@ export const DipsUK: React.FC = () => (
     <SC k="shoulder" hits={[0.2]}><Shoulder /></SC>
     <SC k="scale" hits={[0, 1.6, 2.4]}><Scale /></SC>
     <SC k="verdict" hits={[0.1, rel(14, 'verdict') + 0.9]} noFooter><Verdict /></SC>
-    <SC k="ask" hits={[0.05]} noFooter><Ask /></SC>
+    <SC k="grow" hits={[0.05, rel(18, 'grow'), rel(19, 'grow') + 1.6]} noFooter><Grow /></SC>
+    <SC k="ask" hits={[0.05, rel(21, 'ask')]} noFooter><Ask /></SC>
     <Subs />
     <Audio src={staticFile('audio/dips_voice.wav')} />
     <Audio src={staticFile('audio/gym_music.wav')} loop volume={(f) => { const t = f / FPS; const duck = interpolate(t, [T(12) + 3.6, T(12) + 4.0, T(13) + 0.05, T(13) + 0.5], [1, 0.2, 0.2, 1], clamp); return 0.1 * duck * interpolate(f, [0, 10, DIPS_TOTAL - 70, DIPS_TOTAL], [0, 1, 1, 0], clamp); }} />

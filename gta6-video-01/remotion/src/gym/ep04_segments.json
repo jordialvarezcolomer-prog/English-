@@ -103,8 +103,32 @@
  },
  {
   "i": 17,
-  "text": "Which one are you doing tomorrow?",
+  "text": "So how does a muscle actually grow?",
   "start": 49.003,
-  "end": 50.846
+  "end": 51.067
+ },
+ {
+  "i": 18,
+  "text": "Hard sets put tension on the fibres.",
+  "start": 51.137,
+  "end": 53.481
+ },
+ {
+  "i": 19,
+  "text": "Over weeks, with enough food and sleep, your body adds more muscle protein, so the fibres get thicker.",
+  "start": 53.531,
+  "end": 59.002
+ },
+ {
+  "i": 20,
+  "text": "Which one are you doing tomorrow?",
+  "start": 59.052,
+  "end": 60.894
+ },
+ {
+  "i": 21,
+  "text": "Tell us in the comments.",
+  "start": 60.964,
+  "end": 62.394
  }
 ]
