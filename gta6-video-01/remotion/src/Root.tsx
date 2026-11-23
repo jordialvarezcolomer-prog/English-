@@ -9,6 +9,7 @@ import {EP2_TOTAL, Episode02} from './fitness/Episode02';
 import {SLEEPTOON_TOTAL, SleepToon} from './gym/SleepToon';
 import {SHOULDERS_TOTAL, ShouldersUK} from './gym/Shoulders';
 import {DIPS_TOTAL, DipsUK} from './gym/Dips';
+import {HeroPushdown, HeroSheet, SHOTS} from './hero/HeroSheet';
 import {GYM_TOTAL} from './gym/timeline';
 import {TOTAL_FRAMES} from './timeline';
 import {FPS, W, H} from './theme';
@@ -21,6 +22,8 @@ export const Root: React.FC = () => (
     <Composition id="SleepToon" component={SleepToon} durationInFrames={SLEEPTOON_TOTAL} fps={FPS} width={W} height={H} />
     <Composition id="ShouldersUK" component={ShouldersUK} durationInFrames={SHOULDERS_TOTAL} fps={FPS} width={W} height={H} />
     <Composition id="DipsUK" component={DipsUK} durationInFrames={DIPS_TOTAL} fps={FPS} width={W} height={H} />
+    <Composition id="HeroSheet" component={HeroSheet} durationInFrames={SHOTS.length} fps={FPS} width={720} height={1280} />
+    <Composition id="HeroPushdown" component={HeroPushdown} durationInFrames={90} fps={FPS} width={720} height={1280} />
     <Composition id="Test3D" component={Test3D} durationInFrames={45} fps={FPS} width={W} height={H} />
     <Composition id="GymRest" component={GymRest} durationInFrames={GYM_TOTAL} fps={FPS} width={W} height={H} /></>
 );
