@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Easing, Sequence, interpolate, random, staticFile, useCurrentFrame} from 'remotion';
 import SEG from './segments.json';
-import {TopArm, Blanket, Burst, CALM, Defs, Ex, Fire, Gauge, Head, Macaque, Room} from './Macaque';
+import {Fx, Hummingbird, TopArm, Blanket, Burst, CALM, Defs, Ex, Fire, Gauge, Head, Macaque, Room} from './Macaque';
 
 /* "What if you did it faster and faster?" — British-English replica of the reference structure. No brands, logos or handles. */
 const FPS = 30;
@@ -40,7 +40,7 @@ const exAt = (t: number): Ex => {
   if (t >= W.end[0]) return t < W.end[0] + 1.2 ? {mouth: 'flat', eye: 0.5, pupil: 1, brow: 0.2, sweat: 0.2, blush: 0.9} : {mouth: 'sleep', eye: 0.06, pupil: 1, brow: 0.3, sweat: 0, blush: 0.9};
   return {mouth: 'scream', eye: 1, pupil: 0.5, brow: -1, sweat: 0.5, blush: 1};
 };
-const shakeAt = (t: number) => (t < T(2) ? 0.6 : t < T(3) ? 1.6 : t < T(6) ? 5 : t < T(9) ? 9 : t < W.end[0] ? 13 : 0);
+const shakeAt = (t: number) => (t < T(1) ? 2.2 : t < T(2) ? 3.2 : t < T(3) ? 1.6 : t < T(6) ? 5 : t < T(9) ? 9 : t < W.end[0] ? 13 : 0);
 const hudAt = (t: number): {v: number; max: number; label: string; unit: string} | null => {
   if (t < T(2)) return null;
   if (t < T(3)) return {v: 5, max: 1400, label: '5', unit: 'KM/H'};
@@ -55,20 +55,22 @@ const hudAt = (t: number): {v: number; max: number; label: string; unit: string}
 };
 
 /* ---------------- bedroom scene (used many times) ---------------- */
-const Bedroom: React.FC<{t: number; zoom?: [number, number, number]; fire?: number; burnt?: number; bare?: boolean; bigClock?: number; night?: number; scene?: 'night' | 'day' | 'volcano'; clock?: number; extra?: React.ReactNode; hud?: boolean; dark?: number}> = ({t, zoom = [1, 540, 900], fire = 0, burnt = 0, bare = false, bigClock = 0, night = 1, scene = 'night', clock = 1, extra, hud = true, dark = 0}) => {
+const Bedroom: React.FC<{t: number; zoom?: [number, number, number]; fire?: number; burnt?: number; bare?: boolean; bigClock?: number; night?: number; scene?: 'night' | 'day' | 'volcano'; clock?: number; extra?: React.ReactNode; hud?: boolean; dark?: number; fx?: boolean}> = ({t, zoom = [1, 540, 900], fire = 0, burnt = 0, bare = false, bigClock = 0, night = 1, scene = 'night', clock = 1, extra, hud = true, dark = 0, fx = true}) => {
   const sh = shakeAt(t), ex = exAt(t), h = hudAt(t);
   const handsY = 590 + Math.sin(t * 33) * sh * 0.5;
   return (
     <svg width={1080} height={1920} viewBox="0 0 1080 1920" style={{position: 'absolute', left: 0, top: 0}}>
       <g transform={`translate(540 960) scale(${zoom[0]}) translate(${-zoom[1]} ${-zoom[2]})`}>
         <Room t={t} bare={bare} bigClock={bigClock} night={night} scene={scene} clock={clock} lamp={night > 0.4 ? 1 : 0.3}>
-          <Macaque ex={ex} shake={sh} t={t} y={640} hands={[250, handsY]} tilt={Math.sin(t * 25) * sh * 0.25} />
+          <Macaque ex={ex} shake={sh} t={t} y={640} tilt={Math.sin(t * 25) * sh * 0.25} />
         </Room>
         <Blanket shake={sh} t={t} dark={dark} burnt={burnt} />
         <TopArm shake={sh} t={t} />
         {fire > 0 && <Fire k={fire} t={t} />}
+        {t > T(3) - 0.2 && t < T(4) + 0.6 && <Hummingbird x={kf(t, [[T(3) - 0.2, -200], [T(3) + 0.6, 170], [T(4), 170], [T(4) + 0.6, -260]])} y={kf(t, [[T(3) - 0.2, 700], [T(3) + 0.6, 840]])} t={t} s={1.7} />}
         {extra}
       </g>
+      {fx && <Fx t={t} shake={sh} />}
       {hud && h && <Gauge value={h.v} max={h.max} label={h.label} unit={h.unit} shake={sh * 0.4} t={t} />}
     </svg>
   );

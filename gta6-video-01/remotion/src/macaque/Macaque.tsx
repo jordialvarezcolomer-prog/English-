@@ -72,7 +72,7 @@ export const Head: React.FC<{ex: Ex; t?: number}> = ({ex, t = 0}) => {
 };
 
 /* ---------------- torso + arms ---------------- */
-const Arm: React.FC<{sd: number; hx: number; hy: number; shake: number; t: number}> = ({sd, hx, hy, shake, t}) => {
+const Arm: React.FC<{sd: number; hx: number; hy: number; shake: number; t: number; noHand?: boolean}> = ({sd, hx, hy, shake, t, noHand}) => {
   const sx = sd * 150, sy = 0;
   const j = Math.sin(t * 38 + sd) * shake;
   const ex = sd * 190 + j * 0.3, ey = 190;
@@ -82,11 +82,11 @@ const Arm: React.FC<{sd: number; hx: number; hy: number; shake: number; t: numbe
       <path d={`M${sx} ${sy} L${ex} ${ey} L${hx2} ${hy2}`} fill="none" stroke={FUR_D} strokeWidth={74} strokeLinecap="round" strokeLinejoin="round" />
       <path d={`M${sx} ${sy} L${ex} ${ey} L${hx2} ${hy2}`} fill="none" stroke="url(#mArm)" strokeWidth={66} strokeLinecap="round" strokeLinejoin="round" />
       <path d={`M${sx} ${sy} L${ex} ${ey} L${hx2} ${hy2}`} fill="none" stroke="#C99560" strokeWidth={3} strokeDasharray="9 9" strokeLinecap="round" opacity={0.6} transform="translate(0 -2)" />
-      <g transform={`translate(${hx2} ${hy2 + 6})`}><ellipse rx={36} ry={30} fill="#C38E6C" stroke={FUR_D} strokeWidth={3} />{[-18, 0, 18].map((x) => <ellipse key={x} cx={x} cy={22} rx={10} ry={13} fill="#C38E6C" stroke={FUR_D} strokeWidth={2.5} />)}</g>
+      {!noHand && <g transform={`translate(${hx2} ${hy2 + 6})`}><ellipse rx={36} ry={30} fill="#C38E6C" stroke={FUR_D} strokeWidth={3} />{[-18, 0, 18].map((x) => <ellipse key={x} cx={x} cy={22} rx={10} ry={13} fill="#C38E6C" stroke={FUR_D} strokeWidth={2.5} />)}</g>}
     </g>
   );
 };
-export const Macaque: React.FC<{ex: Ex; shake?: number; t: number; x?: number; y?: number; s?: number; hands?: [number, number]; tilt?: number; head?: boolean}> = ({ex, shake = 0, t, x = 540, y = 620, s = 1, hands = [230, 590], tilt = 0, head = true}) => {
+export const Macaque: React.FC<{ex: Ex; shake?: number; t: number; x?: number; y?: number; s?: number; hands?: [number, number]; handsL?: [number, number]; tilt?: number; head?: boolean}> = ({ex, shake = 0, t, x = 540, y = 620, s = 1, hands = [250, 455], handsL = [-40, 570], tilt = 0, head = true}) => {
   const bob = Math.sin(t * 2.2) * 2 + Math.sin(t * 41) * shake * 0.4;
   return (
     <g transform={`translate(${x} ${y + bob}) scale(${s})`}>
@@ -95,7 +95,10 @@ export const Macaque: React.FC<{ex: Ex; shake?: number; t: number; x?: number; y
       <path d="M-150 120 Q-120 80 -70 80 L-50 190 Q0 230 50 190 L70 80 Q120 80 150 120 L170 700 L-170 700Z" fill="url(#mTank)" stroke="#9AA6BE" strokeWidth={3} />
       <path d="M-110 260 Q-60 330 0 320 Q60 330 110 260" fill="none" stroke="#B6C0D6" strokeWidth={4} opacity={0.8} />
       <path d="M-140 420 Q-130 520 -150 640" fill="none" stroke="#B6C0D6" strokeWidth={4} opacity={0.6} /><path d="M140 420 Q130 520 150 640" fill="none" stroke="#B6C0D6" strokeWidth={4} opacity={0.6} />
-      <g transform="translate(0 120)"><Arm sd={-1} hx={-hands[0] * 0.8} hy={hands[1]} shake={shake * 0.5} t={t} /><Arm sd={1} hx={hands[0] * 0.8} hy={hands[1]} shake={shake} t={t} /></g>
+      <g transform="translate(0 120)">
+        {shake > 1.2 && [-1.2, -0.6, 0.6, 1.2].map((m, i) => <g key={i} opacity={0.16 * Math.min(1, shake / 8)} transform={`rotate(${m * Math.min(14, shake * 1.1) * Math.sin(t * 38 + i)} -150 0)`}><Arm sd={-1} hx={handsL[0]} hy={handsL[1]} shake={0} t={t} /></g>)}
+        <Arm sd={-1} hx={handsL[0]} hy={handsL[1]} shake={shake * 0.5} t={t} /><Arm sd={1} hx={hands[0] * 0.8} hy={hands[1]} shake={0} t={t} noHand />
+      </g>
       <g transform={`translate(${Math.sin(t * 47) * shake * 0.7} ${-40 + Math.sin(t * 53) * shake * 0.4}) rotate(${tilt + Math.sin(t * 31) * shake * 0.25})`}><Head ex={ex} t={t} /></g>
     </g>
   );
@@ -104,18 +107,19 @@ export const Macaque: React.FC<{ex: Ex; shake?: number; t: number; x?: number; y
 /* ---------------- room ---------------- */
 const CARS = Array.from({length: 22}).map((_, i) => ({x: 120 + (i % 6) * 150 + (Math.floor(i / 6) % 2) * 70, y: 1420 + Math.floor(i / 6) * 110, bolt: i % 3 === 0}));
 export const Blanket: React.FC<{shake: number; t: number; dark?: number; y?: number; burnt?: number}> = ({shake, t, dark = 0, y = 1180, burnt = 0}) => {
-  const j = Math.sin(t * 36) * shake, k = Math.sin(t * 29 + 1) * shake;
+  const j = Math.sin(t * 36) * shake, k = Math.sin(t * 29 + 1) * shake, bmp = (1.5 + shake * 2.4) * (0.5 + 0.5 * Math.abs(Math.sin(t * 19 * (1 + shake * 0.08))));
   return (
     <g transform={`translate(0 ${y - 1180})`}>
-      <path d={`M150 1240 Q330 ${1170 + j * 2} 540 ${1220 + k} Q760 ${1170 - j} 930 1240 L1000 1920 L80 1920Z`} fill="url(#mBlanket)" stroke="#142A6A" strokeWidth={4} />
-      <path d={`M150 1240 Q330 ${1170 + j * 2} 540 ${1220 + k} Q760 ${1170 - j} 930 1240 L930 1290 Q760 ${1230 - j} 540 ${1280 + k} Q330 ${1230 + j * 2} 150 1290Z`} fill="#F4F6FC" stroke="#AEB8D0" strokeWidth={3} />
+      <path d={`M150 1240 Q330 ${1170 + j * 2} 540 ${1220 + k - bmp * 0.5} Q760 ${1170 - j} 930 1240 L1000 1920 L80 1920Z`} fill="url(#mBlanket)" stroke="#142A6A" strokeWidth={4} />
+      <path d={`M150 1240 Q330 ${1170 + j * 2} 540 ${1220 + k - bmp * 0.5} Q760 ${1170 - j} 930 1240 L930 1290 Q760 ${1230 - j} 540 ${1280 + k - bmp * 0.5} Q330 ${1230 + j * 2} 150 1290Z`} fill="#F4F6FC" stroke="#AEB8D0" strokeWidth={3} />
       {Array.from({length: 24}).map((_, i) => <rect key={i} x={110 + i * 36} y={1352 + (i % 2) * 22 + k * 0.5} width={36} height={22} fill={i % 2 ? '#fff' : '#15151B'} opacity={0.95} />)}
+      <g>{(() => { const w = 170 + shake * 10, hgt = 44 + bmp * 2.4, cx = 505, cy = 1318 - bmp * 0.9; return <><path d={`M390 1245 Q450 ${1262} ${cx} ${cy - hgt}`} stroke="#0B1A4A" strokeWidth={5} fill="none" opacity={0.45} strokeLinecap="round" /><ellipse cx={cx} cy={cy + hgt * 0.35} rx={w} ry={hgt} fill="#07123A" opacity={0.55} /><ellipse cx={cx - 12} cy={cy - hgt * 0.1} rx={w * 0.85} ry={hgt * 0.8} fill="#9DB8FF" opacity={0.42} /><path d={`M${cx - w} ${cy + hgt * 0.4} Q${cx} ${cy - hgt * 1.25} ${cx + w} ${cy + hgt * 0.4}`} fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.5} /></>; })()}</g>
       {CARS.map((c, i) => (
         <g key={i} transform={`translate(${c.x} ${c.y + (i % 2) * 20 + j * 0.6})`} opacity={0.95}>
           {c.bolt ? <polygon points="0,-26 16,-26 6,-4 20,-4 -8,32 0,6 -12,6" fill="#FFC93C" stroke="#B07A10" strokeWidth={2} /> : <><path d="M-30 6 L-24 -10 Q-8 -20 14 -10 L30 4 L32 14 L-32 14Z" fill="#D8352A" stroke="#7A1810" strokeWidth={2.5} /><path d="M-14 -8 L-4 -15 L8 -8Z" fill="#BFE4FF" /><circle cx={-16} cy={16} r={6} fill="#222" /><circle cx={16} cy={16} r={6} fill="#222" /></>}
         </g>
       ))}
-      <path d={`M150 1240 Q330 ${1170 + j * 2} 540 ${1220 + k} Q760 ${1170 - j} 930 1240 L1000 1920 L80 1920Z`} fill="#2A1710" opacity={burnt * 0.85} />
+      <path d={`M150 1240 Q330 ${1170 + j * 2} 540 ${1220 + k - bmp * 0.5} Q760 ${1170 - j} 930 1240 L1000 1920 L80 1920Z`} fill="#2A1710" opacity={burnt * 0.85} />
       <rect x={0} y={1180} width={1080} height={740} fill="#06081A" opacity={dark} />
     </g>
   );
@@ -178,21 +182,30 @@ export const Burst: React.FC<{k: number; x?: number; y?: number}> = ({k, x = 540
   <g>{[0, 1, 2].map((i) => <circle key={i} cx={x} cy={y} r={Math.max(0, k * 1300 - i * 160)} fill="none" stroke="#fff" strokeWidth={30 - i * 8} opacity={Math.max(0, 1 - k) * 0.9} />)}<circle cx={x} cy={y} r={k * 500} fill="#fff" opacity={Math.max(0, 1 - k * 1.1)} /></g>
 );
 
-/** hand resting ON the blanket + ghosted forearm and a bulge under it: the "arm buzzing" read */
-export const TopArm: React.FC<{shake: number; t: number}> = ({shake, t}) => {
-  const k = Math.min(1, shake / 10), o = Math.sin(t * 38) * shake * 0.9;
-  const hand = (x: number, y: number, a = 1) => (
-    <g transform={`translate(${x} ${y})`} opacity={a}>
-      <path d="M-40 -90 L-26 -90 L-14 0 L-46 0Z" fill="url(#mArm)" stroke="#6A4420" strokeWidth={3} />
-      <path d="M-58 -4 Q-62 40 -40 54 Q-6 64 20 50 Q36 30 28 -2 Q-14 -12 -58 -4Z" fill="#E9B893" stroke="#9A6A48" strokeWidth={3} />
-      {[0, 1, 2, 3].map((i) => <path key={i} d={`M${-44 + i * 17} 38 Q${-44 + i * 17} 62 ${-42 + i * 17} 70`} stroke="#9A6A48" strokeWidth={3} fill="none" strokeLinecap="round" />)}
+/** the right hand rests ON the blanket edge (continues the straight right arm) */
+export const TopArm: React.FC<{shake: number; t: number}> = ({shake, t}) => (
+  <g transform={`translate(740 ${1221 + Math.sin(t * 2.2) * 2 + Math.sin(t * 41) * shake * 0.4})`}><ellipse rx={36} ry={30} fill="#C38E6C" stroke={FUR_D} strokeWidth={3} />{[-18, 0, 18].map((x) => <ellipse key={x} cx={x} cy={22} rx={10} ry={13} fill="#C38E6C" stroke={FUR_D} strokeWidth={2.5} />)}</g>
+);
+export const Hummingbird: React.FC<{x: number; y: number; t: number; s?: number}> = ({x, y, t, s = 1}) => {
+  const f = Math.sin(t * 90);
+  return (
+    <g transform={`translate(${x} ${y + Math.sin(t * 12) * 5}) scale(${s}) rotate(-8)`}>
+      <ellipse cx={-20} cy={-26} rx={70} ry={10 + 22 * Math.abs(f)} fill="#CFE8F8" opacity={0.55} transform="rotate(-24)" /><ellipse cx={-6} cy={-30} rx={56} ry={8 + 18 * Math.abs(f)} fill="#fff" opacity={0.35} transform="rotate(-8)" />
+      <path d="M-84 8 L-40 -6 L-40 22Z" fill="#1E7A46" /><ellipse cx={-10} cy={6} rx={50} ry={26} fill="#2FB866" stroke="#14673A" strokeWidth={3} />
+      <circle cx={46} cy={-2} r={22} fill="#2FB866" stroke="#14673A" strokeWidth={3} /><path d="M40 10 Q58 20 62 8 Q56 -2 40 4Z" fill="#E0243C" /><circle cx={54} cy={-8} r={4} fill="#111" />
+      <path d="M66 -2 L170 -12 L66 4Z" fill="#2A2A2A" />
     </g>
   );
+};
+/** screen-space video effects: vignette, speed lines, sparks */
+export const Fx: React.FC<{t: number; shake: number; spark?: boolean}> = ({t, shake, spark = true}) => {
+  const k = Math.min(1, shake / 10);
   return (
-    <g>
-      {k > 0.05 && <g opacity={0.35 * k}><ellipse cx={400 + o * 0.6} cy={1285} rx={120} ry={46} fill="#0B1740" /></g>}
-      {hand(730, 1222)}
-      {k > 0.3 && Array.from({length: 5}).map((_, i) => <line key={i} x1={330 + i * 22 + o} y1={1090 + i * 20} x2={330 + i * 22 + o} y2={1150 + i * 20} stroke="#fff" strokeWidth={3} opacity={0.5 * k} />)}
+    <g pointerEvents="none">
+      <defs><radialGradient id="mVig" cx="50%" cy="50%" r="75%"><stop offset="0.55" stopColor="#000" stopOpacity={0} /><stop offset="1" stopColor="#000" stopOpacity={0.5} /></radialGradient></defs>
+      <rect width={1080} height={1920} fill="url(#mVig)" />
+      {k > 0.15 && Array.from({length: 26}).map((_, i) => { const a = (i / 26) * 6.283 + Math.floor(t * 14) * 0.37, r0 = 560 + random(`sl${i}${Math.floor(t * 14)}`) * 160, r1 = r0 + 160 + 360 * k; return <line key={i} x1={540 + Math.cos(a) * r0} y1={960 + Math.sin(a) * r0 * 1.5} x2={540 + Math.cos(a) * r1} y2={960 + Math.sin(a) * r1 * 1.5} stroke="#fff" strokeWidth={3 + 4 * k} opacity={0.22 * k} strokeLinecap="round" />; })}
+      {spark && shake > 4 && Array.from({length: 16}).map((_, i) => { const ph = (t * 2.2 + random(`sp${i}`)) % 1; return <circle key={i} cx={360 + random(`sx${i}`) * 300 + Math.sin(ph * 9 + i) * 30} cy={1260 - ph * 300} r={3 + random(`sr${i}`) * 4} fill={i % 2 ? '#FFB347' : '#FFE08A'} opacity={(1 - ph) * Math.min(1, shake / 8)} />; })}
     </g>
   );
 };
