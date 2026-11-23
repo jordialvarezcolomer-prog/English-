@@ -1,7 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Easing, Sequence, interpolate, random, staticFile, useCurrentFrame} from 'remotion';
 import SEG from './segments.json';
-import {Blanket, Burst, CALM, Defs, Ex, Fire, Gauge, Head, Macaque, Room} from './Macaque';
+import {TopArm, Blanket, Burst, CALM, Defs, Ex, Fire, Gauge, Head, Macaque, Room} from './Macaque';
 
 /* "What if you did it faster and faster?" — British-English replica of the reference structure. No brands, logos or handles. */
 const FPS = 30;
@@ -15,6 +15,7 @@ const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 const c01 = (x: number) => Math.min(1, Math.max(0, x));
 /** piecewise value over absolute time: [[t, v], ...] linear between keys */
 const kf = (t: number, keys: [number, number][]) => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 0; i < keys.length - 1; i++) { const [t0, v0] = keys[i], [t1, v1] = keys[i + 1]; if (t <= t1) return lerp(v0, v1, (t - t0) / (t1 - t0)); } return keys[keys.length - 1][1]; };
+const punch = (t: number, at: number[]) => 1 + at.reduce((m, a) => Math.max(m, t >= a && t < a + 0.5 ? 0.12 * (1 - (t - a) / 0.5) : 0), 0);
 const F = 'DejaVu Sans, Montserrat, sans-serif';
 
 /* ---------------- scenes (absolute-time windows) ---------------- */
@@ -54,16 +55,17 @@ const hudAt = (t: number): {v: number; max: number; label: string; unit: string}
 };
 
 /* ---------------- bedroom scene (used many times) ---------------- */
-const Bedroom: React.FC<{t: number; zoom?: [number, number, number]; fire?: number; night?: number; scene?: 'night' | 'day' | 'volcano'; clock?: number; extra?: React.ReactNode; hud?: boolean; dark?: number}> = ({t, zoom = [1, 540, 900], fire = 0, night = 1, scene = 'night', clock = 1, extra, hud = true, dark = 0}) => {
+const Bedroom: React.FC<{t: number; zoom?: [number, number, number]; fire?: number; burnt?: number; bare?: boolean; bigClock?: number; night?: number; scene?: 'night' | 'day' | 'volcano'; clock?: number; extra?: React.ReactNode; hud?: boolean; dark?: number}> = ({t, zoom = [1, 540, 900], fire = 0, burnt = 0, bare = false, bigClock = 0, night = 1, scene = 'night', clock = 1, extra, hud = true, dark = 0}) => {
   const sh = shakeAt(t), ex = exAt(t), h = hudAt(t);
   const handsY = 590 + Math.sin(t * 33) * sh * 0.5;
   return (
     <svg width={1080} height={1920} viewBox="0 0 1080 1920" style={{position: 'absolute', left: 0, top: 0}}>
       <g transform={`translate(540 960) scale(${zoom[0]}) translate(${-zoom[1]} ${-zoom[2]})`}>
-        <Room t={t} night={night} scene={scene} clock={clock} lamp={night > 0.4 ? 1 : 0.3}>
+        <Room t={t} bare={bare} bigClock={bigClock} night={night} scene={scene} clock={clock} lamp={night > 0.4 ? 1 : 0.3}>
           <Macaque ex={ex} shake={sh} t={t} y={640} hands={[250, handsY]} tilt={Math.sin(t * 25) * sh * 0.25} />
         </Room>
-        <Blanket shake={sh} t={t} dark={dark} />
+        <Blanket shake={sh} t={t} dark={dark} burnt={burnt} />
+        <TopArm shake={sh} t={t} />
         {fire > 0 && <Fire k={fire} t={t} />}
         {extra}
       </g>
@@ -171,7 +173,7 @@ const Cern: React.FC<{t: number}> = ({t}) => {
       {Array.from({length: 14}).map((_, i) => { const k = ((i + lt * 2.5) % 14) / 14, r = 60 + k * k * 900; return <ellipse key={i} cx={540} cy={760 + k * 160} rx={r * 0.7} ry={r} fill="none" stroke="#202938" strokeWidth={4 + k * 22} opacity={0.5 + 0.4 * k} />; })}
       {Array.from({length: 16}).map((_, i) => <line key={i} x1={540} y1={720} x2={540 + Math.cos(i * 0.39) * 1400} y2={720 + Math.sin(i * 0.39) * 1400} stroke="#7C93B8" strokeWidth={2} opacity={0.2} />)}
       <polygon points="880,420 1080,520 1080,1500 880,1400" fill="#1D54C8" /><text transform="translate(985 880) rotate(75)" fontFamily={F} fontWeight={900} fontSize={70} fill="#fff" textAnchor="middle" letterSpacing={4}>CERN</text><text transform="translate(1030 1180) rotate(75)" fontFamily={F} fontWeight={800} fontSize={26} fill="#BFD3FF" textAnchor="middle">LHC</text>
-      <g transform={`translate(540 1010) scale(0.95)`}><g transform="translate(-540 -640)"><Room t={t} lamp={0}><Macaque ex={exAt(t)} shake={shakeAt(t)} t={t} y={640} /></Room></g></g>
+      <g transform="translate(540 1000) scale(1.25) translate(-540 -1000)"><Room t={t} lamp={0} bare><Macaque ex={exAt(t)} shake={shakeAt(t)} t={t} y={640} /></Room><Blanket shake={shakeAt(t)} t={t} burnt={1} /><TopArm shake={shakeAt(t)} t={t} /></g>
       <rect x={0} y={1180} width={1080} height={740} fill="#150E10" opacity={0.0} />
       {lt < T(17) - W.cern[0] + 0.6 && Array.from({length: 40}).map((_, i) => { const a = random(`sp${i}`) * 6.283, k = (lt * 2 + random(`sk${i}`)) % 1; return <line key={i} x1={540 + Math.cos(a) * 60 * k} y1={1100 + Math.sin(a) * 60 * k} x2={540 + Math.cos(a) * (60 + 360 * k)} y2={1100 + Math.sin(a) * (60 + 360 * k)} stroke="#FFC24A" strokeWidth={3} opacity={1 - k} />; })}
       {nob > 0 && <g opacity={nob} transform={`translate(${lerp(260, 0, nob)} 0)`}><Nobel x={870} y={760} t={t} /></g>}
@@ -248,11 +250,11 @@ const Inner: React.FC<{t0: number; children: (t: number) => React.ReactNode}> = 
 export const MacaqueFaster: React.FC = () => (
   <AbsoluteFill style={{background: '#000'}}>
     <Defs />
-    <Scene k="room1">{(t) => <Bedroom t={t} zoom={[kf(t, [[0, 2.1], [1.6, 2.1], [3.4, 1.05], [T(4), 1.2]]), 540, kf(t, [[0, 720], [1.6, 720], [3.4, 900]])]} />}</Scene>
+    <Scene k="room1">{(t) => <Bedroom t={t} zoom={[kf(t, [[0, 2.1], [1.6, 2.1], [3.4, 1.05], [T(4), 1.2]]) * punch(t, [T(2), T(3)]), 540, kf(t, [[0, 720], [1.6, 720], [3.4, 900]])]} />}</Scene>
     <Scene k="fbi">{(t) => <Fbi t={t} />}</Scene>
-    <Scene k="room2">{(t) => <Bedroom t={t} zoom={[kf(t, [[T(6), 1.05], [T(8), 1.3], [T(9), 1.5], [T(10), 1.6]]), 540, 900]} fire={kf(t, [[T(7), 0], [T(8) + 0.2, 0], [T(8) + 1.8, 1], [T(10), 1.2]])} extra={t > T(9) && t < T(9) + 1.2 ? <Burst k={(t - T(9)) / 1.2} /> : null} />}</Scene>
+    <Scene k="room2">{(t) => <Bedroom t={t} burnt={kf(t, [[T(8) + 1, 0], [T(9) + 1, 1]])} zoom={[kf(t, [[T(6), 1.05], [T(8), 1.3], [T(9), 1.5], [T(10), 1.6]]) * punch(t, [T(6), T(7), T(8), T(9)]), 540, 900]} fire={kf(t, [[T(7), 0], [T(8) + 0.2, 0], [T(8) + 1.8, 1], [T(10), 1.2]])} extra={t > T(9) && t < T(9) + 1.2 ? <Burst k={(t - T(9)) / 1.2} /> : null} />}</Scene>
     <Scene k="news">{(t) => <News t={t} />}</Scene>
-    <Scene k="relat">{(t) => <Bedroom t={t} night={kf(t, [[T(12), 1], [T(13), 0.55]])} scene={t > T(13) ? 'volcano' : 'night'} clock={kf(t, [[T(12), 1], [T(13), 0.1]])} dark={0.45} zoom={[1.1, 540, 900]} extra={<g>{Array.from({length: 6}).map((_, i) => { const k = ((t * 0.5 + i / 6) % 1); return <ellipse key={i} cx={540} cy={1500} rx={120 + k * 700} ry={30 + k * 160} fill="none" stroke="#9FD0FF" strokeWidth={4} opacity={0.7 * (1 - k)} />; })}</g>} />}</Scene>
+    <Scene k="relat">{(t) => <Bedroom t={t} night={kf(t, [[T(12), 1], [T(13), 0.55]])} scene={t > T(13) ? 'volcano' : 'night'} clock={kf(t, [[T(12), 1], [T(13), 0.1]])} burnt={1} bigClock={kf(t, [[T(12), 0], [T(12) + 0.6, 1]])} dark={0.2} zoom={[kf(t, [[T(12), 1.1], [T(13) - 0.2, 1.1], [T(13) + 0.3, 2.3], [T(14), 2.5]]), 540, kf(t, [[T(13) - 0.2, 900], [T(13) + 0.3, 700]])]} extra={<g>{Array.from({length: 6}).map((_, i) => { const k = ((t * 0.5 + i / 6) % 1); return <ellipse key={i} cx={540} cy={1500} rx={120 + k * 700} ry={30 + k * 160} fill="none" stroke="#9FD0FF" strokeWidth={4} opacity={0.7 * (1 - k)} />; })}</g>} />}</Scene>
     <Scene k="atoms">{(t) => <Atoms t={t} />}</Scene>
     <Scene k="cern">{(t) => <Cern t={t} />}</Scene>
     <Scene k="star">{(t) => <Star t={t} />}</Scene>
