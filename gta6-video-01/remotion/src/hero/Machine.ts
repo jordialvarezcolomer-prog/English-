@@ -4,7 +4,7 @@ import {PAL, outlineMat, toonMat} from './toon';
 /** Cable tower + rope attachment, same toon/outline language as the hero. */
 export const buildMachine = (aspect = 1080 / 1920, z = 0.62) => {
   const g = new THREE.Group();
-  const metal = toonMat(PAL.metal, 0.5), rope = toonMat(PAL.rope, 0.2), ink = outlineMat(0.0038, aspect);
+  const metal = toonMat(PAL.metal, {spec: 0.5, line: 0}), rope = toonMat(PAL.rope, {spec: 0.2, line: 0}), ink = outlineMat(0.0038, aspect);
   const BOX = new THREE.BoxGeometry(1, 1, 1), CYL = new THREE.CylinderGeometry(1, 1, 1, 20);
   const add = (geo: THREE.BufferGeometry, mat: THREE.ShaderMaterial, pos: [number, number, number], s: [number, number, number]) => { const m = new THREE.Mesh(geo, mat); m.position.set(...pos); m.scale.set(...s); m.add(new THREE.Mesh(geo, ink)); g.add(m); return m; };
   add(BOX, metal, [-0.05, 1.15, z], [0.07, 2.3, 0.11]); add(BOX, metal, [0.07, 1.15, z], [0.05, 2.3, 0.08]); // rails

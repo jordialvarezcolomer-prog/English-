@@ -18,7 +18,10 @@ export const SHOTS: Shot[] = [
   {name: '3/4 · front', pose: threeQuarter, glow: {}, cam: [2.8, 1.1, 4.6], look: [0, 1.0, 0], fov: 26},
   {name: 'front · lateral raise (side delts)', pose: lateralRaise(1), glow: {delt_side: 1}, cam: [0, 1.15, 5.2], look: [0, 1.1, 0], fov: 26},
   {name: 'front · double biceps', pose: doubleBiceps, glow: {biceps: 0.7}, cam: [0, 1.2, 4.6], look: [0, 1.1, 0], fov: 26},
-  {name: 'close-up · head and eyes', pose: STAND, glow: {}, cam: [0.45, 1.8, 1.2], look: [0, 1.76, 0], fov: 24},
+  {name: 'close-up · face', pose: STAND, glow: {}, cam: [0.0, 1.88, 1.7], look: [0, 1.86, 0], fov: 18},
+  {name: 'close-up · torso', pose: STAND, glow: {}, cam: [0.0, 1.45, 2.3], look: [0, 1.42, 0], fov: 22},
+  {name: 'close-up · arm (3/4)', pose: threeQuarter, glow: {biceps: 0.0}, cam: [1.7, 1.2, 1.7], look: [0.28, 1.15, 0.1], fov: 20},
+  {name: 'close-up · legs', pose: STAND, glow: {quads: 0.0}, cam: [1.4, 0.55, 2.2], look: [0, 0.5, 0], fov: 24},
 ];
 const Cam: React.FC<{pos: [number, number, number]; look: [number, number, number]; fov: number}> = ({pos, look, fov}) => {
   const {camera} = useThree();

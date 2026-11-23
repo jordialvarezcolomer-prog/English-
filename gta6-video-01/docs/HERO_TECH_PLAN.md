@@ -17,6 +17,9 @@
 - Individual muscle meshes allow highlight without touching the rest of the character.
 - Consistency test: `HeroSheet` composition renders 8 poses/cameras from the same rig (`out/hero/consistency_sheet.png`).
 
+## v1 update
+The primitive mannequin was replaced by an implicit-surface sculpt (≈230 anatomical blobs → smooth-union field → Surface Nets mesh, 6.8 mm voxels) skinned to the same rig, with groove lines, comic cel shader, face carving and procedural textures (`src/hero/Sculpt.ts`, `Hero.ts`, `toon.ts`).
+
 ## Known limits of v0.1 (honest)
 The procedural body is a clean, consistent mannequin-style bodybuilder — it does NOT yet match the reference's painted anatomy detail (muscle separation lines, vein/skin texture, hand detail). Upgrade path, in order: (1) add shape keys/detail meshes + hatch texture per muscle; (2) replace the primitives by a sculpted GLB (Blender) skinned to the same bone names, keeping the shaders; (3) optional AI-painted hero key art for thumbnails/title cards only.
 

@@ -25,8 +25,11 @@ Silent visual coach of the British-English fitness/biomechanics channel. Built f
 ## 3. Proportions (metres, standing, 1.98 m tall)
 Head 0.26 · neck 0.17 · shoulder width 0.57 (delt to delt ≈ 0.68) · waist ≈ 0.33 · hip ≈ 0.45 · upper arm 0.32 · forearm 0.26 · hand 0.12 · thigh 0.46 · shin 0.46. Chest:waist ratio ≈ 1.8:1 (strong V). Never change these numbers — they live in `src/hero/Hero.ts`.
 
-## 4. Face rules
-Eyes: two white angular slits tilted down toward the nose, black outlined, never a pupil. No mouth, nose, ears, eyebrows, hair. Expression changes only by head pitch/tilt and a slight brow-ridge shadow (focus, strain), never by drawing features.
+## 4. Face rules (updated v1 — owner asked for a humanised face)
+Human face on the teal head: sculpted nose, lips with a firm mouth line, ears, heavy brow ridge, real eyes in carved sockets (white sclera, teal iris `#1F7A76`/`#3FB0A8`, black pupil, catch-light) with heavy upper lids. Expression = determined, focused (brows sloping toward the nose, firm closed mouth). Bald, no hair/eyebrows drawn as hair. Comic ink lines (mouth, nostrils, eyelid creases, nasolabial folds, jaw) are drawn on top of the sculpted surface.
+
+## 4b. Textures (all procedural, identical every video)
+Skin: pore grain, halftone dots in shadow transitions, comic hatching in the darkest band, veins on forearms/biceps/triceps (strongest on forearms), muscle-separation ink lines from the sculpted grooves. Shorts: woven fabric + vertical drape folds. Socks/waistband: knit ribs. Soles: tread. Rope: black twisted.
 
 ## 5. Lighting & shading rules
 Light fixed in **view space** (upper-left, slightly in front) so shading is identical from every camera angle; 6 hard bands; one specular dot band; outline always on. Muscle highlight = amber tint on that muscle's own mesh; no extra glows on the rest of the body.
