@@ -1,0 +1,2 @@
+# Plan: Macaque "faster and faster" (UK English, 72 s)
+A. Hook: macaque already in bed, camera zoomed on face. B. Escalation ladder 5 km/h → 50 → 300 → 1300 → fractions of light speed, gauge always on screen. C. Retention: new scene every 2–4 s, pattern breaks (FBI, news, CERN, star, black hole). D. Captions top, 1–3 words, active word bold, keywords boxed. E. Audio: Kokoro British voice, very quiet SFX. F. Facts are comedic; physics claims illustrative only, no brands/logos. G. Ending: calm macaque asleep, CTA in narration.
