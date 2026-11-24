@@ -27,6 +27,7 @@ type WK = keyof typeof W;
 
 /* ---------------- expression + shake timeline ---------------- */
 const exAt = (t: number): Ex => {
+  if (t >= 7.2 && t < T(2)) return {mouth: 'o', eye: 1.2, pupil: 0.7, brow: -0.7, sweat: 0.3, blush: 0.8};
   if (t < T(2)) return {...CALM, mouth: 'smile', eye: 0.9, blush: 0.7};
   if (t < T(3)) return {mouth: 'flat', eye: 0.9, pupil: 1.1, brow: 0.2, sweat: 0, blush: 0.6};
   if (t < T(6)) return {mouth: 'o', eye: 1, pupil: 0.8, brow: -0.6, sweat: 0.4, blush: 0.7};
@@ -252,7 +253,7 @@ const Inner: React.FC<{t0: number; children: (t: number) => React.ReactNode}> = 
 export const MacaqueFaster: React.FC = () => (
   <AbsoluteFill style={{background: '#000'}}>
     <Defs />
-    <Scene k="room1">{(t) => <Bedroom t={t} zoom={[kf(t, [[0, 1.4], [1.2, 1.4], [3.4, 1.05], [T(4), 1.2]]) * punch(t, [T(2), T(3)]), 540, kf(t, [[0, 960], [1.2, 960], [3.4, 900]])]} />}</Scene>
+    <Scene k="room1">{(t) => <Bedroom t={t} zoom={[kf(t, [[0, 1.4], [1.2, 1.4], [3.0, 1.05], [5.45, 1.05], [5.55, 1.7], [6.3, 1.75], [6.4, 2.2], [7.1, 2.3], [7.2, 2.4], [T(2), 2.4], [T(2) + 0.5, 1.05], [T(4), 1.2]]) * punch(t, [T(2), T(3)]), 540, kf(t, [[0, 960], [3.0, 900], [5.45, 900], [5.55, 1150], [6.3, 1150], [6.4, 1250], [7.1, 1250], [7.2, 660], [T(2), 660], [T(2) + 0.5, 900]])]} />}</Scene>
     <Scene k="fbi">{(t) => <Fbi t={t} />}</Scene>
     <Scene k="room2">{(t) => <Bedroom t={t} burnt={kf(t, [[T(8) + 1, 0], [T(9) + 1, 1]])} zoom={[kf(t, [[T(6), 1.05], [T(8), 1.3], [T(9), 1.5], [T(10), 1.6]]) * punch(t, [T(6), T(7), T(8), T(9)]), 540, 900]} fire={kf(t, [[T(7), 0], [T(8) + 0.2, 0], [T(8) + 1.8, 1], [T(10), 1.2]])} extra={t > T(9) && t < T(9) + 1.2 ? <Burst k={(t - T(9)) / 1.2} /> : null} />}</Scene>
     <Scene k="news">{(t) => <News t={t} />}</Scene>
