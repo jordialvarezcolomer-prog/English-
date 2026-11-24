@@ -40,7 +40,7 @@ const exAt = (t: number): Ex => {
   if (t >= W.end[0]) return t < W.end[0] + 1.2 ? {mouth: 'flat', eye: 0.5, pupil: 1, brow: 0.2, sweat: 0.2, blush: 0.9} : {mouth: 'sleep', eye: 0.06, pupil: 1, brow: 0.3, sweat: 0, blush: 0.9};
   return {mouth: 'scream', eye: 1, pupil: 0.5, brow: -1, sweat: 0.5, blush: 1};
 };
-const shakeAt = (t: number) => (t < T(1) ? 2.2 : t < T(2) ? 3.2 : t < T(3) ? 1.6 : t < T(6) ? 5 : t < T(9) ? 9 : t < W.end[0] ? 13 : 0);
+const shakeAt = (t: number) => (t < 1.6 ? 7 : t < T(2) ? 4 : t < T(3) ? 1.6 : t < T(6) ? 5 : t < T(9) ? 9 : t < W.end[0] ? 13 : 0);
 const hudAt = (t: number): {v: number; max: number; label: string; unit: string} | null => {
   if (t < T(2)) return null;
   if (t < T(3)) return {v: 5, max: 1400, label: '5', unit: 'KM/H'};
@@ -252,7 +252,7 @@ const Inner: React.FC<{t0: number; children: (t: number) => React.ReactNode}> = 
 export const MacaqueFaster: React.FC = () => (
   <AbsoluteFill style={{background: '#000'}}>
     <Defs />
-    <Scene k="room1">{(t) => <Bedroom t={t} zoom={[kf(t, [[0, 2.1], [1.6, 2.1], [3.4, 1.05], [T(4), 1.2]]) * punch(t, [T(2), T(3)]), 540, kf(t, [[0, 720], [1.6, 720], [3.4, 900]])]} />}</Scene>
+    <Scene k="room1">{(t) => <Bedroom t={t} zoom={[kf(t, [[0, 1.4], [1.2, 1.4], [3.4, 1.05], [T(4), 1.2]]) * punch(t, [T(2), T(3)]), 540, kf(t, [[0, 960], [1.2, 960], [3.4, 900]])]} />}</Scene>
     <Scene k="fbi">{(t) => <Fbi t={t} />}</Scene>
     <Scene k="room2">{(t) => <Bedroom t={t} burnt={kf(t, [[T(8) + 1, 0], [T(9) + 1, 1]])} zoom={[kf(t, [[T(6), 1.05], [T(8), 1.3], [T(9), 1.5], [T(10), 1.6]]) * punch(t, [T(6), T(7), T(8), T(9)]), 540, 900]} fire={kf(t, [[T(7), 0], [T(8) + 0.2, 0], [T(8) + 1.8, 1], [T(10), 1.2]])} extra={t > T(9) && t < T(9) + 1.2 ? <Burst k={(t - T(9)) / 1.2} /> : null} />}</Scene>
     <Scene k="news">{(t) => <News t={t} />}</Scene>
