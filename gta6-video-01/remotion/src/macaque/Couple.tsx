@@ -70,6 +70,53 @@ export const Thermo: React.FC<{deg: number; t: number; x?: number; y?: number}> 
   );
 };
 
+
+type Car = {x: number; y: number; s: number; rot: number; flip?: boolean; face: 'smile' | 'grin' | 'wink' | 'wow'; look: number; trail?: boolean; hop?: number};
+const LAYOUT: Car[] = [
+  {x: 150, y: 1345, s: 0.62, rot: -7, face: 'smile', look: -4, trail: true}, {x: 520, y: 1310, s: 0.46, rot: 5, flip: true, face: 'wink', look: 3},
+  {x: 880, y: 1360, s: 0.66, rot: -3, face: 'grin', look: 5, hop: 18}, {x: 330, y: 1520, s: 0.54, rot: 9, flip: true, face: 'wow', look: -2},
+  {x: 700, y: 1540, s: 0.6, rot: -9, face: 'smile', look: 4, trail: true}, {x: 150, y: 1710, s: 0.6, rot: 6, face: 'grin', look: 3},
+  {x: 520, y: 1720, s: 0.7, rot: -4, flip: true, face: 'smile', look: -5, trail: true}, {x: 890, y: 1750, s: 0.5, rot: 8, face: 'wink', look: -3},
+];
+const SPARKS: {t: 'star' | 'bolt' | 'twinkle'; x: number; y: number; r: number; rot: number; fill?: string}[] = [
+  {t: 'star', x: 330, y: 1330, r: 20, rot: 10, fill: '#FFE27A'}, {t: 'bolt', x: 690, y: 1330, r: 1.1, rot: 12}, {t: 'star', x: 1010, y: 1470, r: 15, rot: -8, fill: '#fff'},
+  {t: 'bolt', x: 100, y: 1520, r: 0.8, rot: -14}, {t: 'star', x: 520, y: 1460, r: 26, rot: 4, fill: '#FFD34D'}, {t: 'twinkle', x: 860, y: 1560, r: 12, rot: 0},
+  {t: 'bolt', x: 960, y: 1620, r: 1.2, rot: 10}, {t: 'star', x: 330, y: 1650, r: 14, rot: 14, fill: '#fff'}, {t: 'bolt', x: 330, y: 1790, r: 0.9, rot: -10},
+  {t: 'star', x: 720, y: 1860, r: 22, rot: -6, fill: '#FFE27A'}, {t: 'twinkle', x: 80, y: 1850, r: 14, rot: 20}, {t: 'star', x: 1000, y: 1890, r: 12, rot: 0, fill: '#fff'},
+  {t: 'twinkle', x: 440, y: 1600, r: 10, rot: 0}, {t: 'bolt', x: 760, y: 1700, r: 0.75, rot: -18}, {t: 'star', x: 130, y: 1420, r: 11, rot: 0, fill: '#fff'},
+];
+const Star: React.FC<{x: number; y: number; r: number; rot: number; fill?: string}> = ({x, y, r, rot, fill}) => (
+  <polygon transform={`translate(${x} ${y}) rotate(${rot})`} fill={fill} stroke="#B58A18" strokeWidth={1.5} strokeLinejoin="round" points={Array.from({length: 10}).map((_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; return `${Math.cos(a) * rr},${Math.sin(a) * rr}`; }).join(' ')} />
+);
+/** small cartoon race car, 3/4 front view, hand-varied (flip, tilt, expression, gaze) */
+const McCar: React.FC<Car> = ({x, y, s, rot, flip, face, look, hop = 0}) => {
+  const fx = flip ? -1 : 1;
+  return (
+    <g transform={`translate(${x} ${y - hop}) rotate(${rot}) scale(${s * fx * 0.7} ${s * 0.7})`}>
+      <ellipse cx={20} cy={134 + hop / s} rx={220 - hop} ry={13} fill="#000" opacity={0.28} />
+      {/* spoiler + side panel */}
+      <path d="M200 -50 L262 -58 L266 -30 L214 -18Z" fill="#8E1812" stroke="#5A0E0A" strokeWidth={5} />
+      <path d="M150 -6 L252 -40 L264 92 L160 114Z" fill="#B8231C" stroke="#5A0E0A" strokeWidth={6} />
+      <path d="M160 8 L236 -14 L240 12 L164 34Z" fill="#7FB8E6" stroke="#5A0E0A" strokeWidth={4} />
+      <polygon points="170,40 232,26 214,56 246,52 196,104 204,70 172,76" fill="#FFC93C" stroke="#B07A10" strokeWidth={3} />
+      <g transform={`translate(226 104) scale(${fx} 1) rotate(-8)`}><text textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={30} fill="#fff" stroke="#8E1812" strokeWidth={1}>95</text></g>
+      {/* roof + body */}
+      <path d="M-90 -100 Q0 -160 96 -104 L152 -6 L-152 -6Z" fill="#C62A22" stroke="#5A0E0A" strokeWidth={6} /><path d="M-40 -128 Q20 -146 70 -118" fill="none" stroke="#FF8A7E" strokeWidth={7} strokeLinecap="round" opacity={0.7} />
+      <path d="M-160 44 Q-164 -16 -110 -34 L106 -34 Q158 -16 162 44 L162 100 Q162 118 142 118 L-142 118 Q-162 118 -162 100Z" fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={7} />
+      <path d="M-120 -8 Q0 -30 120 -8" fill="none" stroke="#FF9A8E" strokeWidth={8} strokeLinecap="round" opacity={0.55} />
+      {/* windshield + eyes */}
+      <path d="M-112 -28 Q-92 -104 0 -108 Q92 -104 112 -28Z" fill="#F7FBFF" stroke="#5A0E0A" strokeWidth={6} />
+      {[-1, 1].map((sd) => <g key={sd} transform={`translate(${sd * 44} -62)`}>
+        {face === 'wink' && sd === 1 ? <path d="M-26 6 Q0 -16 26 6" fill="none" stroke="#5A0E0A" strokeWidth={7} strokeLinecap="round" /> : <><ellipse rx={32} ry={30} fill="#fff" /><circle cx={look} cy={5} r={face === 'wow' ? 12 : 16} fill="#3A8FD8" /><circle cx={look} cy={5} r={face === 'wow' ? 5 : 7} fill="#0B1B33" /><circle cx={look + 5} cy={-1} r={4} fill="#fff" /><path d={`M-32 ${face === 'wow' ? -18 : -6} Q0 -40 32 ${face === 'wow' ? -18 : -6} L32 -16 Q0 -46 -32 -16Z`} fill="#C62A22" /></>}
+      </g>)}
+      {[-1, 1].map((sd) => <g key={sd}><ellipse cx={sd * 122} cy={52} rx={26} ry={17} fill="#FFE27A" stroke="#7A5A10" strokeWidth={4} /><ellipse cx={sd * 116} cy={48} rx={9} ry={5} fill="#fff" opacity={0.8} /></g>)}
+      {/* mouth */}
+      {face === 'wow' ? <ellipse cx={0} cy={92} rx={34} ry={22} fill="#3A0F12" stroke="#5A0E0A" strokeWidth={5} /> : face === 'grin' ? <><path d="M-96 72 Q0 150 96 72Z" fill="#3A0F12" stroke="#5A0E0A" strokeWidth={5} strokeLinejoin="round" /><path d="M-82 76 Q0 98 82 76 L78 88 Q0 108 -78 88Z" fill="#F4F4F4" /></> : <><path d="M-96 72 Q0 140 96 72 L90 86 Q0 122 -90 86Z" fill="#F2F2F2" stroke="#5A0E0A" strokeWidth={5} /><path d="M-90 80 Q0 108 90 80" fill="none" stroke="#9AA0AA" strokeWidth={3} /></>}
+      {/* wheels */}
+      {[-1, 1].map((sd) => <g key={sd} transform={`translate(${sd * 166} 112)`}><ellipse rx={24} ry={46} fill="#1B1B1B" stroke="#000" strokeWidth={3} /><ellipse rx={13} ry={26} fill="#E8E8E8" /><ellipse rx={8} ry={16} fill="#D13228" /></g>)}
+    </g>
+  );
+};
 export type CoupleState = {t: number; shake: number; ex: Ex; her: 'front' | 'mask' | 'back'; pct: number; cracks: number; tries: number; deg: number; hour: number; zoom?: [number, number, number]; bubble?: string; lights?: number};
 export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, cracks, tries, deg, hour, zoom = [1, 540, 960], bubble, lights = 1}) => {
   const bmp = (2 + shake * 2.4) * (0.5 + 0.5 * Math.abs(Math.sin(t * 19))), j = Math.sin(t * 36) * shake, breath = Math.sin(t * 1.6) * 5;
@@ -127,22 +174,8 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
           <g clipPath="url(#cQuilt)">
             {Array.from({length: 30}).map((_, i) => <rect key={i} x={30 + i * 36} y={1190 + (i % 2) * 22} width={36} height={22} fill={i % 2 ? '#fff' : '#15151B'} opacity={0.95} />)}
             {Array.from({length: 40}).map((_, i) => <circle key={i} cx={random(`qx${i}`) * 1080} cy={1090 + random(`qy${i}`) * 830} r={1.8 + random(`qr${i}`) * 2.2} fill="#fff" opacity={0.45} />)}
-            {[0, 1, 2, 3, 4].map((row) => [0, 1, 2, 3].map((col) => { const cx = 130 + col * 260 + (row % 2) * 130, cy = 1340 + row * 150, rot = ((row * 3 + col * 5) % 5 - 2) * 3; return (
-              <g key={`${row}${col}`}>
-                <g transform={`translate(${cx} ${cy}) rotate(${rot}) scale(0.42)`}>
-                  <ellipse cx={20} cy={128} rx={230} ry={14} fill="#000" opacity={0.25} />
-                  <path d="M150 -6 L250 -40 L262 92 L160 112Z" fill="#B8231C" stroke="#5A0E0A" strokeWidth={6} />
-                  <polygon points="168,10 238,-8 220,28 250,22 196,80 206,46 170,52" fill="#FFC93C" stroke="#B07A10" strokeWidth={3} /><text x={214} y={96} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={34} fill="#fff" transform="rotate(-8 214 96)">95</text>
-                  <path d="M-90 -100 Q0 -158 96 -104 L150 -6 L-150 -6Z" fill="#C62A22" stroke="#5A0E0A" strokeWidth={6} />
-                  <path d="M-160 44 Q-164 -16 -110 -34 L106 -34 Q158 -16 162 44 L162 100 Q162 118 142 118 L-142 118 Q-162 118 -162 100Z" fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={7} />
-                  <path d="M-112 -28 Q-92 -104 0 -108 Q92 -104 112 -28Z" fill="#F7FBFF" stroke="#5A0E0A" strokeWidth={6} />
-                  {[-1, 1].map((sd) => <g key={sd} transform={`translate(${sd * 44} -62)`}><ellipse rx={32} ry={30} fill="#fff" /><circle cx={sd * 3} cy={4} r={16} fill="#3A8FD8" /><circle cx={sd * 3} cy={4} r={7} fill="#0B1B33" /><circle cx={sd * 3 + 5} cy={-2} r={4} fill="#fff" /><path d="M-32 -6 Q0 -40 32 -6 L32 -14 Q0 -44 -32 -14Z" fill="#C62A22" /></g>)}
-                  {[-1, 1].map((sd) => <ellipse key={sd} cx={sd * 122} cy={52} rx={26} ry={17} fill="#FFE27A" stroke="#7A5A10" strokeWidth={4} />)}
-                  <path d="M-96 72 Q0 140 96 72 L90 86 Q0 122 -90 86Z" fill="#F2F2F2" stroke="#5A0E0A" strokeWidth={5} /><path d="M-90 80 Q0 108 90 80" fill="none" stroke="#9AA0AA" strokeWidth={3} />
-                  {[-1, 1].map((sd) => <g key={sd} transform={`translate(${sd * 166} 112)`}><ellipse rx={24} ry={46} fill="#1B1B1B" stroke="#000" strokeWidth={3} /><ellipse rx={12} ry={24} fill="#D13228" /></g>)}
-                </g>
-                <polygon transform={`translate(${cx + 130} ${cy + 40}) scale(0.9)`} points="0,-26 16,-26 6,-4 20,-4 -8,32 0,6 -12,6" fill="#FFC93C" stroke="#B07A10" strokeWidth={2} />
-              </g>); }))}
+            {LAYOUT.map((c, i) => <g key={i}>{c.trail && <g opacity={0.5}>{[0, 1, 2].map((k) => <line key={k} x1={c.x - (c.flip ? -1 : 1) * (110 + k * 6) * c.s * 0.7} y1={c.y + (k - 1) * 22 * c.s * 0.7 + 26} x2={c.x - (c.flip ? -1 : 1) * (200 + k * 18) * c.s * 0.7} y2={c.y + (k - 1) * 22 * c.s * 0.7 + 26} stroke="#fff" strokeWidth={5} strokeLinecap="round" />)}</g>}<McCar {...c} /></g>)}
+            {SPARKS.map((k, i) => k.t === 'star' ? <Star key={i} x={k.x} y={k.y} r={k.r} rot={k.rot} fill={k.fill} /> : k.t === 'bolt' ? <polygon key={i} transform={`translate(${k.x} ${k.y}) rotate(${k.rot}) scale(${k.r})`} points="0,-26 16,-26 6,-4 20,-4 -8,32 0,6 -12,6" fill="#FFC93C" stroke="#B07A10" strokeWidth={2} /> : <g key={i} transform={`translate(${k.x} ${k.y}) rotate(${k.rot})`} stroke="#fff" strokeWidth={3} strokeLinecap="round" opacity={0.8}><line x1={-k.r} x2={k.r} /><line y1={-k.r} y2={k.r} /></g>)}
           </g>
           {/* her breathing mound + his bump */}
           <ellipse cx={780} cy={1100 + breath * 0.5} rx={220} ry={46} fill="#9DB8FF" opacity={0.18} /><path d="M580 1090 Q780 1040 980 1090" fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.35} />
