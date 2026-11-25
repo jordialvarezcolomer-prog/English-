@@ -30,29 +30,29 @@ export const Partner: React.FC<{state: 'front' | 'mask' | 'back'; t: number; bre
 };
 
 /** success-o-meter: heart with ZZZ that cracks with every failed attempt */
-export const HeartMeter: React.FC<{pct: number; cracks: number; t: number; x?: number; y?: number}> = ({pct, cracks, t, x = 170, y = 560}) => {
+export const HeartMeter: React.FC<{pct: number; cracks: number; t: number; x?: number; y?: number}> = ({pct, cracks, t, x = 120, y = 560}) => {
   const beat = 1 + 0.06 * Math.max(0, Math.sin(t * 5)) * (0.3 + pct / 10);
   const H = 'M0 62 C-120 -10 -78 -92 0 -42 C78 -92 120 -10 0 62Z';
   const CR = ['M-6 -40 L8 -14 L-10 4 L6 26', 'M-44 -50 L-30 -20 L-46 0', 'M40 -52 L26 -22 L44 2', 'M-70 -8 L-48 6 L-60 28', 'M62 -4 L40 12 L52 34', 'M-18 30 L2 40 L-8 58'];
   const fill = Math.max(0.04, Math.min(1, pct / 100 * 2.2));
   return (
-    <g transform={`translate(${x} ${y}) scale(${beat})`}>
+    <g transform={`translate(${x} ${y}) scale(${beat * 0.85})`}>
       <clipPath id="hmc"><path d={H} /></clipPath>
       <path d={H} fill="#5A2038" stroke="#FFD1DC" strokeWidth={5} />
       <g clipPath="url(#hmc)"><rect x={-130} y={62 - fill * 150} width={260} height={150} fill="#FF4D7D" /><rect x={-130} y={62 - fill * 150} width={260} height={10} fill="#FF9EB8" opacity={0.7} /></g>
       <text x={0} y={-8} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={34} fill="#fff" opacity={0.95}>Z z z</text>
       {CR.slice(0, cracks).map((d, i) => <path key={i} d={d} stroke="#0B0610" strokeWidth={5} fill="none" strokeLinecap="round" strokeLinejoin="round" />)}
+      <text x={0} y={-62} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={13} fill="#FFD1DC" letterSpacing={1.5}>SUCCESS-O-METER</text>
+      <text x={0} y={-48} textAnchor="middle" fontFamily={F} fontWeight={600} fontSize={10} fill="#E3C2CD">made-up numbers, just a joke</text>
       <text x={0} y={104} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={30} fill="#fff">{pct}%</text>
-      <text x={0} y={128} textAnchor="middle" fontFamily={F} fontWeight={700} fontSize={13} fill="#FFD1DC" letterSpacing={1.5}>SUCCESS-O-METER</text>
-      <text x={0} y={146} textAnchor="middle" fontFamily={F} fontWeight={600} fontSize={10} fill="#C9A8B4">made-up numbers, just a joke</text>
     </g>
   );
 };
 /** prisoner-style tally on the headboard, one mark per attempt (every 5th is a strike-through) */
 export const Tally: React.FC<{n: number; x?: number; y?: number}> = ({n, x = 540, y = 500}) => (
   <g transform={`translate(${x} ${y})`}>
-    <text x={0} y={-56} textAnchor="middle" fontFamily={F} fontWeight={800} fontSize={18} fill="#2A1710" opacity={0.7} letterSpacing={3}>ATTEMPTS</text>
-    {Array.from({length: n}).map((_, i) => { const g = Math.floor(i / 5), k = i % 5; return k < 4 ? <line key={i} x1={-120 + g * 90 + k * 16} y1={-36} x2={-120 + g * 90 + k * 16} y2={22} stroke="#2A1710" strokeWidth={6} strokeLinecap="round" /> : <line key={i} x1={-130 + g * 90} y1={14} x2={-60 + g * 90} y2={-28} stroke="#2A1710" strokeWidth={6} strokeLinecap="round" />; })}
+    <text x={0} y={-56} textAnchor="middle" fontFamily={F} fontWeight={800} fontSize={18} fill="#FFF0E0" opacity={0.85} letterSpacing={3}>ATTEMPTS</text>
+    {Array.from({length: n}).map((_, i) => { const g = Math.floor(i / 5), k = i % 5; return k < 4 ? <line key={i} x1={-120 + g * 90 + k * 16} y1={-36} x2={-120 + g * 90 + k * 16} y2={22} stroke="#FFF0E0" strokeWidth={6} strokeLinecap="round" /> : <line key={i} x1={-130 + g * 90} y1={14} x2={-60 + g * 90} y2={-28} stroke="#FFF0E0" strokeWidth={6} strokeLinecap="round" />; })}
   </g>
 );
 export const Thermo: React.FC<{deg: number; t: number; x?: number; y?: number}> = ({deg, t, x = 985, y = 430}) => {
@@ -79,7 +79,8 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
       <defs>
         <linearGradient id="cWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2B2040" /><stop offset="1" stopColor="#4C3552" /></linearGradient>
         <linearGradient id="cWood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#5A3418" /><stop offset="0.5" stopColor="#9A6330" /><stop offset="1" stopColor="#5A3418" /></linearGradient>
-        <linearGradient id="cBlanket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4F8199" /><stop offset="1" stopColor="#25506A" /></linearGradient>
+        <linearGradient id="cBlanket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#E0453A" /><stop offset="1" stopColor="#A81F19" /></linearGradient>
+        <linearGradient id="cRed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#F2584B" /><stop offset="0.6" stopColor="#D13228" /><stop offset="1" stopColor="#8E1812" /></linearGradient>
         <linearGradient id="cPillow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFFFFF" /><stop offset="1" stopColor="#C9D2E6" /></linearGradient>
         <radialGradient id="cLamp"><stop offset="0" stopColor="#FFE6A0" stopOpacity={0.8} /><stop offset="1" stopColor="#FFE6A0" stopOpacity={0} /></radialGradient>
       </defs>
@@ -87,13 +88,22 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
         <rect width={1080} height={1920} fill="url(#cWall)" />
         {Array.from({length: 14}).map((_, i) => <rect key={i} x={i * 80 + 20} y={0} width={4} height={1100} fill="#000" opacity={0.08} />)}
         <rect y={1500} width={1080} height={420} fill="#5E3D22" />
-        {/* window with moon */}
-        <g transform="translate(90 90)"><rect width={190} height={250} rx={8} fill="#1A1126" /><rect x={12} y={12} width={166} height={226} fill="#101A3C" /><circle cx={120} cy={70} r={26} fill="#FFF3C8" />{Array.from({length: 10}).map((_, i) => <circle key={i} cx={24 + random(`cs${i}`) * 140} cy={24 + random(`ct${i}`) * 190} r={1.6} fill="#fff" opacity={0.7} />)}<rect x={91} y={12} width={8} height={226} fill="#1A1126" /><rect x={12} y={120} width={166} height={8} fill="#1A1126" /></g>
+        {/* window: night skyline with lit windows */}
+        <g transform="translate(70 80)"><rect width={230} height={270} rx={8} fill="#1A1126" />
+          <defs><linearGradient id="cSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#0B1236" /><stop offset="1" stopColor="#3A3470" /></linearGradient></defs>
+          <rect x={12} y={12} width={206} height={246} fill="url(#cSky)" />
+          {Array.from({length: 8}).map((_, i) => <circle key={i} cx={24 + random(`cs${i}`) * 180} cy={24 + random(`ct${i}`) * 80} r={1.5} fill="#fff" opacity={0.7} />)}
+          {Array.from({length: 9}).map((_, i) => { const bw = 24, bx = 12 + i * 22.5, bh = 70 + random(`bh${i}`) * 110, by = 258 - bh; return <g key={i}><rect x={bx} y={by} width={bw} height={bh} fill={i % 2 ? '#0A0F26' : '#12183A'} />{Array.from({length: Math.floor(bh / 15)}).map((_, r) => [0, 1].map((c) => random(`w${i}${r}${c}`) > 0.42 ? <rect key={`${r}${c}`} x={bx + 4 + c * 10} y={by + 6 + r * 15} width={6} height={8} fill="#FFD66B" opacity={0.9} /> : null))}</g>; })}
+          <rect x={111} y={12} width={8} height={246} fill="#1A1126" /><rect x={12} y={130} width={206} height={8} fill="#1A1126" /></g>
+        {/* bedside table lamp next to the window */}
+        <g transform="translate(372 330)"><circle cy={-60} r={170} fill="url(#cLamp)" opacity={0.8 * lights} />
+          <rect x={-50} y={-6} width={100} height={12} rx={4} fill="#6B4A1E" /><rect x={-40} y={6} width={80} height={86} fill="#5A3820" stroke="#3A210E" strokeWidth={3} /><circle cx={0} cy={48} r={6} fill="#E2B456" />
+          <rect x={-6} y={-70} width={12} height={66} fill="#8A6A2E" /><path d="M-52 -66 L-30 -134 L30 -134 L52 -66Z" fill="#F4D58A" stroke="#B88A30" strokeWidth={3} /></g>
         {/* wall clock */}
         <g transform="translate(900 200)"><circle r={62} fill="#FBFBFB" stroke="#D8352A" strokeWidth={8} />{Array.from({length: 12}).map((_, i) => <line key={i} x1={0} y1={-50} x2={0} y2={-43} stroke="#333" strokeWidth={3} transform={`rotate(${i * 30})`} />)}<line y2={-32} stroke="#222" strokeWidth={6} strokeLinecap="round" transform={`rotate(${hh})`} /><line y2={-46} stroke="#D8352A" strokeWidth={3} strokeLinecap="round" transform={`rotate(${hm})`} /><circle r={5} fill="#222" /></g>
         {/* headboard + pillows */}
-        <rect x={50} y={420} width={980} height={620} rx={46} fill="url(#cWood)" stroke="#3A210E" strokeWidth={6} />
-        <rect x={86} y={456} width={908} height={548} rx={30} fill="none" stroke="#D9A260" strokeWidth={3} opacity={0.4} />
+        <rect x={50} y={420} width={980} height={620} rx={46} fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={6} /><rect x={50} y={452} width={980} height={26} fill="#FFD34D" opacity={0.9} /><rect x={50} y={486} width={980} height={8} fill="#fff" opacity={0.8} />
+        <rect x={86} y={456} width={908} height={548} rx={30} fill="none" stroke="#FFD1C8" strokeWidth={3} opacity={0.35} />
         <Tally n={tries} x={540} y={540} />
         <rect x={110} y={700} width={420} height={190} rx={70} fill="url(#cPillow)" stroke="#9AA6BE" strokeWidth={3} /><rect x={550} y={700} width={420} height={190} rx={70} fill="url(#cPillow)" stroke="#9AA6BE" strokeWidth={3} />
         {/* him */}
@@ -107,22 +117,32 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
           <path d="M-190 120 Q-170 -10 -80 -26 L80 -26 Q170 -10 190 120Z" fill="url(#mFur)" stroke={FUR_D} strokeWidth={4} opacity={her === 'back' ? 1 : 1} />
           <path d="M-150 112 Q-130 4 -70 -14 L-50 20 Q0 40 50 20 L70 -14 Q130 4 150 112Z" fill="#B49CE6" stroke="#6E58B0" strokeWidth={3} /><path d="M-70 -14 Q-60 -40 -52 -14M70 -14 Q60 -40 52 -14" stroke="#6E58B0" strokeWidth={6} fill="none" />
           <g transform={`translate(10 -142) scale(0.84) rotate(${her === 'back' ? 0 : 8})`}><Partner state={her} t={t} /></g>
-          {bubble && <g transform="translate(-20 -330)"><rect x={-110} y={-34} width={260} height={64} rx={32} fill="#fff" stroke="#999" strokeWidth={3} /><path d="M-40 28 L-56 56 L-10 28Z" fill="#fff" stroke="#999" strokeWidth={3} /><text x={20} y={8} textAnchor="middle" fontFamily={F} fontWeight={800} fontSize={26} fill="#222">{bubble}</text></g>}
+          {bubble && (() => { const w = Math.max(260, bubble.length * 17 + 60); return <g transform="translate(-20 -330)"><rect x={-w / 2 + 20} y={-34} width={w} height={64} rx={32} fill="#fff" stroke="#999" strokeWidth={3} /><path d="M-40 28 L-56 56 L-10 28Z" fill="#fff" stroke="#999" strokeWidth={3} /><text x={20} y={8} textAnchor="middle" fontFamily={F} fontWeight={800} fontSize={26} fill="#222">{bubble}</text></g>; })()}
         </g>
         {/* blanket over both with cars + his bump */}
         <g>
-          <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" fill="url(#cBlanket)" stroke="#1B3A52" strokeWidth={4} />
+          <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" fill="url(#cBlanket)" stroke="#5A0E0A" strokeWidth={4} />
           <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1020 1066 Q780 1020 540 1060 Q300 1020 60 1066Z" fill="#F4F6FC" stroke="#AEB8D0" strokeWidth={3} />
           <clipPath id="cQuilt"><path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" /></clipPath>
-          <g clipPath="url(#cQuilt)" opacity={0.55}>{Array.from({length: 22}).map((_, i) => <g key={i}><line x1={-300 + i * 120} y1={1060} x2={300 + i * 120} y2={1960} stroke="#C9DCEB" strokeWidth={3} strokeDasharray="14 9" /><line x1={1380 - i * 120} y1={1060} x2={780 - i * 120} y2={1960} stroke="#C9DCEB" strokeWidth={3} strokeDasharray="14 9" /></g>)}</g>
-          <g clipPath="url(#cQuilt)" opacity={0.35}>{Array.from({length: 40}).map((_, i) => <circle key={i} cx={random(`qx${i}`) * 1080} cy={1090 + random(`qy${i}`) * 830} r={2 + random(`qr${i}`) * 3} fill="#fff" />)}</g>
+          <g clipPath="url(#cQuilt)">
+            <g opacity={0.5}>{[0, 1, 2, 3].map((i) => <line key={i} x1={20 + i * 40} y1={1420 + i * 46} x2={250 + i * 30} y2={1420 + i * 46} stroke="#fff" strokeWidth={6} strokeLinecap="round" />)}</g>
+            <g transform="translate(580 1520) scale(1.25)">
+              <ellipse cx={20} cy={142} rx={300} ry={16} fill="#000" opacity={0.25} />
+              <path d="M-290 40 L-270 -20 Q-240 -40 -170 -45 L-90 -110 Q-60 -135 0 -135 L110 -135 Q160 -135 190 -100 L230 -50 L285 -35 Q310 -30 312 0 L312 50 Q312 72 290 72 L-270 72 Q-295 72 -290 40Z" fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={5} />
+              <path d="M-80 -100 L-40 -126 L100 -126 L150 -94 L140 -50 L-95 -50Z" fill="#BFE4F6" stroke="#5A0E0A" strokeWidth={4} /><path d="M-50 -118 L10 -118 L-20 -56 L-80 -56Z" fill="#fff" opacity={0.35} />
+              <polygon points="-215,-8 -105,-8 -128,18 -30,18 -165,64 -138,34 -220,34" fill="#FFC93C" stroke="#B07A10" strokeWidth={3} />
+              <circle cx={40} cy={22} r={30} fill="#fff" stroke="#5A0E0A" strokeWidth={3} /><text x={40} y={34} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={34} fill="#C21F1F">95</text>
+              <ellipse cx={298} cy={4} rx={14} ry={16} fill="#FFE27A" stroke="#B07A10" strokeWidth={3} /><rect x={-300} y={44} width={610} height={10} fill="#8E1812" opacity={0.6} />
+              {[-170, 190].map((cx) => <g key={cx} transform={`translate(${cx} 72)`}><circle r={54} fill="#1B1B1B" /><circle r={30} fill="#C9CBD6" stroke="#777" strokeWidth={3} /><circle r={9} fill="#555" />{[0, 1, 2, 3, 4].map((k) => <line key={k} y2={-26} stroke="#888" strokeWidth={3} transform={`rotate(${k * 72})`} />)}</g>)}
+            </g>
+          </g>
           {/* her breathing mound + his bump */}
-          <ellipse cx={780} cy={1100 + breath * 0.5} rx={220} ry={46} fill="#9DB8FF" opacity={0.18} /><path d="M580 1090 Q780 1040 980 1090" fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.35} />
-          {(() => { const w = 150 + shake * 9, hgt = 38 + bmp * 2.2, cx = 330, cy = 1110 - bmp * 0.9; return <><ellipse cx={cx} cy={cy + hgt * 0.35} rx={w} ry={hgt} fill="#0A2030" opacity={0.5} /><ellipse cx={cx - 12} cy={cy - hgt * 0.1} rx={w * 0.85} ry={hgt * 0.8} fill="#BFE0F0" opacity={0.35} /><path d={`M${cx - w} ${cy + hgt * 0.4} Q${cx} ${cy - hgt * 1.25} ${cx + w} ${cy + hgt * 0.4}`} fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.5} /></>; })()}
+          <ellipse cx={780} cy={1100 + breath * 0.5} rx={220} ry={46} fill="#FFB3A8" opacity={0.18} /><path d="M580 1090 Q780 1040 980 1090" fill="none" stroke="#FFE3DE" strokeWidth={4} opacity={0.35} />
+          {(() => { const w = 150 + shake * 9, hgt = 38 + bmp * 2.2, cx = 330, cy = 1110 - bmp * 0.9; return <><ellipse cx={cx} cy={cy + hgt * 0.35} rx={w} ry={hgt} fill="#3A0A08" opacity={0.45} /><ellipse cx={cx - 12} cy={cy - hgt * 0.1} rx={w * 0.85} ry={hgt * 0.8} fill="#FFB3A8" opacity={0.35} /><path d={`M${cx - w} ${cy + hgt * 0.4} Q${cx} ${cy - hgt * 1.25} ${cx + w} ${cy + hgt * 0.4}`} fill="none" stroke="#FFE3DE" strokeWidth={4} opacity={0.5} /></>; })()}
         </g>
         <rect x={0} y={0} width={1080} height={1920} fill="#0A0614" opacity={0.0 + (1 - lights) * 0.6} />
       </g>
-      <HeartMeter pct={pct} cracks={cracks} t={t} x={150} y={540} />
+      <HeartMeter pct={pct} cracks={cracks} t={t} x={118} y={595} />
       <Thermo deg={deg} t={t} />
     </svg>
   );
