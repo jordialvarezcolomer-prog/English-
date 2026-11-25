@@ -127,14 +127,19 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
           <g clipPath="url(#cQuilt)">
             {Array.from({length: 30}).map((_, i) => <rect key={i} x={30 + i * 36} y={1190 + (i % 2) * 22} width={36} height={22} fill={i % 2 ? '#fff' : '#15151B'} opacity={0.95} />)}
             {Array.from({length: 40}).map((_, i) => <circle key={i} cx={random(`qx${i}`) * 1080} cy={1090 + random(`qy${i}`) * 830} r={1.8 + random(`qr${i}`) * 2.2} fill="#fff" opacity={0.45} />)}
-            {[0, 1, 2, 3, 4, 5].map((row) => [0, 1, 2, 3].map((col) => { const cx = 110 + col * 260 + (row % 2) * 130, cy = 1320 + row * 130; return (
+            {[0, 1, 2, 3, 4].map((row) => [0, 1, 2, 3].map((col) => { const cx = 130 + col * 260 + (row % 2) * 130, cy = 1340 + row * 150, rot = ((row * 3 + col * 5) % 5 - 2) * 3; return (
               <g key={`${row}${col}`}>
-                <g transform={`translate(${cx} ${cy}) scale(0.3)`}>
-                  <path d="M-290 40 L-270 -20 Q-240 -40 -170 -45 L-90 -110 Q-60 -135 0 -135 L110 -135 Q160 -135 190 -100 L230 -50 L285 -35 Q310 -30 312 0 L312 50 Q312 72 290 72 L-270 72 Q-295 72 -290 40Z" fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={9} />
-                  <path d="M-80 -100 L-40 -126 L100 -126 L150 -94 L140 -50 L-95 -50Z" fill="#BFE4F6" stroke="#5A0E0A" strokeWidth={7} />
-                  <polygon points="-215,-8 -105,-8 -128,18 -30,18 -165,64 -138,34 -220,34" fill="#FFC93C" stroke="#B07A10" strokeWidth={5} />
-                  <circle cx={50} cy={20} r={32} fill="#fff" stroke="#5A0E0A" strokeWidth={5} /><text x={50} y={34} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={40} fill="#C21F1F">95</text>
-                  {[-170, 190].map((wx) => <g key={wx} transform={`translate(${wx} 72)`}><circle r={54} fill="#1B1B1B" /><circle r={28} fill="#C9CBD6" /></g>)}
+                <g transform={`translate(${cx} ${cy}) rotate(${rot}) scale(0.42)`}>
+                  <ellipse cx={20} cy={128} rx={230} ry={14} fill="#000" opacity={0.25} />
+                  <path d="M150 -6 L250 -40 L262 92 L160 112Z" fill="#B8231C" stroke="#5A0E0A" strokeWidth={6} />
+                  <polygon points="168,10 238,-8 220,28 250,22 196,80 206,46 170,52" fill="#FFC93C" stroke="#B07A10" strokeWidth={3} /><text x={214} y={96} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={34} fill="#fff" transform="rotate(-8 214 96)">95</text>
+                  <path d="M-90 -100 Q0 -158 96 -104 L150 -6 L-150 -6Z" fill="#C62A22" stroke="#5A0E0A" strokeWidth={6} />
+                  <path d="M-160 44 Q-164 -16 -110 -34 L106 -34 Q158 -16 162 44 L162 100 Q162 118 142 118 L-142 118 Q-162 118 -162 100Z" fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={7} />
+                  <path d="M-112 -28 Q-92 -104 0 -108 Q92 -104 112 -28Z" fill="#F7FBFF" stroke="#5A0E0A" strokeWidth={6} />
+                  {[-1, 1].map((sd) => <g key={sd} transform={`translate(${sd * 44} -62)`}><ellipse rx={32} ry={30} fill="#fff" /><circle cx={sd * 3} cy={4} r={16} fill="#3A8FD8" /><circle cx={sd * 3} cy={4} r={7} fill="#0B1B33" /><circle cx={sd * 3 + 5} cy={-2} r={4} fill="#fff" /><path d="M-32 -6 Q0 -40 32 -6 L32 -14 Q0 -44 -32 -14Z" fill="#C62A22" /></g>)}
+                  {[-1, 1].map((sd) => <ellipse key={sd} cx={sd * 122} cy={52} rx={26} ry={17} fill="#FFE27A" stroke="#7A5A10" strokeWidth={4} />)}
+                  <path d="M-96 72 Q0 140 96 72 L90 86 Q0 122 -90 86Z" fill="#F2F2F2" stroke="#5A0E0A" strokeWidth={5} /><path d="M-90 80 Q0 108 90 80" fill="none" stroke="#9AA0AA" strokeWidth={3} />
+                  {[-1, 1].map((sd) => <g key={sd} transform={`translate(${sd * 166} 112)`}><ellipse rx={24} ry={46} fill="#1B1B1B" stroke="#000" strokeWidth={3} /><ellipse rx={12} ry={24} fill="#D13228" /></g>)}
                 </g>
                 <polygon transform={`translate(${cx + 130} ${cy + 40}) scale(0.9)`} points="0,-26 16,-26 6,-4 20,-4 -8,32 0,6 -12,6" fill="#FFC93C" stroke="#B07A10" strokeWidth={2} />
               </g>); }))}
