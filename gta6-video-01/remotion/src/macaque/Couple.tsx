@@ -51,8 +51,8 @@ export const HeartMeter: React.FC<{pct: number; cracks: number; t: number; x?: n
 /** prisoner-style tally on the headboard, one mark per attempt (every 5th is a strike-through) */
 export const Tally: React.FC<{n: number; x?: number; y?: number}> = ({n, x = 540, y = 500}) => (
   <g transform={`translate(${x} ${y})`}>
-    <text x={0} y={-56} textAnchor="middle" fontFamily={F} fontWeight={800} fontSize={18} fill="#FFF0E0" opacity={0.85} letterSpacing={3}>ATTEMPTS</text>
-    {Array.from({length: n}).map((_, i) => { const g = Math.floor(i / 5), k = i % 5; return k < 4 ? <line key={i} x1={-120 + g * 90 + k * 16} y1={-36} x2={-120 + g * 90 + k * 16} y2={22} stroke="#FFF0E0" strokeWidth={6} strokeLinecap="round" /> : <line key={i} x1={-130 + g * 90} y1={14} x2={-60 + g * 90} y2={-28} stroke="#FFF0E0" strokeWidth={6} strokeLinecap="round" />; })}
+    <text x={0} y={-56} textAnchor="middle" fontFamily={F} fontWeight={800} fontSize={18} fill="#2A1710" opacity={0.7} letterSpacing={3}>ATTEMPTS</text>
+    {Array.from({length: n}).map((_, i) => { const g = Math.floor(i / 5), k = i % 5; return k < 4 ? <line key={i} x1={-120 + g * 90 + k * 16} y1={-36} x2={-120 + g * 90 + k * 16} y2={22} stroke="#2A1710" strokeWidth={6} strokeLinecap="round" /> : <line key={i} x1={-130 + g * 90} y1={14} x2={-60 + g * 90} y2={-28} stroke="#2A1710" strokeWidth={6} strokeLinecap="round" />; })}
   </g>
 );
 export const Thermo: React.FC<{deg: number; t: number; x?: number; y?: number}> = ({deg, t, x = 985, y = 430}) => {
@@ -79,7 +79,7 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
       <defs>
         <linearGradient id="cWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2B2040" /><stop offset="1" stopColor="#4C3552" /></linearGradient>
         <linearGradient id="cWood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#5A3418" /><stop offset="0.5" stopColor="#9A6330" /><stop offset="1" stopColor="#5A3418" /></linearGradient>
-        <linearGradient id="cBlanket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#E0453A" /><stop offset="1" stopColor="#A81F19" /></linearGradient>
+        <linearGradient id="cBlanket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3558B8" /><stop offset="1" stopColor="#1B2F78" /></linearGradient>
         <linearGradient id="cRed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#F2584B" /><stop offset="0.6" stopColor="#D13228" /><stop offset="1" stopColor="#8E1812" /></linearGradient>
         <linearGradient id="cPillow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFFFFF" /><stop offset="1" stopColor="#C9D2E6" /></linearGradient>
         <radialGradient id="cLamp"><stop offset="0" stopColor="#FFE6A0" stopOpacity={0.8} /><stop offset="1" stopColor="#FFE6A0" stopOpacity={0} /></radialGradient>
@@ -102,8 +102,8 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
         {/* wall clock */}
         <g transform="translate(900 200)"><circle r={62} fill="#FBFBFB" stroke="#D8352A" strokeWidth={8} />{Array.from({length: 12}).map((_, i) => <line key={i} x1={0} y1={-50} x2={0} y2={-43} stroke="#333" strokeWidth={3} transform={`rotate(${i * 30})`} />)}<line y2={-32} stroke="#222" strokeWidth={6} strokeLinecap="round" transform={`rotate(${hh})`} /><line y2={-46} stroke="#D8352A" strokeWidth={3} strokeLinecap="round" transform={`rotate(${hm})`} /><circle r={5} fill="#222" /></g>
         {/* headboard + pillows */}
-        <rect x={50} y={420} width={980} height={620} rx={46} fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={6} /><rect x={50} y={452} width={980} height={26} fill="#FFD34D" opacity={0.9} /><rect x={50} y={486} width={980} height={8} fill="#fff" opacity={0.8} />
-        <rect x={86} y={456} width={908} height={548} rx={30} fill="none" stroke="#FFD1C8" strokeWidth={3} opacity={0.35} />
+        <rect x={50} y={420} width={980} height={620} rx={46} fill="url(#cWood)" stroke="#3A210E" strokeWidth={6} />
+        <rect x={86} y={456} width={908} height={548} rx={30} fill="none" stroke="#D9A260" strokeWidth={3} opacity={0.4} />
         <Tally n={tries} x={540} y={540} />
         <rect x={110} y={700} width={420} height={190} rx={70} fill="url(#cPillow)" stroke="#9AA6BE" strokeWidth={3} /><rect x={550} y={700} width={420} height={190} rx={70} fill="url(#cPillow)" stroke="#9AA6BE" strokeWidth={3} />
         {/* him */}
@@ -121,24 +121,27 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
         </g>
         {/* blanket over both with cars + his bump */}
         <g>
-          <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" fill="url(#cBlanket)" stroke="#5A0E0A" strokeWidth={4} />
+          <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" fill="url(#cBlanket)" stroke="#142A6A" strokeWidth={4} />
           <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1020 1066 Q780 1020 540 1060 Q300 1020 60 1066Z" fill="#F4F6FC" stroke="#AEB8D0" strokeWidth={3} />
           <clipPath id="cQuilt"><path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" /></clipPath>
           <g clipPath="url(#cQuilt)">
-            <g opacity={0.5}>{[0, 1, 2, 3].map((i) => <line key={i} x1={20 + i * 40} y1={1420 + i * 46} x2={250 + i * 30} y2={1420 + i * 46} stroke="#fff" strokeWidth={6} strokeLinecap="round" />)}</g>
-            <g transform="translate(580 1520) scale(1.25)">
-              <ellipse cx={20} cy={142} rx={300} ry={16} fill="#000" opacity={0.25} />
-              <path d="M-290 40 L-270 -20 Q-240 -40 -170 -45 L-90 -110 Q-60 -135 0 -135 L110 -135 Q160 -135 190 -100 L230 -50 L285 -35 Q310 -30 312 0 L312 50 Q312 72 290 72 L-270 72 Q-295 72 -290 40Z" fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={5} />
-              <path d="M-80 -100 L-40 -126 L100 -126 L150 -94 L140 -50 L-95 -50Z" fill="#BFE4F6" stroke="#5A0E0A" strokeWidth={4} /><path d="M-50 -118 L10 -118 L-20 -56 L-80 -56Z" fill="#fff" opacity={0.35} />
-              <polygon points="-215,-8 -105,-8 -128,18 -30,18 -165,64 -138,34 -220,34" fill="#FFC93C" stroke="#B07A10" strokeWidth={3} />
-              <circle cx={40} cy={22} r={30} fill="#fff" stroke="#5A0E0A" strokeWidth={3} /><text x={40} y={34} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={34} fill="#C21F1F">95</text>
-              <ellipse cx={298} cy={4} rx={14} ry={16} fill="#FFE27A" stroke="#B07A10" strokeWidth={3} /><rect x={-300} y={44} width={610} height={10} fill="#8E1812" opacity={0.6} />
-              {[-170, 190].map((cx) => <g key={cx} transform={`translate(${cx} 72)`}><circle r={54} fill="#1B1B1B" /><circle r={30} fill="#C9CBD6" stroke="#777" strokeWidth={3} /><circle r={9} fill="#555" />{[0, 1, 2, 3, 4].map((k) => <line key={k} y2={-26} stroke="#888" strokeWidth={3} transform={`rotate(${k * 72})`} />)}</g>)}
-            </g>
+            {Array.from({length: 30}).map((_, i) => <rect key={i} x={30 + i * 36} y={1190 + (i % 2) * 22} width={36} height={22} fill={i % 2 ? '#fff' : '#15151B'} opacity={0.95} />)}
+            {Array.from({length: 40}).map((_, i) => <circle key={i} cx={random(`qx${i}`) * 1080} cy={1090 + random(`qy${i}`) * 830} r={1.8 + random(`qr${i}`) * 2.2} fill="#fff" opacity={0.45} />)}
+            {[0, 1, 2, 3].map((row) => [0, 1, 2].map((col) => { const cx = 150 + col * 340 + (row % 2) * 170, cy = 1350 + row * 190; return (
+              <g key={`${row}${col}`}>
+                <g transform={`translate(${cx} ${cy}) scale(0.44)`}>
+                  <path d="M-290 40 L-270 -20 Q-240 -40 -170 -45 L-90 -110 Q-60 -135 0 -135 L110 -135 Q160 -135 190 -100 L230 -50 L285 -35 Q310 -30 312 0 L312 50 Q312 72 290 72 L-270 72 Q-295 72 -290 40Z" fill="url(#cRed)" stroke="#5A0E0A" strokeWidth={9} />
+                  <path d="M-80 -100 L-40 -126 L100 -126 L150 -94 L140 -50 L-95 -50Z" fill="#BFE4F6" stroke="#5A0E0A" strokeWidth={7} />
+                  <polygon points="-215,-8 -105,-8 -128,18 -30,18 -165,64 -138,34 -220,34" fill="#FFC93C" stroke="#B07A10" strokeWidth={5} />
+                  <circle cx={50} cy={20} r={32} fill="#fff" stroke="#5A0E0A" strokeWidth={5} /><text x={50} y={34} textAnchor="middle" fontFamily={F} fontWeight={900} fontSize={40} fill="#C21F1F">95</text>
+                  {[-170, 190].map((wx) => <g key={wx} transform={`translate(${wx} 72)`}><circle r={54} fill="#1B1B1B" /><circle r={28} fill="#C9CBD6" /></g>)}
+                </g>
+                <polygon transform={`translate(${cx + 175} ${cy + 70}) scale(1.1)`} points="0,-26 16,-26 6,-4 20,-4 -8,32 0,6 -12,6" fill="#FFC93C" stroke="#B07A10" strokeWidth={2} />
+              </g>); }))}
           </g>
           {/* her breathing mound + his bump */}
-          <ellipse cx={780} cy={1100 + breath * 0.5} rx={220} ry={46} fill="#FFB3A8" opacity={0.18} /><path d="M580 1090 Q780 1040 980 1090" fill="none" stroke="#FFE3DE" strokeWidth={4} opacity={0.35} />
-          {(() => { const w = 150 + shake * 9, hgt = 38 + bmp * 2.2, cx = 330, cy = 1110 - bmp * 0.9; return <><ellipse cx={cx} cy={cy + hgt * 0.35} rx={w} ry={hgt} fill="#3A0A08" opacity={0.45} /><ellipse cx={cx - 12} cy={cy - hgt * 0.1} rx={w * 0.85} ry={hgt * 0.8} fill="#FFB3A8" opacity={0.35} /><path d={`M${cx - w} ${cy + hgt * 0.4} Q${cx} ${cy - hgt * 1.25} ${cx + w} ${cy + hgt * 0.4}`} fill="none" stroke="#FFE3DE" strokeWidth={4} opacity={0.5} /></>; })()}
+          <ellipse cx={780} cy={1100 + breath * 0.5} rx={220} ry={46} fill="#9DB8FF" opacity={0.18} /><path d="M580 1090 Q780 1040 980 1090" fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.35} />
+          {(() => { const w = 150 + shake * 9, hgt = 38 + bmp * 2.2, cx = 330, cy = 1110 - bmp * 0.9; return <><ellipse cx={cx} cy={cy + hgt * 0.35} rx={w} ry={hgt} fill="#07123A" opacity={0.5} /><ellipse cx={cx - 12} cy={cy - hgt * 0.1} rx={w * 0.85} ry={hgt * 0.8} fill="#9DB8FF" opacity={0.4} /><path d={`M${cx - w} ${cy + hgt * 0.4} Q${cx} ${cy - hgt * 1.25} ${cx + w} ${cy + hgt * 0.4}`} fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.5} /></>; })()}
         </g>
         <rect x={0} y={0} width={1080} height={1920} fill="#0A0614" opacity={0.0 + (1 - lights) * 0.6} />
       </g>
