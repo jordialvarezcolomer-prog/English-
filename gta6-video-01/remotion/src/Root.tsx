@@ -14,6 +14,7 @@ import {GYM_TOTAL} from './gym/timeline';
 import {TOTAL_FRAMES} from './timeline';
 import {FPS, W, H} from './theme';
 import {CoupleBoard} from './macaque/Couple';
+import {CoupleFaster, COUPLE_TOTAL} from './macaque/CoupleVideo';
 import {MacaqueFaster, MACAQUE_TOTAL} from './macaque/MacaqueVideo';
 
 const fontCss = `@font-face{font-family:Montserrat;font-weight:900;src:url(${staticFile('fonts/montserrat-latin-900-normal.woff2')}) format('woff2');}`;
@@ -28,6 +29,7 @@ export const Root: React.FC = () => (
     <Composition id="HeroPushdown" component={HeroPushdown} durationInFrames={90} fps={FPS} width={720} height={1280} />
     <Composition id="Test3D" component={Test3D} durationInFrames={45} fps={FPS} width={W} height={H} />
     <Composition id="MacaqueUK" component={MacaqueFaster} durationInFrames={MACAQUE_TOTAL} fps={FPS} width={W} height={H} />
+    <Composition id="CoupleUK" component={CoupleFaster} durationInFrames={COUPLE_TOTAL} fps={FPS} width={W} height={H} />
     <Composition id="CoupleBoard" component={CoupleBoard} durationInFrames={180} fps={FPS} width={W} height={H} />
     <Composition id="GymRest" component={GymRest} durationInFrames={GYM_TOTAL} fps={FPS} width={W} height={H} /></>
 );

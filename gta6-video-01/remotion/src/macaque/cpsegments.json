@@ -1,0 +1,140 @@
+{
+ "segs": [
+  {
+   "start": 0.05660377358490567,
+   "end": 2.377358490566037,
+   "text": "It's eleven at night, and you're a bloody macaque!"
+  },
+  {
+   "start": 2.547169811320754,
+   "end": 9.198113207547168,
+   "text": "You're more awake than ever! And the bedsheets know it. Thump, thump, thump... but right next to you, your partner is fast asleep."
+  },
+  {
+   "start": 9.377358490566035,
+   "end": 15.056603773584898,
+   "text": "Attempt one: a gentle change of position. She snores louder! Chance of success: five per cent."
+  },
+  {
+   "start": 15.216981132075466,
+   "end": 18.43396226415094,
+   "text": "Attempt two: you stroke her shoulder. She mumbles: \"Tomorrow!\""
+  },
+  {
+   "start": 18.95283018867924,
+   "end": 25.06603773584905,
+   "text": "Attempt three: candles, soft music and perfumed sheets. She puts on her eye mask!"
+  },
+  {
+   "start": 25.245283018867926,
+   "end": 28.735849056603765,
+   "text": "One o'clock goes by. Two o'clock goes by. You're staring at the ceiling, counting sheep..."
+  },
+  {
+   "start": 28.905660377358483,
+   "end": 33.76415094339624,
+   "text": "Attempt four: a dramatic sigh! She rolls over. Your chance drops to one per cent!"
+  },
+  {
+   "start": 33.924528301886795,
+   "end": 39.056603773584904,
+   "text": "The room is heating up! Five degrees more. The thermometer hits thirty! And you keep right on going..."
+  },
+  {
+   "start": 39.23584905660377,
+   "end": 44.93396226415093,
+   "text": "Attempt five: pretend you're cold, so you can shuffle closer. She flings the blanket at you with all her might!"
+  },
+  {
+   "start": 45.11320754716979,
+   "end": 50.0377358490566,
+   "text": "Attempt six: you whisper in her ear. She answers in her sleep: \"Five more minutes!\""
+  },
+  {
+   "start": 50.688679245283005,
+   "end": 54.90566037735848,
+   "text": "Attempt seven: pretend to be a sleepwalker and wander over to her side of the bed. But she isn't falling for it!"
+  },
+  {
+   "start": 55.08490566037735,
+   "end": 58.92452830188678,
+   "text": "You get closer... and closer... you're almost there..."
+  },
+  {
+   "start": 59.0943396226415,
+   "end": 62.17924528301887,
+   "text": "And then an alarm goes off: it's six in the morning!"
+  },
+  {
+   "start": 62.35849056603775,
+   "end": 66.12264150943402,
+   "text": "She wakes up with a start, looks at you and asks: \"Why are you awake?\""
+  },
+  {
+   "start": 66.76415094339629,
+   "end": 71.867924528302,
+   "text": "And you, with bags under your eyes down to the floor, can only answer: \"No reason... hee hee.\""
+  },
+  {
+   "start": 72.03773584905672,
+   "end": 75.22641509433973,
+   "text": "She smiles, hugs you, and goes back to sleep on your chest."
+  },
+  {
+   "start": 75.3867924528303,
+   "end": 78.50943396226428,
+   "text": "And you discover how hard it is to be a man sometimes..."
+  },
+  {
+   "start": 78.66981132075485,
+   "end": 82.57547169811333,
+   "text": "Send this to your partner, so she can see what a macaque she's sleeping next to!"
+  }
+ ],
+ "events": {
+  "thump1": 5.096640589047399,
+  "thump2": 5.631217838765007,
+  "thump3": 6.094339622641508,
+  "asleep": 8.509433962264149,
+  "att1": 9.52830188679245,
+  "louder": 12.33962264150943,
+  "five": 14.150943396226408,
+  "att2": 15.28301886792452,
+  "shoulder": 16.462264150943387,
+  "mumble1": 18.15094339622641,
+  "att3": 19.0566037735849,
+  "candles": 19.69666182873729,
+  "music": 20.24528301886792,
+  "perfume": 21.188679245283012,
+  "mask": 22.698113207547163,
+  "oclock1": 23.92452830188679,
+  "oclock2": 25.273584905660375,
+  "ceiling": 27.301886792452827,
+  "att4": 28.924528301886788,
+  "sigh": 29.905660377358483,
+  "roll": 30.922093730979917,
+  "one": 32.8679245283019,
+  "heat": 34.377358490566046,
+  "thirty": 37.254716981132084,
+  "keep": 37.87735849056603,
+  "att5": 39.264150943396224,
+  "shuffle": 41.5943396226415,
+  "fling": 42.67688679245282,
+  "att6": 45.09486373165617,
+  "whisper": 46.35849056603773,
+  "mumble2": 49.283018867924525,
+  "att7": 50.792452830188665,
+  "sleepw": 52.24528301886791,
+  "closer": 56.40566037735848,
+  "alarm": 59.433962264150935,
+  "wakes": 62.37735849056605,
+  "mumble3": 65.98113207547175,
+  "noreason": 70.5377358490567,
+  "hehe": 71.3311320754718,
+  "hugs": 72.88679245283029,
+  "hard": 76.22641509433974,
+  "send": 78.74528301886805,
+  "end": 82.13207547169824
+ },
+ "dur": 82.6225
+}

@@ -6,7 +6,7 @@ import {Ex, Head, CALM, Defs} from './Macaque';
 const F = 'DejaVu Sans, sans-serif';
 const FUR_D = '#5E3A1B';
 
-export const Partner: React.FC<{state: 'front' | 'mask' | 'back'; t: number; breathe?: number}> = ({state, t, breathe = 1}) => {
+export const Partner: React.FC<{state: 'front' | 'mask' | 'back' | 'awake'; t: number; breathe?: number}> = ({state, t, breathe = 1}) => {
   const z = (i: number) => { const ph = (t * 0.5 + i / 3) % 1; return <text key={i} x={120 + ph * 70} y={-90 - ph * 150} fontFamily={F} fontWeight={900} fontSize={34 + i * 10} fill="#CFE0FF" opacity={(1 - ph) * 0.9}>Z</text>; };
   return (
     <g>
@@ -18,13 +18,14 @@ export const Partner: React.FC<{state: 'front' | 'mask' | 'back'; t: number; bre
         </g>
       ) : (
         <>
-          <g style={{filter: 'brightness(1.2) saturate(0.85)'}}><Head ex={{mouth: 'sleep', eye: state === 'mask' ? 0.0 : 0.06, pupil: 1, brow: 0.3, sweat: 0, blush: 1}} t={t} /></g>
+          <g style={{filter: 'brightness(1.2) saturate(0.85)'}}><Head ex={{mouth: state === 'awake' ? 'flat' : 'sleep', eye: state === 'mask' ? 0.0 : state === 'awake' ? 0.55 : 0.06, pupil: 1, brow: state === 'awake' ? -0.2 : 0.3, sweat: 0, blush: 1}} t={t} /></g>
           {[-1, 1].map((sd) => <g key={sd} transform={`translate(${sd * 42} -4)`}><path d={`M${sd * 14} -3 L${sd * 30} -12 M${sd * 18} 4 L${sd * 34} 4 M${sd * 14} 10 L${sd * 28} 18`} stroke="#2A1710" strokeWidth={3.5} strokeLinecap="round" fill="none" /></g>)}
+          {state === 'awake' && <g><path d="M-108 -100 Q0 -130 108 -100 L104 -62 Q0 -84 -104 -62Z" fill="#7E57C2" stroke="#4A2D8A" strokeWidth={3} /></g>}
           {state === 'mask' && <g><path d="M-112 -24 Q0 -50 112 -24 L108 24 Q0 44 -108 24Z" fill="#7E57C2" stroke="#4A2D8A" strokeWidth={3} />{[-1, 1].map((sd) => <path key={sd} d={`M${sd * 42 - 18} -2 Q${sd * 42} 12 ${sd * 42 + 18} -2`} stroke="#EDE3FF" strokeWidth={4} fill="none" strokeLinecap="round" />)}<path d="M-140 0 L-112 -2 M112 -2 L140 0" stroke="#4A2D8A" strokeWidth={6} /></g>}
         </>
       )}
       <g transform="translate(92 -112) rotate(18)"><path d="M0 0 L-46 -30 L-46 30Z M0 0 L46 -30 L46 30Z" fill="#FF7AA8" stroke="#C23C6E" strokeWidth={3} /><circle r={12} fill="#FF9EC0" stroke="#C23C6E" strokeWidth={3} /></g>
-      {state !== 'back' && [0, 1, 2].map(z)}
+      {state !== 'back' && state !== 'awake' && [0, 1, 2].map(z)}
     </g>
   );
 };
@@ -117,8 +118,8 @@ const McCar: React.FC<Car> = ({x, y, s, rot, flip, face, look, hop = 0}) => {
     </g>
   );
 };
-export type CoupleState = {t: number; shake: number; ex: Ex; her: 'front' | 'mask' | 'back'; pct: number; cracks: number; tries: number; deg: number; hour: number; zoom?: [number, number, number]; bubble?: string; lights?: number};
-export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, cracks, tries, deg, hour, zoom = [1, 540, 960], bubble, lights = 1}) => {
+export type CoupleState = {t: number; shake: number; ex: Ex; her: 'front' | 'mask' | 'back' | 'awake'; pct: number; cracks: number; tries: number; deg: number; hour: number; zoom?: [number, number, number]; bubble?: string; lights?: number; hisDx?: number; hisRot?: number; herDx?: number; herRot?: number; herUp?: number; blanketDx?: number; blanketRot?: number; bags?: number; dawn?: number; tint?: number; hideMeter?: number; hideThermo?: number; hideTally?: number; hisBubble?: string; extra?: React.ReactNode; over?: React.ReactNode};
+export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, cracks, tries, deg, hour, zoom = [1, 540, 960], bubble, lights = 1, hisDx = 0, hisRot = 0, herDx = 0, herRot = 0, herUp = 0, blanketDx = 0, blanketRot = 0, bags = 0, dawn = 0, tint = 0, hideMeter = 0, hideThermo = 0, hideTally = 0, hisBubble, extra, over}) => {
   const bmp = (2 + shake * 2.4) * (0.5 + 0.5 * Math.abs(Math.sin(t * 19))), j = Math.sin(t * 36) * shake, breath = Math.sin(t * 1.6) * 5;
   const hh = (hour % 12) * 30 + 0, hm = 0;
   return (
@@ -138,7 +139,7 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
         {/* window: night skyline with lit windows */}
         <g transform="translate(70 80)"><rect width={230} height={270} rx={8} fill="#1A1126" />
           <defs><linearGradient id="cSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#0B1236" /><stop offset="1" stopColor="#3A3470" /></linearGradient></defs>
-          <rect x={12} y={12} width={206} height={246} fill="url(#cSky)" />
+          <rect x={12} y={12} width={206} height={246} fill="url(#cSky)" /><rect x={12} y={12} width={206} height={246} fill="#FFB35C" opacity={0.75 * dawn} />
           {Array.from({length: 8}).map((_, i) => <circle key={i} cx={24 + random(`cs${i}`) * 180} cy={24 + random(`ct${i}`) * 80} r={1.5} fill="#fff" opacity={0.7} />)}
           {Array.from({length: 9}).map((_, i) => { const bw = 24, bx = 12 + i * 22.5, bh = 70 + random(`bh${i}`) * 110, by = 258 - bh; return <g key={i}><rect x={bx} y={by} width={bw} height={bh} fill={i % 2 ? '#0A0F26' : '#12183A'} />{Array.from({length: Math.floor(bh / 15)}).map((_, r) => [0, 1].map((c) => random(`w${i}${r}${c}`) > 0.42 ? <rect key={`${r}${c}`} x={bx + 4 + c * 10} y={by + 6 + r * 15} width={6} height={8} fill="#FFD66B" opacity={0.9} /> : null))}</g>; })}
           <rect x={111} y={12} width={8} height={246} fill="#1A1126" /><rect x={12} y={130} width={206} height={8} fill="#1A1126" /></g>
@@ -151,23 +152,24 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
         {/* headboard + pillows */}
         <rect x={50} y={420} width={980} height={620} rx={46} fill="url(#cWood)" stroke="#3A210E" strokeWidth={6} />
         <rect x={86} y={456} width={908} height={548} rx={30} fill="none" stroke="#D9A260" strokeWidth={3} opacity={0.4} />
-        <Tally n={tries} x={540} y={540} />
+        <g opacity={1 - hideTally}><Tally n={tries} x={540} y={540} /></g>
         <rect x={110} y={700} width={420} height={190} rx={70} fill="url(#cPillow)" stroke="#9AA6BE" strokeWidth={3} /><rect x={550} y={700} width={420} height={190} rx={70} fill="url(#cPillow)" stroke="#9AA6BE" strokeWidth={3} />
         {/* him */}
-        <g transform={`translate(${320 + Math.sin(t * 41) * shake * 0.4} ${840})`}>
+        <g transform={`translate(${320 + hisDx + Math.sin(t * 41) * shake * 0.4} ${840}) rotate(${hisRot} 0 120)`}>
           <path d="M-190 120 Q-170 -10 -80 -26 L80 -26 Q170 -10 190 120Z" fill="url(#mFur)" stroke={FUR_D} strokeWidth={4} />
           <path d="M-120 110 Q-100 0 -50 -14 L-34 50 Q0 80 34 50 L50 -14 Q100 0 120 110Z" fill="url(#mTank)" stroke="#9AA6BE" strokeWidth={3} />
-          <g transform={`translate(0 -150) scale(0.84) rotate(${Math.sin(t * 31) * shake * 0.25})`}><Head ex={ex} t={t} /></g>
+          <g transform={`translate(0 -150) scale(0.84) rotate(${Math.sin(t * 31) * shake * 0.25})`}><Head ex={ex} t={t} />{bags > 0 && [-1, 1].map((sd) => <ellipse key={sd} cx={sd * 42} cy={26} rx={28} ry={9} fill="#4A2D5A" opacity={0.55 * bags} />)}</g>
+          {hisBubble && (() => { const w = Math.max(260, hisBubble.length * 17 + 60); return <g transform="translate(90 -330)"><rect x={-w / 2} y={-34} width={w} height={64} rx={32} fill="#fff" stroke="#999" strokeWidth={3} /><path d="M20 28 L40 58 L56 28Z" fill="#fff" stroke="#999" strokeWidth={3} /><text textAnchor="middle" y={8} fontFamily={F} fontWeight={800} fontSize={26} fill="#222">{hisBubble}</text></g>; })()}
         </g>
         {/* her */}
-        <g transform={`translate(760 ${860 + breath * 0.4})`}>
+        <g transform={`translate(${760 + herDx} ${860 + breath * 0.4 - herUp}) rotate(${herRot} 0 120)`}>
           <path d="M-190 120 Q-170 -10 -80 -26 L80 -26 Q170 -10 190 120Z" fill="url(#mFur)" stroke={FUR_D} strokeWidth={4} opacity={her === 'back' ? 1 : 1} />
           <path d="M-150 112 Q-130 4 -70 -14 L-50 20 Q0 40 50 20 L70 -14 Q130 4 150 112Z" fill="#B49CE6" stroke="#6E58B0" strokeWidth={3} /><path d="M-70 -14 Q-60 -40 -52 -14M70 -14 Q60 -40 52 -14" stroke="#6E58B0" strokeWidth={6} fill="none" />
           <g transform={`translate(10 -142) scale(0.84) rotate(${her === 'back' ? 0 : 8})`}><Partner state={her} t={t} /></g>
           {bubble && (() => { const w = Math.max(260, bubble.length * 17 + 60); return <g transform="translate(-20 -330)"><rect x={-w / 2 + 20} y={-34} width={w} height={64} rx={32} fill="#fff" stroke="#999" strokeWidth={3} /><path d="M-40 28 L-56 56 L-10 28Z" fill="#fff" stroke="#999" strokeWidth={3} /><text x={20} y={8} textAnchor="middle" fontFamily={F} fontWeight={800} fontSize={26} fill="#222">{bubble}</text></g>; })()}
         </g>
         {/* blanket over both with cars + his bump */}
-        <g>
+        <g transform={`translate(${blanketDx} 0) rotate(${blanketRot} 540 1500)`}>
           <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" fill="url(#cBlanket)" stroke="#142A6A" strokeWidth={4} />
           <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1020 1066 Q780 1020 540 1060 Q300 1020 60 1066Z" fill="#F4F6FC" stroke="#AEB8D0" strokeWidth={3} />
           <clipPath id="cQuilt"><path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" /></clipPath>
@@ -182,9 +184,12 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
           {(() => { const w = 150 + shake * 9, hgt = 38 + bmp * 2.2, cx = 330, cy = 1110 - bmp * 0.9; return <><ellipse cx={cx} cy={cy + hgt * 0.35} rx={w} ry={hgt} fill="#07123A" opacity={0.5} /><ellipse cx={cx - 12} cy={cy - hgt * 0.1} rx={w * 0.85} ry={hgt * 0.8} fill="#9DB8FF" opacity={0.4} /><path d={`M${cx - w} ${cy + hgt * 0.4} Q${cx} ${cy - hgt * 1.25} ${cx + w} ${cy + hgt * 0.4}`} fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.5} /></>; })()}
         </g>
         <rect x={0} y={0} width={1080} height={1920} fill="#0A0614" opacity={0.0 + (1 - lights) * 0.6} />
+        <rect x={0} y={0} width={1080} height={1920} fill="#FF8A3A" opacity={0.28 * dawn + 0.22 * tint} style={{mixBlendMode: 'soft-light'}} />
+        {extra}
       </g>
-      <HeartMeter pct={pct} cracks={cracks} t={t} x={118} y={595} />
-      <Thermo deg={deg} t={t} />
+      <g opacity={1 - hideMeter}><HeartMeter pct={pct} cracks={cracks} t={t} x={118} y={595} /></g>
+      <g opacity={1 - hideThermo}><Thermo deg={deg} t={t} /></g>
+      {over}
     </svg>
   );
 };
