@@ -45,6 +45,15 @@ const camAt = (t: number): [number, number, number] => {
   return [z, lerp(a[2], b[2], u), lerp(a[3], b[3], u)];
 };
 
+/** 0 = music for him (frantic), 1 = music for her (calm), from where the camera is looking */
+const herWeightRaw = (t: number) => {
+  if (t >= A(15)) return 1;
+  if ((t >= EV.heat && t < A(8)) || (t >= EV.closer && t < EV.alarm + 0.6)) return 0;
+  const [z, cx] = camAt(t), tight = c01((z - 1.15) / 0.5), side = c01((cx - 450) / 200);
+  return tight * side + (1 - tight) * 0.3 * (t > EV.asleep && t < A(2) ? 3 : 1);
+};
+const herWeight = (t: number) => c01([-0.3, -0.15, 0, 0.15, 0.3].reduce((a, d) => a + herWeightRaw(Math.max(0, t + d)), 0) / 5);
+
 /* ---------------- state ---------------- */
 const shakeAt = (t: number) => kf(t, [[0, 6], [EV.thump3 + 0.3, 6], [EV.asleep - 0.2, 1.5], [EV.asleep, 0.5], [A(2), 1.8], [A(3), 1.2], [A(4), 1], [A(5), 0.6], [A(6), 0], [A(7) - 0.1, 0], [A(7) + 0.3, 8], [EV.thirty, 13], [EV.keep + 0.2, 14], [SEG[7].end, 14], [A(8) - 0.02, 2], [EV.shuffle, 4], [EV.fling, 6], [EV.fling + 0.5, 0], [A(9), 0.8], [A(10), 1.5], [EV.sleepw, 3], [A(11), 3], [EV.closer, 4], [EV.alarm - 0.3, 9], [EV.alarm, 0]]);
 const exAt = (t: number): Ex => {
@@ -187,7 +196,8 @@ export const CoupleFaster: React.FC = () => {
       <Audio src={staticFile('audio/cp_voice.wav')} />
       <Audio src={staticFile('audio/cp_sfx.wav')} volume={0.3} />
       <Audio src={staticFile('audio/cp_mumble.wav')} volume={0.45} />
-      <Audio src={staticFile('audio/cp_music.wav')} volume={0.1} />
+      <Audio src={staticFile('audio/cp_music_frantic.wav')} volume={(fr) => 0.55 * (1 - herWeight(fr / FPS))} />
+      <Audio src={staticFile('audio/cp_music_calm.wav')} volume={(fr) => 0.55 * herWeight(fr / FPS)} />
     </AbsoluteFill>
   );
 };
