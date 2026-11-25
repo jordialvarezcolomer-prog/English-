@@ -79,6 +79,7 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
       <defs>
         <linearGradient id="cWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2B2040" /><stop offset="1" stopColor="#4C3552" /></linearGradient>
         <linearGradient id="cWood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#5A3418" /><stop offset="0.5" stopColor="#9A6330" /><stop offset="1" stopColor="#5A3418" /></linearGradient>
+        <linearGradient id="cBlanket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4F8199" /><stop offset="1" stopColor="#25506A" /></linearGradient>
         <linearGradient id="cPillow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFFFFF" /><stop offset="1" stopColor="#C9D2E6" /></linearGradient>
         <radialGradient id="cLamp"><stop offset="0" stopColor="#FFE6A0" stopOpacity={0.8} /><stop offset="1" stopColor="#FFE6A0" stopOpacity={0} /></radialGradient>
       </defs>
@@ -110,13 +111,14 @@ export const CoupleScene: React.FC<CoupleState> = ({t, shake, ex, her, pct, crac
         </g>
         {/* blanket over both with cars + his bump */}
         <g>
-          <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" fill="url(#mBlanket)" stroke="#142A6A" strokeWidth={4} />
+          <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" fill="url(#cBlanket)" stroke="#1B3A52" strokeWidth={4} />
           <path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1020 1066 Q780 1020 540 1060 Q300 1020 60 1066Z" fill="#F4F6FC" stroke="#AEB8D0" strokeWidth={3} />
-          {Array.from({length: 30}).map((_, i) => <rect key={i} x={30 + i * 36} y={1190 + (i % 2) * 22} width={36} height={22} fill={i % 2 ? '#fff' : '#15151B'} opacity={0.95} />)}
-          {Array.from({length: 24}).map((_, i) => { const cx = 110 + (i % 6) * 170 + (Math.floor(i / 6) % 2) * 80, cy = 1330 + Math.floor(i / 6) * 120; return i % 3 === 0 ? <polygon key={i} transform={`translate(${cx} ${cy})`} points="0,-26 16,-26 6,-4 20,-4 -8,32 0,6 -12,6" fill="#FFC93C" stroke="#B07A10" strokeWidth={2} /> : <g key={i} transform={`translate(${cx} ${cy})`}><path d="M-30 6 L-24 -10 Q-8 -20 14 -10 L30 4 L32 14 L-32 14Z" fill="#D8352A" stroke="#7A1810" strokeWidth={2.5} /><path d="M-14 -8 L-4 -15 L8 -8Z" fill="#BFE4FF" /><circle cx={-16} cy={16} r={6} fill="#222" /><circle cx={16} cy={16} r={6} fill="#222" /></g>; })}
+          <clipPath id="cQuilt"><path d="M60 1010 Q300 960 540 1000 Q780 960 1020 1010 L1060 1920 L20 1920Z" /></clipPath>
+          <g clipPath="url(#cQuilt)" opacity={0.55}>{Array.from({length: 22}).map((_, i) => <g key={i}><line x1={-300 + i * 120} y1={1060} x2={300 + i * 120} y2={1960} stroke="#C9DCEB" strokeWidth={3} strokeDasharray="14 9" /><line x1={1380 - i * 120} y1={1060} x2={780 - i * 120} y2={1960} stroke="#C9DCEB" strokeWidth={3} strokeDasharray="14 9" /></g>)}</g>
+          <g clipPath="url(#cQuilt)" opacity={0.35}>{Array.from({length: 40}).map((_, i) => <circle key={i} cx={random(`qx${i}`) * 1080} cy={1090 + random(`qy${i}`) * 830} r={2 + random(`qr${i}`) * 3} fill="#fff" />)}</g>
           {/* her breathing mound + his bump */}
           <ellipse cx={780} cy={1100 + breath * 0.5} rx={220} ry={46} fill="#9DB8FF" opacity={0.18} /><path d="M580 1090 Q780 1040 980 1090" fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.35} />
-          {(() => { const w = 150 + shake * 9, hgt = 38 + bmp * 2.2, cx = 330, cy = 1110 - bmp * 0.9; return <><ellipse cx={cx} cy={cy + hgt * 0.35} rx={w} ry={hgt} fill="#07123A" opacity={0.5} /><ellipse cx={cx - 12} cy={cy - hgt * 0.1} rx={w * 0.85} ry={hgt * 0.8} fill="#9DB8FF" opacity={0.4} /><path d={`M${cx - w} ${cy + hgt * 0.4} Q${cx} ${cy - hgt * 1.25} ${cx + w} ${cy + hgt * 0.4}`} fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.5} /></>; })()}
+          {(() => { const w = 150 + shake * 9, hgt = 38 + bmp * 2.2, cx = 330, cy = 1110 - bmp * 0.9; return <><ellipse cx={cx} cy={cy + hgt * 0.35} rx={w} ry={hgt} fill="#0A2030" opacity={0.5} /><ellipse cx={cx - 12} cy={cy - hgt * 0.1} rx={w * 0.85} ry={hgt * 0.8} fill="#BFE0F0" opacity={0.35} /><path d={`M${cx - w} ${cy + hgt * 0.4} Q${cx} ${cy - hgt * 1.25} ${cx + w} ${cy + hgt * 0.4}`} fill="none" stroke="#DCE6FF" strokeWidth={4} opacity={0.5} /></>; })()}
         </g>
         <rect x={0} y={0} width={1080} height={1920} fill="#0A0614" opacity={0.0 + (1 - lights) * 0.6} />
       </g>
