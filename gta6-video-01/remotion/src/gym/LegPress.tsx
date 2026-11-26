@@ -255,6 +255,7 @@ const MuscleMap: React.FC<{lt: number; t: number}> = ({lt, t}) => {
   return (
     <g>
       <text x={540} y={120} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={48} fill="#17181C">SAME MUSCLES, BOTH MACHINES</text>
+      <g transform="translate(110 0)">
       <Capsule a={[200, 330]} b={Hh} w={190} c={BLUE} /><Capsule a={Kn} b={An} w={96} c={SKIN} /><Capsule a={Hh} b={Kn} w={150} c={SKIN} />
       <rect x={An[0] - 30} y={An[1] - 10} width={150} height={56} rx={22} fill="#fff" stroke={OL} strokeWidth={6} />
       <g opacity={pop(1.0) * pulse}><ellipse cx={Hh[0] - 30} cy={Hh[1] + 10} rx={96} ry={104} fill="#FF4D8D" /></g>
@@ -262,8 +263,9 @@ const MuscleMap: React.FC<{lt: number; t: number}> = ({lt, t}) => {
       <line x1={q0[0]} y1={q0[1]} x2={q1[0]} y2={q1[1]} stroke="#22A861" strokeWidth={44} strokeLinecap="round" opacity={pop(0.2) * pulse} />
       <line x1={c0[0]} y1={c0[1]} x2={c1[0]} y2={c1[1]} stroke="#3AA0FF" strokeWidth={34} strokeLinecap="round" opacity={pop(1.4) * pulse} />
       {lab('QUADS', 600, 560, '#117A3A', 0.2)}{lab('HAMSTRINGS', 20, 760, '#C25E00', 0.6)}{lab('GLUTES', 20, 340, '#C2185B', 1.0)}{lab('CALVES', 560, 900, '#1565C0', 1.4)}
-      {lt > 1.8 && <g opacity={pop(1.8)}><rect x={620} y={960} width={420} height={80} rx={40} fill={BLUE} stroke={OL} strokeWidth={6} /><text x={830} y={1015} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={40} fill="#fff">VERTICAL ✔</text></g>}
-      {lt > 2.1 && <g opacity={pop(2.1)}><rect x={620} y={1050} width={420} height={80} rx={40} fill={RED} stroke={OL} strokeWidth={6} /><text x={830} y={1105} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={40} fill="#fff">HORIZONTAL ✔</text></g>}
+      </g>
+      {lt > 1.8 && <g opacity={pop(1.8)}><rect x={560} y={190} width={420} height={80} rx={40} fill={BLUE} stroke={OL} strokeWidth={6} /><text x={770} y={245} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={40} fill="#fff">VERTICAL ✔</text></g>}
+      {lt > 2.1 && <g opacity={pop(2.1)}><rect x={560} y={290} width={420} height={80} rx={40} fill={RED} stroke={OL} strokeWidth={6} /><text x={770} y={345} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={40} fill="#fff">HORIZONTAL ✔</text></g>}
     </g>
   );
 };
