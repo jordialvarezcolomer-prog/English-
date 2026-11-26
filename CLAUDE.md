@@ -25,3 +25,12 @@
 - **Music**: two synthetic stems mixed live by camera focus with `Audio volume={(frame)=>...}`: a frantic stem (~150 BPM) when the camera is on the agitated character / climax, a calm stem (slow pads + music-box) on the calm character / ending; smooth the weight over +-0.3 s; music ~14 dB below the voice. For gym videos use the same idea: intense stem during the set, calm stem during rest / explanation.
 - **QC before delivering**: contact sheet of ~36 frames over the whole timeline + stills right after every fix, `volumedetect` on the final mix, `loudnorm=I=-16`, re-encode for sending (libx264 crf 24, ~35 MB). Say honestly that the video was checked by stills/levels, not watched.
 - **Copyright note**: look-alikes of Disney/Pixar characters (e.g. the red race car) are drawn by me, simplified and without logos; always warn the owner about possible claims.
+
+## Lessons from the leg-press video (owner feedback; apply to ALL videos, especially gym)
+- **Use REAL equipment/exercises only**: draw machines the way they exist in a gym (e.g. 45-degree sled leg press vs flat seated leg press). Never invent a variant. If unsure, look up the real machine before drawing.
+- **No permanent split-screen.** Split-screen only for the hook and 1-2 short comparison beats. Otherwise change shot every 2-3 s: solo close-ups, detail inserts, diagrams (angle arcs, spine, muscle maps), floor plans, "other examples", celebratory finale.
+- **Reps fast** (about 1 s per rep), athletes **sweat** (drops + sweat spray), strain faces at the bottom of each rep.
+- **Hook**: both subjects visibly doing the action from frame 0; the title sits in its own band ABOVE the action and never covers the exercise; punch-in on each option as it is named, then pull back.
+- **Labels/names must fit** (auto-size chips, keep them in screen space, never clip them at the edge when the camera zooms).
+- **SVG diagrams need an `<svg>` wrapper** when placed inside an HTML stage (blank shots otherwise).
+- **Review before sending**: render stills of EVERY shot (mid-point + extra frames), read the contact sheets, fix, then render. Say honestly what was checked.
