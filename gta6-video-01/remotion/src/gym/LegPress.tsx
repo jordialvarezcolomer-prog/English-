@@ -1,13 +1,15 @@
 import React from 'react';
-import {AbsoluteFill, Audio, staticFile, useCurrentFrame} from 'remotion';
-import {BG, FONT, G, OL, Person, Pose, V} from './kit';
+import {AbsoluteFill, Audio, random, staticFile, useCurrentFrame} from 'remotion';
+import {BG, FONT, G, OL, Person, POSES, Pose, V, ik} from './kit';
 import D from '../macaque/lpsegments.json';
+import SH from '../macaque/lpshots.json';
 
-/* VERTICAL vs HORIZONTAL leg press — Alex (vertical, lying) vs Daniel (horizontal, seated). UK English. Timeline driven by lpsegments.json.
-   Technique/biomechanics claims are the owner-approved script; sources to verify: NSCA Essentials of Strength Training; Schoenfeld 2010 (squat kinematics). Cards are ILLUSTRATIVE. */
+/* VERTICAL (45-degree sled) vs HORIZONTAL (flat seated) leg press — Alex vs Daniel. UK English. Timeline from lpsegments.json + lpshots.json.
+   Sources to verify before claiming anything on screen: NSCA Essentials of Strength Training; Schoenfeld 2010. Cards/diagrams are ILLUSTRATIVE (no invented numbers). */
 const FPS = 30;
 const SEG = D.segs as {start: number; end: number; text: string}[];
 const EV = D.events as Record<string, number>;
+const SHOTS = SH as {name: string; from: number; to: number}[];
 const A = (i: number) => SEG[i].start;
 const END = D.dur + 0.9;
 export const LEGPRESS_TOTAL = Math.round(END * FPS);
@@ -15,89 +17,84 @@ const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 const c01 = (x: number) => Math.min(1, Math.max(0, x));
 const sm = (u: number) => u * u * (3 - 2 * u);
 const back = (u: number) => { const c = 1.9; return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2); };
-const BLUE = G.blue, RED = G.red, S = 0.8, REP = 1.7, CH = 1100, TOP = 230;
+const BLUE = G.blue, RED = G.red, S = 0.8, REP = 1.05, CH = 1100, TOP = 230;
 const rad = (d: number) => (d * Math.PI) / 180;
+const repU = (t: number, off = 0) => 0.5 - 0.5 * Math.cos((2 * Math.PI * (t + off)) / REP);
 
-/* ---------------- camera over the two machines (container coords 1080 x 1100) ---------------- */
-const AX: V = [540, 440], DX: V = [420, 980];
-const CAM: [number, number, number, number][] = ([
-  [0, 1.12, 540, 550], [0.5, 1.0, 540, 550], [EV.vertical - 0.1, 1.0, 540, 550], [EV.vertical, 1.55, 540, 330], [EV.horizontal - 0.1, 1.55, 540, 330], [EV.horizontal, 1.55, 470, 880], [3.2, 1.0, 540, 550],
-  [EV.alex - 0.1, 1.0, 540, 550], [EV.alex, 1.5, 520, 360], [EV.daniel - 0.1, 1.5, 520, 360], [EV.daniel, 1.5, 460, 900], [EV.r1 - 0.2, 1.0, 540, 550],
-  [EV.deeper - 0.3, 1.0, 540, 550], [EV.deeper, 1.9, 500, 330], [EV.but - 0.05, 1.9, 500, 330], [EV.but + 0.15, 2.0, 520, 430], [EV.danger + 1.0, 2.0, 520, 430], [EV.r2 - 0.2, 1.0, 540, 550],
-  [EV.seat - 0.3, 1.0, 540, 550], [EV.seat, 1.8, 330, 900], [EV.pointD2 - 0.2, 1.8, 330, 900], [EV.r3 - 0.1, 1.0, 540, 550], [EV.stops, 1.4, 700, 550], [EV.lock - 0.1, 1.4, 700, 550], [EV.draw3, 1.0, 540, 550],
-  [EV.r4 - 0.1, 1.0, 540, 550], [EV.higher, 1.5, 640, 520], [EV.lower, 1.5, 640, 560], [EV.both, 1.0, 540, 550], [EV.r5 - 0.1, 1.0, 540, 550],
-  [EV.bonus - 0.1, 1.0, 540, 550], [EV.light, 1.2, 540, 550], [EV.wins - 0.2, 1.0, 540, 550], [EV.horiz - 0.1, 1.0, 540, 550], [EV.horiz, 1.5, 470, 880], [EV.vert - 0.1, 1.5, 470, 880], [EV.vert, 1.5, 540, 360],
-  [EV.control - 0.1, 1.5, 540, 360], [EV.control + 0.4, 1.1, 540, 550], [EV.tell, 1.0, 540, 550], [END, 1.0, 540, 550]] as [number, number, number, number][]).sort((a, b) => a[0] - b[0]);
-const camAt = (t: number): [number, number, number] => {
-  let i = 0; while (i < CAM.length - 1 && t > CAM[i + 1][0]) i++;
-  const a = CAM[i], b = CAM[Math.min(i + 1, CAM.length - 1)], u = a === b ? 0 : sm(c01((t - a[0]) / Math.max(1e-6, b[0] - a[0])));
-  const z = lerp(a[1], b[1], u), hx = 540 / z, hy = 550 / z;
-  return [z, Math.min(1080 - hx, Math.max(hx, lerp(a[2], b[2], u))), Math.min(CH - hy, Math.max(hy, lerp(a[3], b[3], u)))];
-};
-
-/* ---------------- poses (local 400x600 box, athlete facing right) ---------------- */
-const pressPose = (kind: 'v' | 'h', d: number, lift = 0): {pose: Pose; n: V; foot: V} => {
-  const b = kind === 'h' ? 28 : 0, g = kind === 'h' ? 22 : 0;
-  const H: V = [150 + (kind === 'v' ? lift * 26 : 0), 380];
+/* ---------------- athlete geometry (rig canvas 800x560, hip at HIPR) ---------------- */
+const HIPR: V = [260, 360];
+const CFG = {v: {b: 50, g: 45}, h: {b: 24, g: 10}};
+const rigGeo = (kind: 'v' | 'h', d: number, lift = 0) => {
+  const {b, g} = CFG[kind];
+  const H: V = [150 + lift * (kind === 'v' ? 10 : 4), 380 - lift * (kind === 'v' ? 18 : 6)];
   const sh: V = [150 - 150 * Math.sin(rad(b)), 380 - 150 * Math.cos(rad(b))];
   const head: V = [sh[0] + 6 * Math.cos(rad(b)) - 56 * Math.sin(rad(b)), sh[1] - 6 * Math.sin(rad(b)) - 56 * Math.cos(rad(b))];
   const n: V = [Math.cos(rad(g)), -Math.sin(rad(g))], foot: V = [H[0] + d * n[0], H[1] + d * n[1]];
-  const hand: V = kind === 'v' ? [H[0] + 26, H[1] + 26] : [H[0] + 30, H[1] - 34];
-  return {pose: {hip: H, sh, head, handL: hand, handR: [hand[0] + 8, hand[1] + 4], footL: foot, footR: [foot[0] + 6, foot[1] + 6], legBend: 1, armBend: -1}, n, foot};
+  const hand: V = [H[0] + 30, H[1] - 34];
+  const pose: Pose = {hip: H, sh, head, handL: hand, handR: [hand[0] + 8, hand[1] + 4], footL: foot, footR: [foot[0] + 6, foot[1] + 6], legBend: 1, armBend: -1};
+  const R = (p: V): V => [HIPR[0] + (p[0] - 150) * S, HIPR[1] + (p[1] - 380) * S];
+  const knee = ik(H, foot, 98, 96, 1);
+  return {pose, n, g, b, hipR: R(H), shR: R(sh), headR: R(head), kneeR: R(knee), footR: R(foot), R};
 };
-const repU = (t: number, off = 0) => 0.5 - 0.5 * Math.cos((2 * Math.PI * (t + off)) / REP);
 
-/* ---------------- machines ---------------- */
-const VertMachine: React.FC<{d: number}> = ({d}) => {
-  const footY = AX[1] - d * S, py = footY - 16 * S - 8;
+/* ---------------- machines (rig coords) ---------------- */
+const Pegs: React.FC<{on: boolean; t: number}> = ({on, t}) => on ? <g><rect x={286} y={398} width={26} height={12} rx={4} fill="#FFC93C" stroke={OL} strokeWidth={3} opacity={0.6 + 0.4 * Math.sin(t * 14)} /></g> : null;
+const SledMachine: React.FC<{geo: ReturnType<typeof rigGeo>; plates: number; stops?: boolean; t: number}> = ({geo, plates, stops, t}) => {
+  const n = geo.n, c: V = [geo.footR[0] + n[0] * (16 * S + 8), geo.footR[1] + n[1] * (16 * S + 8)], pd: V = [0.707, 0.707];
+  const rs: V = [HIPR[0] + 30, HIPR[1] + 70], re: V = [rs[0] + 330 * n[0], rs[1] + 330 * n[1]], car: V = [c[0] + pd[0] * 62, c[1] + pd[1] * 62];
   return (
     <g>
-      <rect x={300} y={470} width={380} height={34} rx={14} fill="#2B2F3A" stroke={OL} strokeWidth={4} /><rect x={330} y={504} width={20} height={16} fill="#4C5260" stroke={OL} strokeWidth={3} /><rect x={620} y={504} width={20} height={16} fill="#4C5260" stroke={OL} strokeWidth={3} />
-      <rect x={790} y={60} width={44} height={460} rx={10} fill="#4C5260" stroke={OL} strokeWidth={4} /><rect x={770} y={500} width={84} height={22} rx={8} fill="#3A3F4B" stroke={OL} strokeWidth={4} />
-      <rect x={AX[0] + 100} y={py - 4} width={700 - AX[0] + 130} height={16} rx={6} fill="#6A707E" stroke={OL} strokeWidth={4} />
-      <rect x={766} y={py - 30} width={92} height={62} rx={10} fill="#C9CDD4" stroke={OL} strokeWidth={4} />
-      <rect x={AX[0] - 150} y={py - 8} width={310} height={18} rx={8} fill="#9AA0AC" stroke={OL} strokeWidth={4} />
-      {[70, 58].map((r, i) => <g key={i} transform={`translate(${AX[0] + 190} ${py + 4 - i * 0})`}><circle r={r} fill={i ? '#25272D' : '#1C1D22'} stroke={OL} strokeWidth={4} /></g>)}
-      <circle cx={AX[0] + 190} cy={py + 4} r={14} fill="#C9CDD4" stroke={OL} strokeWidth={3} />
-      <line x1={80} x2={1000} y1={520} y2={520} stroke="#B9B9B5" strokeWidth={6} />
+      <rect x={120} y={462} width={520} height={16} rx={7} fill="#2B2F3A" stroke={OL} strokeWidth={4} />
+      <rect x={rs[0] - 12} y={rs[1]} width={24} height={462 - rs[1]} fill="#4C5260" stroke={OL} strokeWidth={3} /><rect x={re[0] - 12} y={re[1] + 10} width={24} height={452 - re[1]} fill="#4C5260" stroke={OL} strokeWidth={3} />
+      <line x1={rs[0]} y1={rs[1]} x2={re[0]} y2={re[1]} stroke={OL} strokeWidth={30} strokeLinecap="round" /><line x1={rs[0]} y1={rs[1]} x2={re[0]} y2={re[1]} stroke="#5C6372" strokeWidth={22} strokeLinecap="round" />
+      <Pegs on={!!stops} t={t} />
+      <g transform={`translate(${geo.hipR[0] - 8} ${geo.hipR[1] + 34}) rotate(-18)`}><rect x={-64} y={-14} width={128} height={28} rx={13} fill="#2B2F3A" stroke={OL} strokeWidth={4} /></g>
+      <g transform={`translate(${geo.hipR[0] - 56} ${geo.hipR[1] - 52}) rotate(-50)`}><rect x={-17} y={-150} width={34} height={250} rx={15} fill="#2B2F3A" stroke={OL} strokeWidth={4} /></g>
+      <line x1={car[0]} y1={car[1]} x2={c[0]} y2={c[1]} stroke="#9AA0AC" strokeWidth={14} strokeLinecap="round" />
+      <g transform={`translate(${c[0] + n[0] * 8} ${c[1] + n[1] * 8}) rotate(-45)`}><rect x={-8} y={-130} width={16} height={260} rx={7} fill="#9AA0AC" stroke={OL} strokeWidth={4} /></g>
+      <rect x={car[0] - 30} y={car[1] - 24} width={60} height={48} rx={10} fill="#C9CDD4" stroke={OL} strokeWidth={4} transform={`rotate(-45 ${car[0]} ${car[1]})`} />
+      {Array.from({length: plates}).map((_, i) => <g key={i} transform={`translate(${car[0] + 34 + i * 9} ${car[1] - 30 - i * 9})`}><circle r={64 - i * 2} fill={i % 2 ? '#25272D' : '#1C1D22'} stroke={OL} strokeWidth={4} /><circle r={13} fill="#C9CDD4" stroke={OL} strokeWidth={3} /></g>)}
     </g>
   );
 };
-const HorizMachine: React.FC<{d: number}> = ({d}) => {
-  const n: V = [Math.cos(rad(22)), -Math.sin(rad(22))], H = DX, foot: V = [H[0] + d * S * n[0], H[1] + d * S * n[1]], c: V = [foot[0] + n[0] * (16 * S + 8), foot[1] + n[1] * (16 * S + 8)];
-  const far: V = [H[0] + 620 * n[0], H[1] + 620 * n[1] + 50];
+const FlatMachine: React.FC<{geo: ReturnType<typeof rigGeo>; plates: number}> = ({geo, plates}) => {
+  const n = geo.n, c: V = [geo.footR[0] + n[0] * (16 * S + 8), geo.footR[1] + n[1] * (16 * S + 8)], rs: V = [HIPR[0] - 20, HIPR[1] + 66], re: V = [rs[0] + 470 * n[0], rs[1] + 470 * n[1]];
   return (
     <g>
-      <rect x={250} y={1052} width={620} height={18} rx={8} fill="#2B2F3A" stroke={OL} strokeWidth={4} />
-      <line x1={H[0] - 40} y1={H[1] + 58} x2={far[0]} y2={far[1] + 8} stroke="#4C5260" strokeWidth={22} strokeLinecap="round" /><line x1={H[0] - 40} y1={H[1] + 58} x2={far[0]} y2={far[1] + 8} stroke={OL} strokeWidth={4} strokeLinecap="round" opacity={0.6} />
-      <rect x={H[0] - 50} y={H[1] + 60} width={26} height={Math.max(8, 1052 - H[1] - 60)} fill="#4C5260" stroke={OL} strokeWidth={3} /><rect x={H[0] + 280} y={far[1] - 6 + 0} width={22} height={Math.max(8, 1052 - far[1] - 6)} fill="#4C5260" stroke={OL} strokeWidth={3} />
-      <g transform={`translate(${H[0] - 6} ${H[1] + 34}) rotate(-8)`}><rect x={-70} y={-12} width={140} height={26} rx={12} fill="#2B2F3A" stroke={OL} strokeWidth={4} /></g>
-      <g transform={`translate(${H[0] - 70} ${H[1] - 46}) rotate(-28)`}><rect x={-16} y={-150} width={34} height={240} rx={14} fill="#2B2F3A" stroke={OL} strokeWidth={4} /></g>
-      <g transform={`translate(${c[0] + n[0] * 8} ${c[1] + n[1] * 8}) rotate(-22)`}><rect x={-8} y={-130} width={16} height={260} rx={7} fill="#9AA0AC" stroke={OL} strokeWidth={4} /></g>
-      <line x1={c[0]} y1={c[1] + 50} x2={c[0] + 120 * n[0]} y2={c[1] + 50 + 120 * n[1]} stroke="#6A707E" strokeWidth={12} />
-      {[64, 52].map((r, i) => <circle key={i} cx={c[0] + 130 * n[0]} cy={c[1] + 50 + 130 * n[1]} r={r} fill={i ? '#25272D' : '#1C1D22'} stroke={OL} strokeWidth={4} />)}
-      <circle cx={c[0] + 130 * n[0]} cy={c[1] + 50 + 130 * n[1]} r={13} fill="#C9CDD4" stroke={OL} strokeWidth={3} />
-      <line x1={80} x2={1000} y1={1070} y2={1070} stroke="#B9B9B5" strokeWidth={6} />
+      <rect x={120} y={462} width={600} height={16} rx={7} fill="#2B2F3A" stroke={OL} strokeWidth={4} />
+      <rect x={rs[0] - 12} y={rs[1]} width={24} height={462 - rs[1]} fill="#4C5260" stroke={OL} strokeWidth={3} /><rect x={re[0] - 12} y={re[1]} width={24} height={462 - re[1]} fill="#4C5260" stroke={OL} strokeWidth={3} />
+      <line x1={rs[0]} y1={rs[1]} x2={re[0]} y2={re[1]} stroke={OL} strokeWidth={30} strokeLinecap="round" /><line x1={rs[0]} y1={rs[1]} x2={re[0]} y2={re[1]} stroke="#5C6372" strokeWidth={22} strokeLinecap="round" />
+      <g transform={`translate(${geo.hipR[0] - 6} ${geo.hipR[1] + 34}) rotate(-6)`}><rect x={-66} y={-14} width={132} height={28} rx={13} fill="#2B2F3A" stroke={OL} strokeWidth={4} /></g>
+      <g transform={`translate(${geo.hipR[0] - 50} ${geo.hipR[1] - 58}) rotate(-24)`}><rect x={-17} y={-140} width={34} height={240} rx={15} fill="#2B2F3A" stroke={OL} strokeWidth={4} /></g>
+      <g transform={`translate(${c[0] + n[0] * 8} ${c[1] + n[1] * 8}) rotate(-10)`}><rect x={-8} y={-130} width={16} height={260} rx={7} fill="#9AA0AC" stroke={OL} strokeWidth={4} /></g>
+      <line x1={c[0]} y1={c[1] + 60} x2={c[0] + 90} y2={c[1] + 60 + 90 * n[1]} stroke="#6A707E" strokeWidth={14} />
+      {Array.from({length: plates}).map((_, i) => <g key={i} transform={`translate(${c[0] + 100 + i * 9} ${c[1] + 54 + 90 * n[1] - i * 9})`}><circle r={62 - i * 2} fill={i % 2 ? '#25272D' : '#1C1D22'} stroke={OL} strokeWidth={4} /><circle r={13} fill="#C9CDD4" stroke={OL} strokeWidth={3} /></g>)}
     </g>
   );
 };
-
-/* ---------------- athletes ---------------- */
-const Alex: React.FC<{t: number}> = ({t}) => {
-  const lift = sm(c01((t - EV.but) / 0.9)) * (1 - sm(c01((t - EV.danger - 0.8) / 0.5))), u = repU(t);
-  const d = lerp(lerp(82, 186, u), 64, lift), pp = pressPose('v', d, lift), bottom = u < 0.3 || lift > 0.3;
+/** One athlete on one machine (rig canvas scaled by K and placed at x,y in the stage). */
+const RigBox: React.FC<{kind: 'v' | 'h'; t: number; K: number; x: number; y: number; dmin?: number; lift?: number; plates?: number; angle?: boolean; lumbar?: number; stops?: boolean; off?: number; freeze?: number; padGlow?: boolean; speed?: number}> = ({kind, t, K, x, y, dmin, lift = 0, plates = 2, angle, lumbar = 0, stops, off = 0, freeze, padGlow, speed = 1}) => {
+  const u = freeze !== undefined ? freeze : repU(t * speed, off), d = lerp(dmin ?? (kind === 'v' ? 80 : 118), 186, u), geo = rigGeo(kind, d, lift), bottom = u < 0.3;
+  const col = kind === 'v' ? BLUE : RED, ph = (t * 1.6) % 1;
+  const a1 = Math.atan2(geo.shR[1] - geo.hipR[1], geo.shR[0] - geo.hipR[0]), a2 = Math.atan2(geo.kneeR[1] - geo.hipR[1], geo.kneeR[0] - geo.hipR[0]);
+  const arc = (r: number) => `M${geo.hipR[0] + r * Math.cos(a1)} ${geo.hipR[1] + r * Math.sin(a1)} A${r} ${r} 0 0 ${((a2 - a1 + 6.2832) % 6.2832) > Math.PI ? 0 : 1} ${geo.hipR[0] + r * Math.cos(a2)} ${geo.hipR[1] + r * Math.sin(a2)}`;
   return (
-    <div style={{position: 'absolute', left: AX[0], top: AX[1], width: 0, height: 0, transform: 'rotate(-90deg)'}}>
-      <Person pose={pp.pose} shirt={BLUE} phones hair="short" mood={bottom ? 'strain' : 'flat'} sweat={c01(t / 60)} shoeRot={-90} fists s={S} x={-150 * S} y={-380 * S} />
+    <div style={{position: 'absolute', left: x, top: y, width: 800, height: 560, transformOrigin: '0 0', transform: `scale(${K})`}}>
+      <svg width={800} height={560} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+        {kind === 'v' ? <SledMachine geo={geo} plates={plates} stops={stops} t={t} /> : <FlatMachine geo={geo} plates={plates} />}
+        {padGlow && <g transform={`translate(${geo.hipR[0] - 50} ${geo.hipR[1] - 58}) rotate(-24)`}><rect x={-26} y={-146} width={52} height={250} rx={20} fill="none" stroke="#22A861" strokeWidth={9} opacity={0.5 + 0.5 * Math.sin(t * 9)} /></g>}
+      </svg>
+      <Person pose={geo.pose} shirt={kind === 'v' ? BLUE : RED} phones={kind === 'v'} cap={kind === 'h'} beard={kind === 'h'} hair="short" mood={bottom ? 'strain' : 'flat'} sweat={ph} shoeRot={-(90 + geo.g)} fists s={S} x={HIPR[0] - 150 * S} y={HIPR[1] - 380 * S} />
+      <svg width={800} height={560} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+        {[0, 1, 2, 3, 4].map((i) => { const p = (t * 1.5 + i / 5) % 1; return <path key={i} transform={`translate(${geo.headR[0] - 40 - p * 70 * (i % 2 ? 1 : 0.6)} ${geo.headR[1] - 30 - p * 50 + i * 8})`} d="M0 0 q-6 11 0 14 q6 -3 0 -14z" fill="#8FD3FF" stroke={OL} strokeWidth={2} opacity={(1 - p) * 0.9} />; })}
+        {angle && <g><path d={arc(64)} fill="none" stroke={col} strokeWidth={9} strokeLinecap="round" /><line x1={geo.kneeR[0]} y1={geo.kneeR[1]} x2={lerp(geo.shR[0], geo.hipR[0], 0.2)} y2={lerp(geo.shR[1], geo.hipR[1], 0.2)} stroke={col} strokeWidth={5} strokeDasharray="10 8" /><circle cx={geo.kneeR[0]} cy={geo.kneeR[1]} r={22} fill="none" stroke={col} strokeWidth={6} opacity={0.5 + 0.5 * Math.sin(t * 12)} /></g>}
+        {lumbar > 0 && <g><path d={`M${geo.shR[0]} ${geo.shR[1]} Q${lerp(geo.shR[0], geo.hipR[0], 0.5) - 34 * lumbar} ${lerp(geo.shR[1], geo.hipR[1], 0.5) + 24 * lumbar} ${geo.hipR[0] - 20} ${geo.hipR[1] + 6}`} fill="none" stroke={RED} strokeWidth={9} strokeLinecap="round" opacity={0.9} /><ellipse cx={geo.hipR[0] - 22} cy={geo.hipR[1] + 8} rx={46} ry={34} fill="none" stroke={RED} strokeWidth={7} opacity={0.5 + 0.5 * Math.sin(t * 20)} /></g>}
+      </svg>
     </div>
   );
 };
-const Daniel: React.FC<{t: number}> = ({t}) => {
-  const u = repU(t, 0.15), pp = pressPose('h', lerp(118, 186, u)), bottom = u < 0.3;
-  return <Person pose={pp.pose} shirt={RED} phones={false} cap beard mood={bottom ? 'strain' : 'flat'} sweat={c01(t / 60)} shoeRot={-112} fists s={S} x={DX[0] - 150 * S} y={DX[1] - 380 * S} />;
-};
+const headStage = (kind: 'v' | 'h', K: number, x: number, y: number): V => { const g = rigGeo(kind, 140); return [x + K * g.headR[0], y + K * g.headR[1]]; };
 
-/* ---------------- overlays ---------------- */
 const Stamp: React.FC<{t: number; at: number; text: string; fill: string; dur?: number; y?: number; rot?: number; size?: number}> = ({t, at, text, fill, dur = 1.3, y = 1000, rot = -5, size = 96}) => {
   const lt = t - at; if (lt < 0 || lt > dur) return null;
   const k = lt < 0.3 ? back(lt / 0.3) : 1, o = lt > dur - 0.25 ? (dur - lt) / 0.25 : 1, w = text.length * size * 0.62 + 80;
@@ -166,39 +163,133 @@ const Subs: React.FC = () => {
 };
 const calmW = (t: number) => sm(c01((t - (EV.wins - 0.6)) / 1.2));
 
+
+/* ---------------- diagrams (stage coords 1080 x 1100) ---------------- */
+const SKIN = '#F3B78E', SKIN_D = '#D29467';
+const Capsule: React.FC<{a: V; b: V; w: number; c: string}> = ({a, b, w, c}) => <g><line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={OL} strokeWidth={w + 8} strokeLinecap="round" /><line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke={c} strokeWidth={w} strokeLinecap="round" /></g>;
+const LegSide: React.FC<{hip: V; foot: V; k?: number; glow?: 'hams' | 'quads' | null; t: number; locked?: boolean}> = ({hip, foot, k = 2.2, glow, t, locked}) => {
+  const knee = ik(hip, foot, 98 * k, 96 * k, 1), dx = knee[0] - hip[0], dy = knee[1] - hip[1], L = Math.hypot(dx, dy) || 1, p: V = [dy / L, -dx / L];
+  const off = (a: V, b: V, m: number): [V, V] => [[a[0] + p[0] * m, a[1] + p[1] * m], [b[0] + p[0] * m, b[1] + p[1] * m]];
+  const pulse = 0.55 + 0.35 * Math.sin(t * 8);
+  return (
+    <g>
+      <Capsule a={knee} b={foot} w={84} c={SKIN} /><Capsule a={hip} b={knee} w={118} c={SKIN} />
+      {glow === 'quads' && (() => { const [a, b] = off(hip, knee, -34); return <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#22A861" strokeWidth={46} strokeLinecap="round" opacity={pulse} />; })()}
+      {glow === 'hams' && (() => { const [a, b] = off(hip, knee, 34); return <g><line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#FF8A1E" strokeWidth={46} strokeLinecap="round" opacity={pulse} /><circle cx={hip[0] + p[0] * 40} cy={hip[1] + p[1] * 40} r={66} fill="#FF8A1E" opacity={pulse * 0.8} /></g>; })()}
+      <circle cx={knee[0]} cy={knee[1]} r={locked ? 30 : 0} fill="none" stroke={RED} strokeWidth={8} opacity={0.6 + 0.4 * Math.sin(t * 14)} />
+      <rect x={foot[0] - 22} y={foot[1] - 56} width={44} height={112} rx={16} fill="#fff" stroke={OL} strokeWidth={6} />
+    </g>
+  );
+};
+const SpineDiagram: React.FC<{t: number; lt: number}> = ({t, lt}) => {
+  const k = 0.5 - 0.5 * Math.cos(Math.min(lt, 2.4) * 2.6), pel: V = [620, 760 - 70 * k], sho: V = [230, 700];
+  const pts = Array.from({length: 10}).map((_, i) => { const s = i / 9, bx = lerp(pel[0], sho[0], s), by = lerp(pel[1], sho[1], s), cur = (s < 0.5 ? 1 - s * 2 : 0) * 60 * k + Math.sin(s * Math.PI) * 14; return [bx, by + cur] as V; });
+  return (
+    <g>
+      <rect x={140} y={800} width={600} height={46} rx={20} fill="#2B2F3A" stroke={OL} strokeWidth={5} /><rect x={150} y={846} width={40} height={80} fill="#4C5260" stroke={OL} strokeWidth={4} /><rect x={690} y={846} width={40} height={80} fill="#4C5260" stroke={OL} strokeWidth={4} />
+      <ellipse cx={pel[0]} cy={pel[1] + 10} rx={80} ry={56} fill="#EADBC8" stroke={OL} strokeWidth={6} />
+      {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r={24 - i * 0.6} fill="#F6EEDD" stroke={OL} strokeWidth={5} />)}
+      <circle cx={sho[0] - 20} cy={sho[1] - 6} r={34} fill="#F6EEDD" stroke={OL} strokeWidth={5} />
+      <path d={`M${pel[0] - 60} ${pel[1] + 60} Q${pel[0] - 20} ${pel[1] + 130} ${pel[0] + 20} ${pel[1] + 60}`} fill="none" stroke="#9A9AA2" strokeWidth={0} />
+      <path d={`M${pel[0] - 110} ${pel[1] + 40} l0 0`} stroke="none" />
+      <g opacity={k}><path d="M 700 780 L 700 690" stroke={RED} strokeWidth={14} strokeLinecap="round" /><polygon points="680,700 700,660 720,700" fill={RED} /></g>
+      <text x={540} y={420} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={84} fill={k > 0.5 ? RED : '#22A861'}>{k > 0.5 ? 'BACK ROUNDS!' : 'NEUTRAL BACK'}</text>
+      <text x={540} y={500} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={40} fill="#5A5A60">pelvis lifts off the pad</text>
+    </g>
+  );
+};
+const FloorPlan: React.FC<{lt: number}> = ({lt}) => (
+  <g>
+    <rect x={50} y={120} width={980} height={860} rx={36} fill="#D9C7A6" stroke={OL} strokeWidth={6} />
+    <text x={540} y={190} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={44} fill="#17181C">A TYPICAL GYM (illustrative)</text>
+    {[0, 1, 2, 3, 4, 5].map((i) => { const k = back(c01((lt - 0.2 - i * 0.45) / 0.35)); const x = 130 + (i % 3) * 300, y = 260 + Math.floor(i / 3) * 190; return lt > 0.2 + i * 0.45 ? <g key={i} transform={`translate(${x} ${y}) scale(${k})`}><rect width={230} height={120} rx={18} fill={RED} stroke={OL} strokeWidth={6} /><rect x={20} y={20} width={150} height={26} rx={10} fill="#fff" opacity={0.85} /><polygon points="190,60 220,60 205,40" fill="#fff" /><text x={115} y={100} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={30} fill="#fff">HORIZONTAL</text></g> : null; })}
+    {lt > 3.4 && (() => { const k = back(c01((lt - 3.4) / 0.4)); return <g transform={`translate(380 700) scale(${k})`}><polygon points="0,150 60,0 300,0 240,150" fill={BLUE} stroke={OL} strokeWidth={6} /><text x={150} y={96} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={34} fill="#fff">VERTICAL</text></g>; })()}
+    {lt > 4.6 && <text x={540} y={940} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={40} fill="#17181C">rarer to find</text>}
+    {[0, 1, 2, 3, 4].map((i) => <g key={i} transform={`translate(${160 + i * 190 + Math.sin(lt * 3 + i) * 20} ${650 + Math.cos(lt * 2 + i) * 14})`}><circle r={18} fill={SKIN} stroke={OL} strokeWidth={4} /><rect x={-14} y={16} width={28} height={30} rx={8} fill={i % 2 ? BLUE : '#22A861'} stroke={OL} strokeWidth={4} /></g>)}
+  </g>
+);
+const Wins: React.FC<{t: number; lt: number}> = ({t, lt}) => (
+  <g>
+    {Array.from({length: 24}).map((_, i) => <polygon key={i} transform={`translate(540 520) rotate(${i * 15 + lt * 20})`} points="0,-60 18,-520 -18,-520" fill="#FFE27A" opacity={0.55} />)}
+    {[['ALEX', 1, BLUE, 80], ['DRAWS', 2, '#8A8A90', 400], ['DANIEL', 2, RED, 720]].map(([n, v, c, x], i) => { const k = back(c01((lt - 0.2 - i * 0.25) / 0.35)); return <g key={i} transform={`translate(${x} 360) scale(${k})`}><rect width={280} height={320} rx={36} fill={c as string} stroke={OL} strokeWidth={8} /><text x={140} y={70} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={42} fill="#fff">{n}</text><text x={140} y={240} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={170} fill="#fff">{v}</text></g>; })}
+    <text x={540} y={160} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={120} fill="#17181C" transform={`rotate(${Math.sin(t * 6) * 4} 540 130)`}>WHO WINS?</text>
+    {lt > 2.2 && <text x={540} y={820} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={84} fill="#8E6FD1" opacity={c01((lt - 2.2) / 0.3)}>IT DEPENDS ON YOU</text>}
+  </g>
+);
+const Svg: React.FC<{children: React.ReactNode}> = ({children}) => <svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>{children}</svg>;
+const Chip: React.FC<{text: string; color: string; x?: number; y?: number}> = ({text, color, x = 40, y = 20}) => <div style={{position: 'absolute', left: x, top: y, background: color, color: '#fff', borderRadius: 22, border: '5px solid #17181C', padding: '8px 26px', fontFamily: FONT, fontWeight: 900, fontSize: 38, whiteSpace: 'nowrap'}}>{text}</div>;
+
+/* ---------------- shot renderer ---------------- */
+const KS = 1.3, SY = 190;      // solo rig scale + position in stage
+const KH = 0.95;               // split rigs
+type ShotOut = {node: React.ReactNode; bg: string; chip?: [string, string]; cam: [number, number, number]};
+const shotAt = (name: string, t: number, lt: number, dur: number): ShotOut => {
+  const u = c01(lt / dur), drift = (z0: number, z1: number, cx: number, cy: number): [number, number, number] => [lerp(z0, z1, sm(u)), cx, cy];
+  const solo = (kind: 'v' | 'h', o: Partial<React.ComponentProps<typeof RigBox>> = {}) => <RigBox kind={kind} t={t} K={KS} x={kind === 'v' ? 110 : 50} y={SY} {...o} />;
+  const split = (oa: Partial<React.ComponentProps<typeof RigBox>> = {}, od: Partial<React.ComponentProps<typeof RigBox>> = {}) => <><RigBox kind="v" t={t} K={KH} x={227} y={0} {...oa} /><RigBox kind="h" t={t} K={KH} x={170} y={550} off={0.18} {...od} /></>;
+  const hv = headStage('v', KS, 110, SY), hh = headStage('h', KS, 50, SY);
+  const panels = (n: React.ReactNode) => <><svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0}}><rect x={0} y={10} width={1080} height={530} rx={28} fill="#E3EDFF" stroke="#17181C" strokeWidth={5} /><rect x={0} y={560} width={1080} height={530} rx={28} fill="#FFE6E3" stroke="#17181C" strokeWidth={5} /></svg>{n}</>;
+  const BA = '#E3EDFF', BD = '#FFE6E3', BW = '#FFFFFF';
+  switch (name) {
+    case 'hook': { const z = t < EV.vertical ? 1.0 : t < EV.horizontal ? 1.45 : t < 3.4 ? 1.45 : 1.0; return {node: panels(split()), bg: '#fff', cam: [z, 540, t >= EV.vertical && t < EV.horizontal ? 280 : t >= EV.horizontal && t < 3.4 ? 830 : 550]}; }
+    case 'q1': return {node: solo('v'), bg: BA, cam: [2.3, hv[0] - 40, hv[1] + 40]};
+    case 'q2': return {node: solo('h'), bg: BD, cam: [2.3, hh[0] - 40, hh[1] + 40]};
+    case 'q3': return {node: panels(split()), bg: '#fff', cam: drift(1.0, 1.15, 540, 550)};
+    case 'intro_a': return {node: <>{solo('v')}<Svg><text x={760} y={250} fontFamily={FONT} fontWeight={900} fontSize={60} fill={BLUE}>PUSH ↗</text></Svg></>, bg: BA, chip: ['ALEX · VERTICAL 45°', BLUE], cam: drift(1.0, 1.3, 520, 620)};
+    case 'intro_d': return {node: <>{solo('h')}<Svg><text x={800} y={420} fontFamily={FONT} fontWeight={900} fontSize={60} fill={RED}>PUSH →</text></Svg></>, bg: BD, chip: ['DANIEL · HORIZONTAL', RED], cam: drift(1.3, 1.0, 560, 640)};
+    case 'r1_a': return {node: solo('v', {angle: true, dmin: 74}), bg: BA, chip: ['VERTICAL: DEEPER', BLUE], cam: drift(1.0, 1.5, 480, 600)};
+    case 'r1_d': return {node: solo('h', {angle: true}), bg: BD, chip: ['HORIZONTAL: LESS DEEP', RED], cam: drift(1.0, 1.4, 480, 640)};
+    case 'r1_cmp': return {node: panels(split({angle: true, dmin: 74}, {angle: true})), bg: '#fff', cam: drift(1.0, 1.12, 540, 550)};
+    case 'dng_a': return {node: solo('v', {dmin: 62, lift: sm(c01(lt / 0.8)), lumbar: sm(c01(lt / 0.8)), angle: false}), bg: '#FFE4E1', chip: ['TOO DEEP!', RED], cam: drift(1.0, 1.9, 380, 640)};
+    case 'dng_spine': return {node: <Svg><SpineDiagram t={t} lt={lt} /></Svg>, bg: '#FFE4E1', cam: drift(1.0, 1.1, 540, 600)};
+    case 'r2_d': return {node: solo('h', {padGlow: true}), bg: BD, chip: ['HORIZONTAL: SEAT HOLDS YOU', RED], cam: drift(1.0, 1.7, 330, 640)};
+    case 'r2_a': return {node: solo('v', {lumbar: 0.5}), bg: BA, chip: ['VERTICAL: PELVIS IS FREE', BLUE], cam: drift(1.0, 1.5, 380, 650)};
+    case 'r3_stops': return {node: solo('v', {stops: true, dmin: 70, speed: 0.6}), bg: BA, chip: ['USE THE SAFETY STOPS', '#22A861'], cam: drift(1.0, 1.6, 400, 700)};
+    case 'r3_knees': return {node: <Svg><rect x={600} y={420} width={30} height={220} rx={12} fill="#9AA0AC" stroke={OL} strokeWidth={5} /><rect x={560} y={800} width={30} height={220} rx={12} fill="#9AA0AC" stroke={OL} strokeWidth={5} /><Capsule a={[230, 640]} b={[90, 520]} w={120} c={BLUE} /><Capsule a={[230, 940]} b={[90, 820]} w={120} c={BLUE} /><LegSide hip={[230, 640]} foot={[600, 520]} t={t} locked /><LegSide hip={[230, 940]} foot={[560, 880]} t={t} /><text x={850} y={540} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={56} fill={RED}>✖ LOCKED</text><text x={830} y={900} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={52} fill="#22A861">✔ SOFT KNEES</text></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 640)};
+    case 'r4_high': return {node: <Svg><rect x={640} y={330} width={36} height={620} rx={14} fill="#9AA0AC" stroke={OL} strokeWidth={6} /><Capsule a={[290, 790]} b={[130, 650]} w={130} c={BLUE} /><LegSide hip={[290, 790]} foot={[lerp(600, 640, repU(t)), 520]} glow="hams" t={t} /><text x={540} y={170} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={62} fill="#FF8A1E">FEET HIGHER</text><text x={540} y={240} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={42} fill="#17181C">GLUTES + HAMSTRINGS</text></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 580)};
+    case 'r4_low': return {node: <Svg><rect x={640} y={330} width={36} height={620} rx={14} fill="#9AA0AC" stroke={OL} strokeWidth={6} /><Capsule a={[290, 790]} b={[130, 650]} w={130} c={BLUE} /><LegSide hip={[290, 790]} foot={[lerp(600, 640, repU(t)), 900]} glow="quads" t={t} /><text x={540} y={170} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={62} fill="#22A861">FEET LOWER</text><text x={540} y={240} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={42} fill="#17181C">MORE QUADS</text></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 600)};
+    case 'r4_both': return {node: panels(split()), bg: '#fff', cam: drift(1.15, 1.0, 540, 550)};
+    case 'r5_floor': return {node: <Svg><FloorPlan lt={lt} /></Svg>, bg: '#EFE6D2', cam: drift(1.0, 1.12, 540, 560)};
+    case 'bonus': return {node: <>{solo('v', {plates: lt < 2.2 ? 1 : lt < 3.6 ? 2 : 3, speed: 0.8})}</>, bg: BA, chip: [lt < 2.2 ? 'LIGHT SET FIRST' : 'THEN ADD WEIGHT SLOWLY', '#8E6FD1'], cam: drift(1.0, 1.35, 520, 620)};
+    case 'wins': return {node: <Svg><Wins t={t} lt={lt} /></Svg>, bg: '#FFF3C9', cam: drift(1.0, 1.1, 540, 550)};
+    case 'beg': return {node: solo('h', {lumbar: 0.5}), bg: BD, chip: ['BEGINNER / SORE BACK → HORIZONTAL', RED], cam: drift(1.0, 1.35, 400, 640)};
+    case 'exp': return {node: solo('v', {dmin: 70, angle: true}), bg: BA, chip: ['EXPERIENCED + MOBILE → VERTICAL', BLUE], cam: drift(1.0, 1.5, 480, 600)};
+    case 'ctrl': { const pl = 1 + Math.min(3, Math.floor(lt / 1.3)); return {node: lt < 2.8 ? solo('v', {plates: pl, speed: 1.2}) : solo('h', {plates: pl, speed: 1.2}), bg: lt < 2.8 ? BA : BD, chip: [lt < 2.8 ? 'CONTROL THE REP...' : '...THEN ADD WEIGHT', lt < 2.8 ? BLUE : RED], cam: drift(1.0, 1.4, 500, 620)}; }
+    case 'cta': return {node: <>{Array.from({length: 26}).map((_, i) => <div key={i} style={{position: 'absolute', left: random(`cf${i}`) * 1040, top: ((t * 220 * (0.6 + random(`cs${i}`)) + random(`cy${i}`) * 1100) % 1100) - 40, width: 18, height: 26, background: ['#2F7BF2', '#E5383B', '#FFC93C', '#22A861'][i % 4], transform: `rotate(${t * 200 + i * 40}deg)`, border: '3px solid #17181C'}} />)}<Person pose={POSES.flex} shirt={BLUE} phones hair="short" mood="smile" s={1.2} x={40} y={260 - Math.abs(Math.sin(t * 6)) * 40} /><Person pose={POSES.flex} shirt={RED} phones={false} cap beard mood="smile" flip s={1.2} x={480} y={260 - Math.abs(Math.sin(t * 6 + 1)) * 40} /></>, bg: '#FFF3C9', cam: drift(1.0, 1.1, 540, 550)};
+    default: return {node: panels(split()), bg: '#fff', cam: drift(1.0, 1.1, 540, 550)};
+  }
+};
+
 /* ---------------- composition ---------------- */
 export const LegPressVideo: React.FC = () => {
   const f = useCurrentFrame(), t = f / FPS;
-  const [z, cx, cy] = camAt(t), shake = t < 0.5 ? 4 : t >= EV.but && t < EV.danger + 1 ? 5 : 0;
-  const ox = Math.sin(t * 53) * shake, oy = Math.cos(t * 47) * shake;
-  const danger = t >= EV.but && t < EV.danger + 1.4;
-  const flash = Math.max(0, ...[EV.r1, EV.r2, EV.r3, EV.r4, EV.r5, EV.bonus, EV.pointA, EV.pointD2, EV.pointD5, EV.draw3, EV.draw4].map((a) => 1 - (t - (a - 0.05)) / 0.12).filter((v) => v < 1)) * 0.28;
-  const hookK = t < 4.6 ? sm(c01((t - 0.35) / 0.3)) * (1 - sm(c01((t - 4.0) / 0.5))) : 0;
+  const shot = SHOTS.find((s) => t >= s.from && t < s.to) ?? SHOTS[SHOTS.length - 1], lt = t - shot.from, dur = shot.to - shot.from;
+  const out = shotAt(shot.name, t, lt, dur);
+  const dangerShot = shot.name === 'dng_a' || shot.name === 'dng_spine';
+  const sh = shot.name === 'hook' && t < 0.5 ? 5 : dangerShot ? 6 : 0;
+  let [z, cx, cy] = out.cam; { const hx = 540 / z, hy = 550 / z; cx = Math.min(1080 - hx, Math.max(hx, cx)); cy = Math.min(CH - hy, Math.max(hy, cy)); }
+  const ox = Math.sin(t * 53) * sh, oy = Math.cos(t * 47) * sh, sl = lt < 0.2 && shot.name !== 'hook' ? 1 - lt / 0.2 : 0;
+  const flash = Math.max(0, ...[EV.r1, EV.r2, EV.r3, EV.r4, EV.r5, EV.bonus, EV.pointA, EV.pointD2, EV.pointD5, EV.draw3, EV.draw4].map((a) => 1 - (t - (a - 0.05)) / 0.12).filter((v) => v < 1)) * 0.28 + (lt < 0.1 && shot.name !== 'hook' ? 0.3 * (1 - lt / 0.1) : 0);
+  const hookK = t < 4.6 ? 1 : 0, scoreK = sm(c01((t - 4.4) / 0.3));
   return (
     <AbsoluteFill style={{background: G.bg}}>
       <BG />
-      <div style={{position: 'absolute', left: 0, top: TOP, width: 1080, height: CH, overflow: 'hidden'}}>
-        <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: CH, transformOrigin: '0 0', transform: `translate(${540 - cx * z + ox}px, ${550 - cy * z + oy}px) scale(${z})`}}>
-          <svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0}}>
-            <rect x={0} y={10} width={1080} height={530} rx={28} fill="#E3EDFF" stroke="#17181C" strokeWidth={5} /><rect x={0} y={560} width={1080} height={530} rx={28} fill="#FFE6E3" stroke="#17181C" strokeWidth={5} />
-            <VertMachine d={lerp(lerp(82, 186, repU(t)), 64, sm(c01((t - EV.but) / 0.9)) * (1 - sm(c01((t - EV.danger - 0.8) / 0.5))))} /><HorizMachine d={lerp(118, 186, repU(t, 0.15))} />
-            <rect x={24} y={28} width={330} height={62} rx={20} fill={BLUE} stroke="#17181C" strokeWidth={5} /><text x={46} y={72} fontFamily={FONT} fontWeight={900} fontSize={34} fill="#fff">VERTICAL · ALEX</text>
-            <rect x={24} y={578} width={410} height={62} rx={20} fill={RED} stroke="#17181C" strokeWidth={5} /><text x={46} y={622} fontFamily={FONT} fontWeight={900} fontSize={34} fill="#fff">HORIZONTAL · DANIEL</text>
-            {danger && <g><ellipse cx={AX[0] + 4} cy={AX[1] + 30} rx={90} ry={50} fill="none" stroke={RED} strokeWidth={8} opacity={0.5 + 0.5 * Math.sin(t * 20)} /></g>}
-          </svg>
-          <Alex t={t} /><Daniel t={t} />
+      <div style={{position: 'absolute', left: 0, top: TOP, width: 1080, height: CH, overflow: 'hidden', borderRadius: 28, background: out.bg}}>
+        <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: CH, transformOrigin: '0 0', transform: `translate(${540 - cx * z + ox + sl * 150}px, ${550 - cy * z + oy}px) scale(${z})`, filter: sl > 0 ? `blur(${sl * 6}px)` : undefined}}>
+          <svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>{shot.name === 'hook' || shot.name === 'q3' || shot.name === 'r1_cmp' || shot.name === 'r4_both' || shot.name === 'ctrl' ? null : null}</svg>
+          {out.node}
         </div>
+        {out.chip && <Chip text={out.chip[0]} color={out.chip[1]} />}
       </div>
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}>
-        <Score t={t} />
+        <g opacity={scoreK}><Score t={t} /></g>
+        {hookK > 0 && <g transform="translate(540 120)"><rect x={-500} y={-86} width={1000} height={172} rx={40} fill="#fff" stroke="#17181C" strokeWidth={8} /><text textAnchor="middle" y={-4} fontFamily={FONT} fontWeight={900} fontSize={66}><tspan fill={BLUE}>VERTICAL</tspan><tspan fill="#17181C"> or </tspan><tspan fill={RED}>HORIZONTAL?</tspan></text><text textAnchor="middle" y={54} fontFamily={FONT} fontWeight={800} fontSize={34} fill="#5A5A60">which leg press is better?</text></g>}
         <Cards t={t} />
-        <g opacity={hookK}><g transform={`translate(540 ${TOP + 555}) rotate(-4) scale(${0.62 + 0.03 * Math.sin(t * 8)})`}><rect x={-440} y={-170} width={880} height={340} rx={44} fill="#fff" stroke="#17181C" strokeWidth={8} /><text textAnchor="middle" y={-40} fontFamily={FONT} fontWeight={900} fontSize={120} fill={BLUE}>VERTICAL</text><text textAnchor="middle" y={40} fontFamily={FONT} fontWeight={900} fontSize={60} fill="#17181C">or</text><text textAnchor="middle" y={130} fontFamily={FONT} fontWeight={900} fontSize={120} fill={RED}>HORIZONTAL?</text></g></g>
         <Stamp t={t} at={EV.r1 - 0.05} text="ROUND 1" fill="#17181C" /><Stamp t={t} at={EV.r2 - 0.05} text="ROUND 2" fill="#17181C" /><Stamp t={t} at={EV.r3 - 0.05} text="ROUND 3" fill="#17181C" /><Stamp t={t} at={EV.r4 - 0.05} text="ROUND 4" fill="#17181C" /><Stamp t={t} at={EV.r5 - 0.05} text="ROUND 5" fill="#17181C" /><Stamp t={t} at={EV.bonus - 0.05} text="BONUS" fill="#8E6FD1" />
         <Stamp t={t} at={EV.pointA - 0.05} text="POINT: ALEX" fill={BLUE} y={1250} size={72} rot={4} dur={1.2} /><Stamp t={t} at={EV.pointD2 - 0.05} text="POINT: DANIEL" fill={RED} y={1250} size={72} rot={-4} dur={1.2} /><Stamp t={t} at={EV.pointD5 - 0.05} text="POINT: DANIEL" fill={RED} y={1250} size={72} rot={4} dur={1.2} />
         <Stamp t={t} at={EV.draw3 - 0.1} text="DRAW!" fill="#8A8A90" y={1250} size={84} dur={1.3} /><Stamp t={t} at={EV.draw4 - 0.1} text="DRAW!" fill="#8A8A90" y={1250} size={84} dur={1.3} rot={5} />
-        <Stamp t={t} at={EV.but} text="DANGER!" fill={RED} y={1000} size={120} dur={2.2} rot={-6} />
-        <Stamp t={t} at={EV.wins - 0.2} text="WHO WINS?" fill="#8E6FD1" y={1000} size={96} dur={1.8} />
-        {danger && <rect width={1080} height={1920} fill={RED} opacity={0.08 + 0.08 * Math.sin(t * 18)} />}
+        <Stamp t={t} at={EV.but} text="DANGER!" fill={RED} y={1250} size={110} dur={2.2} rot={-6} />
+        {dangerShot && <rect width={1080} height={1920} fill={RED} opacity={0.07 + 0.07 * Math.sin(t * 18)} />}
       </svg>
       <AbsoluteFill style={{background: '#fff', opacity: flash, pointerEvents: 'none'}} />
       <Subs />

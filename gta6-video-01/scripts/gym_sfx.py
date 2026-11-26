@@ -47,10 +47,11 @@ def siren(d=0.8): x = t_(d); f = 700 + 300 * np.sign(np.sin(2 * np.pi * 3.5 * x)
 def buzz(): x = t_(0.4); return np.sign(np.sin(2 * np.pi * 120 * x)) * 0.35 * env(len(x), 0.005, 0.06)
 def drumroll(d): n = int(d * sr); x = noise(d) * (0.5 + 0.5 * np.sin(2 * np.pi * 28 * t_(d))); return bp(x, 200, 3000) * np.linspace(0.05, 1, n)
 def cymbal(): x = t_(1.1); return hp(noise(1.1), 5000) * np.exp(-x * 4) * 0.7
-for sg in SEG: add(S, sg['start'] - 0.07, whoosh(0.28, 400, 2500), 0.35)
+for sg in SEG: add(S, sg['start'] - 0.07, whoosh(0.28, 400, 2500), 0.25)
+for sh in json.load(open(f'{OUT}/src/macaque/lpshots.json')): add(S, sh['from'] - 0.06, whoosh(0.22, 500, 3500), 0.45); add(S, sh['from'], thump(110, 0.12), 0.35)
 add(S, 0.45, whoosh(0.4, 200, 1800), 0.8); add(S, 0.5, thump(70, 0.3), 1.2)                       # hook pull-back
 for k in ('vertical', 'horizontal'): add(S, EV[k] - 0.05, boing(), 0.25); add(S, EV[k], ding(740, 0.3), 0.5)
-REP = 1.7
+REP = 1.05
 for i, t in enumerate(np.arange(0.2, EV['r5'] + 8.0, REP)): add(S, t, clank(600, 0.3), 0.32); add(S, t + 0.04, clank(520, 0.3), 0.26)   # both machines, rep by rep
 for k in ('r1', 'r2', 'r3', 'r4', 'r5', 'bonus'): add(S, EV[k] - 0.1, gong(170), 0.6); add(S, EV[k] - 0.1, chalk(), 0.5)
 for k in ('pointA', 'pointD2', 'pointD5'): add(S, EV[k], ding(988), 0.8); add(S, EV[k] + 0.12, ding(1319), 0.7)
