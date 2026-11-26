@@ -13,6 +13,7 @@ import {HeroPushdown, HeroSheet, SHOTS} from './hero/HeroSheet';
 import {GYM_TOTAL} from './gym/timeline';
 import {TOTAL_FRAMES} from './timeline';
 import {FPS, W, H} from './theme';
+import {LegPressVideo, LEGPRESS_TOTAL} from './gym/LegPress';
 import {CoupleBoard} from './macaque/Couple';
 import {CoupleFaster, COUPLE_TOTAL} from './macaque/CoupleVideo';
 import {MacaqueFaster, MACAQUE_TOTAL} from './macaque/MacaqueVideo';
@@ -30,6 +31,7 @@ export const Root: React.FC = () => (
     <Composition id="Test3D" component={Test3D} durationInFrames={45} fps={FPS} width={W} height={H} />
     <Composition id="MacaqueUK" component={MacaqueFaster} durationInFrames={MACAQUE_TOTAL} fps={FPS} width={W} height={H} />
     <Composition id="CoupleUK" component={CoupleFaster} durationInFrames={COUPLE_TOTAL} fps={FPS} width={W} height={H} />
+    <Composition id="LegPressUK" component={LegPressVideo} durationInFrames={LEGPRESS_TOTAL} fps={FPS} width={W} height={H} />
     <Composition id="CoupleBoard" component={CoupleBoard} durationInFrames={180} fps={FPS} width={W} height={H} />
     <Composition id="GymRest" component={GymRest} durationInFrames={GYM_TOTAL} fps={FPS} width={W} height={H} /></>
 );

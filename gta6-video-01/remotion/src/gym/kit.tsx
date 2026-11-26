@@ -108,8 +108,8 @@ const Eye: React.FC<{cx: number; cy: number; lid: number; look?: number; strain?
     </g>
   );
 };
-const ShoeSide: React.FC<{f: V; dark?: boolean}> = ({f, dark}) => (
-  <g><path d={`M${f[0] - 16} ${f[1] - 8} L${f[0] + 10} ${f[1] - 12} Q${f[0] + 40} ${f[1] - 6} ${f[0] + 44} ${f[1] + 10} L${f[0] + 44} ${f[1] + 16} L${f[0] - 18} ${f[1] + 16} Z`} fill={dark ? '#D8D8D8' : '#FFFFFF'} stroke={OL} strokeWidth={OW} strokeLinejoin="round" /><path d={`M${f[0] - 18} ${f[1] + 11} L${f[0] + 44} ${f[1] + 11}`} stroke="#D9453F" strokeWidth={5} /><path d={`M${f[0] - 4} ${f[1] - 10} l8 8 M${f[0] + 4} ${f[1] - 11} l8 8`} stroke={OL} strokeWidth={2.4} strokeLinecap="round" /><path d={`M${f[0] + 24} ${f[1] - 4} Q${f[0] + 36} ${f[1] - 2} ${f[0] + 40} ${f[1] + 8}`} fill="none" stroke={OL} strokeWidth={2.4} /></g>
+const ShoeSide: React.FC<{f: V; dark?: boolean; rot?: number}> = ({f, dark, rot = 0}) => (
+  <g transform={rot ? `rotate(${rot} ${f[0]} ${f[1]})` : undefined}><path d={`M${f[0] - 16} ${f[1] - 8} L${f[0] + 10} ${f[1] - 12} Q${f[0] + 40} ${f[1] - 6} ${f[0] + 44} ${f[1] + 10} L${f[0] + 44} ${f[1] + 16} L${f[0] - 18} ${f[1] + 16} Z`} fill={dark ? '#D8D8D8' : '#FFFFFF'} stroke={OL} strokeWidth={OW} strokeLinejoin="round" /><path d={`M${f[0] - 18} ${f[1] + 11} L${f[0] + 44} ${f[1] + 11}`} stroke="#D9453F" strokeWidth={5} /><path d={`M${f[0] - 4} ${f[1] - 10} l8 8 M${f[0] + 4} ${f[1] - 11} l8 8`} stroke={OL} strokeWidth={2.4} strokeLinecap="round" /><path d={`M${f[0] + 24} ${f[1] - 4} Q${f[0] + 36} ${f[1] - 2} ${f[0] + 40} ${f[1] + 8}`} fill="none" stroke={OL} strokeWidth={2.4} /></g>
 );
 const Mohawk: React.FC<{cx: number; cy: number; a0: number; a1: number; r: number; R: number; n?: number}> = ({cx, cy, a0, a1, r, R, n = 7}) => {
   const outer: string[] = [], inner: string[] = [];
@@ -117,9 +117,9 @@ const Mohawk: React.FC<{cx: number; cy: number; a0: number; a1: number; r: numbe
   for (let i = n * 2; i >= 0; i--) { const a = ((a0 + ((a1 - a0) * i) / (n * 2)) * Math.PI) / 180; inner.push(`${cx + (r - 6) * Math.cos(a)},${cy - (r - 6) * Math.sin(a)}`); }
   return <polygon points={[...outer, ...inner].join(' ')} fill={MOH} stroke={OL} strokeWidth={OW} strokeLinejoin="round" />;
 };
-type PersonProps = {phones?: boolean; whistle?: boolean; scroll?: number; plate?: number; pose: Pose; shirt?: string; hair?: Hair; beard?: boolean; flip?: boolean; x?: number; y?: number; s?: number; mood?: 'smile' | 'flat' | 'worry' | 'strain'; phone?: boolean; stopwatch?: boolean; opacity?: number; rot?: number; glowThigh?: number; thighColor?: string; sweat?: number; cap?: boolean; tired?: number; blink?: number; fists?: boolean; straightArm?: boolean};
+type PersonProps = {phones?: boolean; whistle?: boolean; scroll?: number; plate?: number; pose: Pose; shirt?: string; hair?: Hair; beard?: boolean; flip?: boolean; x?: number; y?: number; s?: number; mood?: 'smile' | 'flat' | 'worry' | 'strain'; phone?: boolean; stopwatch?: boolean; opacity?: number; rot?: number; glowThigh?: number; thighColor?: string; sweat?: number; cap?: boolean; tired?: number; blink?: number; fists?: boolean; straightArm?: boolean; shoeRot?: number; torsoLean?: number};
 /** Side-view (facing right) outlined cartoon athlete in a 400x600 box. */
-export const Person: React.FC<PersonProps> = ({phones, whistle = false, scroll = -1, plate = 0, pose, shirt = G.blue, hair = 'short', beard = false, flip = false, x = 0, y = 0, s = 1, mood = 'flat', phone = false, stopwatch = false, opacity = 1, rot = 0, glowThigh = 0, thighColor = G.green, sweat = 0, cap = false, tired = 0, blink = 0, fists, straightArm}) => {
+export const Person: React.FC<PersonProps> = ({phones, whistle = false, scroll = -1, plate = 0, pose, shirt = G.blue, hair = 'short', beard = false, flip = false, x = 0, y = 0, s = 1, mood = 'flat', phone = false, stopwatch = false, opacity = 1, rot = 0, glowThigh = 0, thighColor = G.green, sweat = 0, cap = false, tired = 0, blink = 0, fists, straightArm, shoeRot = 0}) => {
   if (cap) hair = 'mohawk';
   const hp = phones ?? shirt === G.blue;
   const lb = pose.legBend ?? 1, ab = pose.armBend ?? -1;
@@ -134,7 +134,7 @@ export const Person: React.FC<PersonProps> = ({phones, whistle = false, scroll =
   const leg = (knee: V, foot: V, far: boolean) => (
     <g>
       <Limb a={knee} b={foot} wa={33} wb={22} bulge={0.14} c={far ? skD : SK} />
-      <ShoeSide f={foot} dark={far} />
+      <ShoeSide f={foot} dark={far} rot={shoeRot} />
       <Limb a={pose.hip} b={knee} wa={48} wb={35} c={far ? skD : SK} />
       <circle cx={knee[0] + 4} cy={knee[1]} r={13} fill={far ? skD : SK} stroke={OL} strokeWidth={OW} />
       <path d={`M${knee[0] - 1} ${knee[1] - 7} q9 3 9 11`} fill="none" stroke={OL} strokeWidth={2.4} strokeLinecap="round" opacity={0.55} />

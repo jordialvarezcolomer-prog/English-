@@ -1,0 +1,115 @@
+{
+ "segs": [
+  {
+   "start": 0.047619047619047616,
+   "end": 4.504761904761904,
+   "text": "Which is better: the vertical leg press or the horizontal one? Today, we settle it!"
+  },
+  {
+   "start": 4.60297619047619,
+   "end": 7.590476190476191,
+   "text": "Two machines. Two lifters. One winner... or is there?"
+  },
+  {
+   "start": 7.780952380952383,
+   "end": 13.79047619047619,
+   "text": "On the left, Alex, lying down, pushing towards the ceiling. On the right, Daniel, sitting, pushing straight ahead."
+  },
+  {
+   "start": 13.952380952380953,
+   "end": 21.44761904761905,
+   "text": "Round one: range of motion. On the vertical one, your knees come closer to your chest, so you can go deeper. Point to Alex!"
+  },
+  {
+   "start": 21.980952380952385,
+   "end": 26.716535433070877,
+   "text": "But careful: go too deep, and your pelvis lifts off the pad, and your lower back rounds. Danger!"
+  },
+  {
+   "start": 26.885714285714297,
+   "end": 33.94285714285716,
+   "text": "Round two: your back. On the horizontal one, the seat holds you in place, and your lower back is better supported. Point to Daniel!"
+  },
+  {
+   "start": 34.12380952380954,
+   "end": 40.895238095238106,
+   "text": "Round three: safety. Both have safety stops. Use them always, and never lock your knees at the top. It's a draw!"
+  },
+  {
+   "start": 41.057142857142864,
+   "end": 50.25714285714283,
+   "text": "Round four: the muscles. Feet higher, and you work more glutes and hamstrings. Feet lower, and it's more quads. And that goes for both machines. Another draw!"
+  },
+  {
+   "start": 50.352380952380926,
+   "end": 58.961904761904734,
+   "text": "Round five: convenience. You'll find the horizontal one in almost every gym, and it's easy to adjust. The vertical one is rarer. Point to Daniel!"
+  },
+  {
+   "start": 59.1333333333333,
+   "end": 64.7333333333333,
+   "text": "Bonus round: the warm-up. Whichever you choose, start with a light set, and add weight slowly."
+  },
+  {
+   "start": 65.25714285714282,
+   "end": 66.86666666666663,
+   "text": "So... who wins? It depends on you."
+  },
+  {
+   "start": 66.91428571428568,
+   "end": 70.37142857142855,
+   "text": "If you're just starting out, or your back bothers you: go horizontal."
+  },
+  {
+   "start": 70.54285714285712,
+   "end": 74.56190476190478,
+   "text": "If you're experienced, with good mobility: the vertical gives you more range."
+  },
+  {
+   "start": 74.72380952380954,
+   "end": 81.67619047619056,
+   "text": "And most importantly: pick the one you can control, and keep adding weight little by little. Quality reps beat ego every time!"
+  },
+  {
+   "start": 82.20000000000007,
+   "end": 87.63809523809535,
+   "text": "Tell me which one you use! And send this to your gym buddy, so they can stop fighting over the machine!"
+  }
+ ],
+ "events": {
+  "vertical": 0.8761904761904762,
+  "horizontal": 2.3047619047619046,
+  "alex": 8.447619047619048,
+  "daniel": 11.533333333333331,
+  "r1": 13.952380952380953,
+  "deeper": 19.257142857142856,
+  "pointA": 19.977030812324927,
+  "but": 20.79047619047619,
+  "rounds": 25.30476190476191,
+  "danger": 26.143859649122813,
+  "r2": 26.876190476190487,
+  "seat": 29.60000000000002,
+  "pointD2": 33.12795031055902,
+  "r3": 34.09220779220781,
+  "stops": 36.01904761904763,
+  "lock": 38.56190476190477,
+  "draw3": 40.28571428571429,
+  "r4": 41.044444444444444,
+  "higher": 42.800000000000004,
+  "lower": 45.69129720853857,
+  "both": 48.4190476190476,
+  "draw4": 49.63809523809521,
+  "r5": 50.39999999999998,
+  "rare": 57.17142857142856,
+  "pointD5": 58.21551020408161,
+  "bonus": 59.12789115646255,
+  "light": 62.14285714285711,
+  "wins": 65.20725623582763,
+  "horiz": 69.45523809523807,
+  "vert": 72.76240601503758,
+  "control": 76.4666666666667,
+  "tell": 82.18861283643899,
+  "send": 84.00000000000009
+ },
+ "dur": 87.68566666666666
+}
