@@ -24,23 +24,24 @@ const repU = (t: number, off = 0) => 0.5 - 0.5 * Math.cos((2 * Math.PI * (t + of
 /* ---------------- athlete geometry (rig canvas 800x560, hip at HIPR) ---------------- */
 const HIPR: V = [260, 360];
 const CFG = {v: {b: 50, g: 45}, h: {b: 24, g: 10}};
-const rigGeo = (kind: 'v' | 'h', d: number, lift = 0) => {
+const rigGeo = (kind: 'v' | 'h', d: number, lift = 0, footOff = 0) => {
   const {b, g} = CFG[kind];
   const H: V = [150 + lift * (kind === 'v' ? 10 : 4), 380 - lift * (kind === 'v' ? 18 : 6)];
   const sh: V = [150 - 150 * Math.sin(rad(b)), 380 - 150 * Math.cos(rad(b))];
   const head: V = [sh[0] + 6 * Math.cos(rad(b)) - 56 * Math.sin(rad(b)), sh[1] - 6 * Math.sin(rad(b)) - 56 * Math.cos(rad(b))];
-  const n: V = [Math.cos(rad(g)), -Math.sin(rad(g))], foot: V = [H[0] + d * n[0], H[1] + d * n[1]];
+  const n: V = [Math.cos(rad(g)), -Math.sin(rad(g))], tdir: V = [Math.sin(rad(g)), Math.cos(rad(g))], base: V = [H[0] + d * n[0], H[1] + d * n[1]], foot: V = [base[0] + footOff * tdir[0], base[1] + footOff * tdir[1]];
   const hand: V = [H[0] + 30, H[1] - 34];
   const pose: Pose = {hip: H, sh, head, handL: hand, handR: [hand[0] + 8, hand[1] + 4], footL: foot, footR: [foot[0] + 6, foot[1] + 6], legBend: 1, armBend: -1};
   const R = (p: V): V => [HIPR[0] + (p[0] - 150) * S, HIPR[1] + (p[1] - 380) * S];
   const knee = ik(H, foot, 98, 96, 1);
-  return {pose, n, g, b, hipR: R(H), shR: R(sh), headR: R(head), kneeR: R(knee), footR: R(foot), R};
+  return {pose, n, g, b, hipR: R(H), shR: R(sh), headR: R(head), kneeR: R(knee), footR: R(foot), baseR: R(base), R};
 };
 
 /* ---------------- machines (rig coords) ---------------- */
 const Pegs: React.FC<{on: boolean; t: number}> = ({on, t}) => on ? <g><rect x={272} y={392} width={54} height={20} rx={6} fill="#FFC93C" stroke={OL} strokeWidth={4} opacity={0.7 + 0.3 * Math.sin(t * 14)} /><text x={340} y={408} fontFamily={FONT} fontWeight={900} fontSize={30} fill="#7A5A10">← STOP</text></g> : null;
-const SledMachine: React.FC<{geo: ReturnType<typeof rigGeo>; plates: number; stops?: boolean; t: number}> = ({geo, plates, stops, t}) => {
-  const n = geo.n, c: V = [geo.footR[0] + n[0] * (16 * S + 8), geo.footR[1] + n[1] * (16 * S + 8)], pd: V = [0.707, 0.707];
+const PlateTxt: React.FC<{r: number}> = ({r}) => <text textAnchor="middle" y={r * 0.12} fontFamily={FONT} fontWeight={900} fontSize={r * 0.36} fill="#fff" letterSpacing={1}>20 KG</text>;
+const SledMachine: React.FC<{geo: ReturnType<typeof rigGeo>; plates: number; stops?: boolean; t: number; band?: boolean}> = ({geo, plates, stops, t, band}) => {
+  const n = geo.n, c: V = [geo.baseR[0] + n[0] * (16 * S + 8), geo.baseR[1] + n[1] * (16 * S + 8)], pd: V = [0.707, 0.707];
   const rs: V = [HIPR[0] + 30, HIPR[1] + 70], re: V = [rs[0] + 330 * n[0], rs[1] + 330 * n[1]], car: V = [c[0] + pd[0] * 62, c[1] + pd[1] * 62];
   return (
     <g>
@@ -53,12 +54,13 @@ const SledMachine: React.FC<{geo: ReturnType<typeof rigGeo>; plates: number; sto
       <line x1={car[0]} y1={car[1]} x2={c[0]} y2={c[1]} stroke="#9AA0AC" strokeWidth={14} strokeLinecap="round" />
       <g transform={`translate(${c[0] + n[0] * 8} ${c[1] + n[1] * 8}) rotate(-45)`}><rect x={-8} y={-130} width={16} height={260} rx={7} fill="#9AA0AC" stroke={OL} strokeWidth={4} /></g>
       <rect x={car[0] - 30} y={car[1] - 24} width={60} height={48} rx={10} fill="#C9CDD4" stroke={OL} strokeWidth={4} transform={`rotate(-45 ${car[0]} ${car[1]})`} />
-      {Array.from({length: plates}).map((_, i) => <g key={i} transform={`translate(${car[0] + 34 + i * 9} ${car[1] - 30 - i * 9})`}><circle r={64 - i * 2} fill={i % 2 ? '#25272D' : '#1C1D22'} stroke={OL} strokeWidth={4} /><circle r={13} fill="#C9CDD4" stroke={OL} strokeWidth={3} /></g>)}
+      {Array.from({length: plates}).map((_, i) => <g key={i} transform={`translate(${car[0] + 34 + i * 9} ${car[1] - 30 - i * 9})`}><circle r={64 - i * 2} fill={i % 2 ? '#25272D' : '#1C1D22'} stroke={OL} strokeWidth={4} />{i === plates - 1 && <PlateTxt r={64 - i * 2} />}<circle r={13} fill="#C9CDD4" stroke={OL} strokeWidth={3} opacity={0.0} /></g>)}
+      {band && <g transform={`translate(${geo.footR[0] + n[0] * 14} ${geo.footR[1] + n[1] * 14}) rotate(-45)`}><rect x={-10} y={-40} width={20} height={80} rx={8} fill="none" stroke="#FFC93C" strokeWidth={7} /></g>}
     </g>
   );
 };
 const FlatMachine: React.FC<{geo: ReturnType<typeof rigGeo>; plates: number}> = ({geo, plates}) => {
-  const n = geo.n, c: V = [geo.footR[0] + n[0] * (16 * S + 8), geo.footR[1] + n[1] * (16 * S + 8)], rs: V = [HIPR[0] - 20, HIPR[1] + 66], re: V = [rs[0] + 470 * n[0], rs[1] + 470 * n[1]];
+  const n = geo.n, c: V = [geo.baseR[0] + n[0] * (16 * S + 8), geo.baseR[1] + n[1] * (16 * S + 8)], rs: V = [HIPR[0] - 20, HIPR[1] + 66], re: V = [rs[0] + 470 * n[0], rs[1] + 470 * n[1]];
   return (
     <g>
       <rect x={120} y={462} width={600} height={16} rx={7} fill="#2B2F3A" stroke={OL} strokeWidth={4} />
@@ -68,25 +70,46 @@ const FlatMachine: React.FC<{geo: ReturnType<typeof rigGeo>; plates: number}> = 
       <g transform={`translate(${geo.hipR[0] - 50} ${geo.hipR[1] - 58}) rotate(-24)`}><rect x={-17} y={-140} width={34} height={240} rx={15} fill="#2B2F3A" stroke={OL} strokeWidth={4} /></g>
       <g transform={`translate(${c[0] + n[0] * 8} ${c[1] + n[1] * 8}) rotate(-10)`}><rect x={-8} y={-130} width={16} height={260} rx={7} fill="#9AA0AC" stroke={OL} strokeWidth={4} /></g>
       <line x1={c[0]} y1={c[1] + 60} x2={c[0] + 90} y2={c[1] + 60 + 90 * n[1]} stroke="#6A707E" strokeWidth={14} />
-      {Array.from({length: plates}).map((_, i) => <g key={i} transform={`translate(${c[0] + 100 + i * 9} ${c[1] + 54 + 90 * n[1] - i * 9})`}><circle r={62 - i * 2} fill={i % 2 ? '#25272D' : '#1C1D22'} stroke={OL} strokeWidth={4} /><circle r={13} fill="#C9CDD4" stroke={OL} strokeWidth={3} /></g>)}
+      {Array.from({length: plates}).map((_, i) => <g key={i} transform={`translate(${c[0] + 100 + i * 9} ${c[1] + 54 + 90 * n[1] - i * 9})`}><circle r={62 - i * 2} fill={i % 2 ? '#25272D' : '#1C1D22'} stroke={OL} strokeWidth={4} />{i === plates - 1 && <PlateTxt r={62 - i * 2} />}<circle r={13} fill="#C9CDD4" stroke={OL} strokeWidth={3} opacity={0.0} /></g>)}
     </g>
   );
 };
 /** One athlete on one machine (rig canvas scaled by K and placed at x,y in the stage). */
-const RigBox: React.FC<{kind: 'v' | 'h'; t: number; K: number; x: number; y: number; dmin?: number; lift?: number; plates?: number; angle?: boolean; lumbar?: number; stops?: boolean; off?: number; freeze?: number; padGlow?: boolean; speed?: number}> = ({kind, t, K, x, y, dmin, lift = 0, plates = 2, angle, lumbar = 0, stops, off = 0, freeze, padGlow, speed = 1}) => {
-  const u = freeze !== undefined ? freeze : repU(t * speed, off), d = lerp(dmin ?? (kind === 'v' ? 80 : 118), 186, u), geo = rigGeo(kind, d, lift), bottom = u < 0.3;
+const RigBox: React.FC<{kind: 'v' | 'h'; t: number; K: number; x: number; y: number; dmin?: number; lift?: number; plates?: number; angle?: boolean; lumbar?: number; stops?: boolean; off?: number; freeze?: number; padGlow?: boolean; speed?: number; footOff?: number; muscles?: 'high' | 'low' | 'all' | null}> = ({kind, t, K, x, y, dmin, lift = 0, plates = 2, angle, lumbar = 0, stops, off = 0, freeze, padGlow, speed = 1, footOff = 0, muscles = null}) => {
+  const u = freeze !== undefined ? freeze : repU(t * speed, off), d = lerp(dmin ?? (kind === 'v' ? 80 : 118), 186, u), geo = rigGeo(kind, d, lift, footOff), bottom = u < 0.3, phase = (((t * speed + off) / REP) % 1 + 1) % 1;
   const col = kind === 'v' ? BLUE : RED, ph = (t * 1.6) % 1;
   const a1 = Math.atan2(geo.shR[1] - geo.hipR[1], geo.shR[0] - geo.hipR[0]), a2 = Math.atan2(geo.kneeR[1] - geo.hipR[1], geo.kneeR[0] - geo.hipR[0]);
   const arc = (r: number) => `M${geo.hipR[0] + r * Math.cos(a1)} ${geo.hipR[1] + r * Math.sin(a1)} A${r} ${r} 0 0 ${((a2 - a1 + 6.2832) % 6.2832) > Math.PI ? 0 : 1} ${geo.hipR[0] + r * Math.cos(a2)} ${geo.hipR[1] + r * Math.sin(a2)}`;
   return (
     <div style={{position: 'absolute', left: x, top: y, width: 800, height: 560, transformOrigin: '0 0', transform: `scale(${K})`}}>
       <svg width={800} height={560} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-        {kind === 'v' ? <SledMachine geo={geo} plates={plates} stops={stops} t={t} /> : <FlatMachine geo={geo} plates={plates} />}
+        {kind === 'v' ? <SledMachine geo={geo} plates={plates} stops={stops} t={t} band={footOff !== 0} /> : <FlatMachine geo={geo} plates={plates} />}
         {padGlow && <g transform={`translate(${geo.hipR[0] - 50} ${geo.hipR[1] - 58}) rotate(-24)`}><rect x={-26} y={-146} width={52} height={250} rx={20} fill="none" stroke="#22A861" strokeWidth={9} opacity={0.5 + 0.5 * Math.sin(t * 9)} /></g>}
       </svg>
       <Person pose={geo.pose} shirt={kind === 'v' ? BLUE : RED} phones={kind === 'v'} cap={kind === 'h'} beard={kind === 'h'} hair="short" mood={bottom ? 'strain' : 'flat'} sweat={ph} shoeRot={-(90 + geo.g)} fists s={S} x={HIPR[0] - 150 * S} y={HIPR[1] - 380 * S} />
       <svg width={800} height={560} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
         {[0, 1, 2, 3, 4].map((i) => { const p = (t * 1.5 + i / 5) % 1; return <path key={i} transform={`translate(${geo.headR[0] - 40 - p * 70 * (i % 2 ? 1 : 0.6)} ${geo.headR[1] - 30 - p * 50 + i * 8})`} d="M0 0 q-6 11 0 14 q6 -3 0 -14z" fill="#8FD3FF" stroke={OL} strokeWidth={2} opacity={(1 - p) * 0.9} />; })}
+        {phase < 0.25 && <circle cx={geo.baseR[0] + geo.n[0] * 22} cy={geo.baseR[1] + geo.n[1] * 22} r={20 + 100 * (phase / 0.25)} fill="none" stroke="#FFC93C" strokeWidth={7} opacity={1 - phase / 0.25} />}
+        {muscles && (() => {
+          const vx = geo.kneeR[0] - geo.hipR[0], vy = geo.kneeR[1] - geo.hipR[1], L = Math.hypot(vx, vy) || 1; let p: V = [vy / L, -vx / L]; if (p[1] > 0) p = [-p[0], -p[1]];
+          const at = (a: V, b: V, k: number, m: number): V => [lerp(a[0], b[0], k) + p[0] * m, lerp(a[1], b[1], k) + p[1] * m];
+          const pu = 0.65 + 0.35 * Math.sin(t * 9), hi = muscles === 'high', lo = muscles === 'low', all = muscles === 'all';
+          const oq = lo || all ? pu : 0.18, oh = hi || all ? pu : 0.18, og = hi || all ? pu : 0.18;
+          const q0 = at(geo.hipR, geo.kneeR, 0.2, 11), q1 = at(geo.hipR, geo.kneeR, 0.92, 11), h0 = at(geo.hipR, geo.kneeR, 0.2, -11), h1 = at(geo.hipR, geo.kneeR, 0.92, -11), c0 = at(geo.kneeR, geo.footR, 0.16, -10), c1 = at(geo.kneeR, geo.footR, 0.8, -10);
+          const lab = (txt: string, pt: V, col: string, dx = 0) => <text x={pt[0] + dx} y={pt[1]} fontFamily={FONT} fontWeight={900} fontSize={26} fill={col} stroke="#fff" strokeWidth={6} paintOrder="stroke">{txt}</text>;
+          return (
+            <g>
+              <line x1={q0[0]} y1={q0[1]} x2={q1[0]} y2={q1[1]} stroke="#22A861" strokeWidth={19} strokeLinecap="round" opacity={oq} />
+              <line x1={h0[0]} y1={h0[1]} x2={h1[0]} y2={h1[1]} stroke="#FF8A1E" strokeWidth={19} strokeLinecap="round" opacity={oh} />
+              <ellipse cx={geo.hipR[0] - 10} cy={geo.hipR[1] + 10} rx={34} ry={28} fill="#FF4D8D" opacity={og * 0.85} />
+              {all && <line x1={c0[0]} y1={c0[1]} x2={c1[0]} y2={c1[1]} stroke="#3AA0FF" strokeWidth={15} strokeLinecap="round" opacity={pu} />}
+              {(lo || all) && lab('QUADS', at(geo.hipR, geo.kneeR, 0.5, 58), '#117A3A', -40)}
+              {(hi || all) && lab('HAMSTRINGS', at(geo.hipR, geo.kneeR, 0.45, -66), '#C25E00', -20)}
+              {(hi || all) && lab('GLUTES', [geo.hipR[0] - 150, geo.hipR[1] + 60], '#C2185B')}
+              {all && lab('CALVES', at(geo.kneeR, geo.footR, 0.5, -52), '#1565C0')}
+            </g>
+          );
+        })()}
         {angle && <g><path d={arc(64)} fill="none" stroke={col} strokeWidth={9} strokeLinecap="round" /><line x1={geo.kneeR[0]} y1={geo.kneeR[1]} x2={lerp(geo.shR[0], geo.hipR[0], 0.2)} y2={lerp(geo.shR[1], geo.hipR[1], 0.2)} stroke={col} strokeWidth={5} strokeDasharray="10 8" /><circle cx={geo.kneeR[0]} cy={geo.kneeR[1]} r={22} fill="none" stroke={col} strokeWidth={6} opacity={0.5 + 0.5 * Math.sin(t * 12)} /></g>}
         {lumbar > 0 && <g><path d={`M${geo.shR[0]} ${geo.shR[1]} Q${lerp(geo.shR[0], geo.hipR[0], 0.5) - 34 * lumbar} ${lerp(geo.shR[1], geo.hipR[1], 0.5) + 24 * lumbar} ${geo.hipR[0] - 20} ${geo.hipR[1] + 6}`} fill="none" stroke={RED} strokeWidth={9} strokeLinecap="round" opacity={0.9} /><ellipse cx={geo.hipR[0] - 22} cy={geo.hipR[1] + 8} rx={46} ry={34} fill="none" stroke={RED} strokeWidth={7} opacity={0.5 + 0.5 * Math.sin(t * 20)} /></g>}
       </svg>
@@ -221,19 +244,48 @@ const Wins: React.FC<{t: number; lt: number}> = ({t, lt}) => (
 const Svg: React.FC<{children: React.ReactNode}> = ({children}) => <svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>{children}</svg>;
 const Chip: React.FC<{text: string; color: string; x?: number; y?: number}> = ({text, color, x = 40, y = 20}) => <div style={{position: 'absolute', left: x, top: y, background: color, color: '#fff', borderRadius: 22, border: '5px solid #17181C', padding: '8px 26px', fontFamily: FONT, fontWeight: 900, fontSize: 38, whiteSpace: 'nowrap'}}>{text}</div>;
 
+
+const MuscleMap: React.FC<{lt: number; t: number}> = ({lt, t}) => {
+  const Hh: V = [330, 400], Kn: V = [470, 720], An: V = [400, 1010], vx = Kn[0] - Hh[0], vy = Kn[1] - Hh[1], L = Math.hypot(vx, vy), nf: V = [vy / L, -vx / L];
+  const sx = Kn[0] - An[0], sy = Kn[1] - An[1], L2 = Math.hypot(sx, sy), nb: V = [-sy / L2, sx / L2];
+  const pop = (a: number) => sm(c01((lt - a) / 0.35)), pulse = 0.7 + 0.3 * Math.sin(t * 9);
+  const strip = (a: V, b: V, off: V, m: number, k0: number, k1: number): [V, V] => [[lerp(a[0], b[0], k0) + off[0] * m, lerp(a[1], b[1], k0) + off[1] * m], [lerp(a[0], b[0], k1) + off[0] * m, lerp(a[1], b[1], k1) + off[1] * m]];
+  const [q0, q1] = strip(Hh, Kn, nf, 30, 0.15, 0.92), [h0, h1] = strip(Hh, Kn, nf, -30, 0.15, 0.92), [c0, c1] = strip(Kn, An, nb, 26, 0.12, 0.78);
+  const lab = (txt: string, x: number, y: number, col: string, a: number) => <g opacity={pop(a)} transform={`translate(0 ${(1 - pop(a)) * 20})`}><text x={x} y={y} fontFamily={FONT} fontWeight={900} fontSize={56} fill={col} stroke="#fff" strokeWidth={10} paintOrder="stroke">{txt}</text></g>;
+  return (
+    <g>
+      <text x={540} y={120} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={48} fill="#17181C">SAME MUSCLES, BOTH MACHINES</text>
+      <Capsule a={[200, 330]} b={Hh} w={190} c={BLUE} /><Capsule a={Kn} b={An} w={96} c={SKIN} /><Capsule a={Hh} b={Kn} w={150} c={SKIN} />
+      <rect x={An[0] - 30} y={An[1] - 10} width={150} height={56} rx={22} fill="#fff" stroke={OL} strokeWidth={6} />
+      <g opacity={pop(1.9) * pulse}><ellipse cx={Hh[0] - 30} cy={Hh[1] + 10} rx={96} ry={104} fill="#FF4D8D" /></g>
+      <line x1={h0[0]} y1={h0[1]} x2={h1[0]} y2={h1[1]} stroke="#FF8A1E" strokeWidth={44} strokeLinecap="round" opacity={pop(1.2) * pulse} />
+      <line x1={q0[0]} y1={q0[1]} x2={q1[0]} y2={q1[1]} stroke="#22A861" strokeWidth={44} strokeLinecap="round" opacity={pop(0.4) * pulse} />
+      <line x1={c0[0]} y1={c0[1]} x2={c1[0]} y2={c1[1]} stroke="#3AA0FF" strokeWidth={34} strokeLinecap="round" opacity={pop(2.6) * pulse} />
+      {lab('QUADS', 600, 560, '#117A3A', 0.4)}{lab('HAMSTRINGS', 20, 760, '#C25E00', 1.2)}{lab('GLUTES', 20, 340, '#C2185B', 1.9)}{lab('CALVES', 560, 900, '#1565C0', 2.6)}
+      {lt > 3.0 && <g opacity={pop(3.0)}><rect x={620} y={960} width={420} height={80} rx={40} fill={BLUE} stroke={OL} strokeWidth={6} /><text x={830} y={1015} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={40} fill="#fff">VERTICAL ✔</text></g>}
+      {lt > 3.4 && <g opacity={pop(3.4)}><rect x={620} y={1050} width={420} height={80} rx={40} fill={RED} stroke={OL} strokeWidth={6} /><text x={830} y={1105} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={40} fill="#fff">HORIZONTAL ✔</text></g>}
+    </g>
+  );
+};
+
 /* ---------------- shot renderer ---------------- */
 const KS = 1.4, SY = 144;      // solo rig scale + position in stage
 const KH = 0.95;               // split rigs
 type ShotOut = {node: React.ReactNode; bg: string; chip?: [string, string]; cam: [number, number, number]};
 const shotAt = (name: string, t: number, lt: number, dur: number): ShotOut => {
   const u = c01(lt / dur), drift = (z0: number, z1: number, cx: number, cy: number): [number, number, number] => [lerp(z0, z1, sm(u)), cx, cy];
-  const solo = (kind: 'v' | 'h', o: Partial<React.ComponentProps<typeof RigBox>> = {}) => <RigBox kind={kind} t={t} K={KS} x={kind === 'v' ? 78 : -6} y={SY} {...o} />;
+  const badge = (sp: number) => { const n = Math.floor((lt * sp) / REP) + 1, ph = ((lt * sp) / REP) % 1, pop = ph < 0.2 ? 1 + 0.35 * (1 - ph / 0.2) : 1; return <div style={{position: 'absolute', right: 30, top: 24, background: '#17181C', color: '#fff', borderRadius: 24, padding: '6px 22px', fontFamily: FONT, fontWeight: 900, fontSize: 44, transform: `scale(${pop})`, transformOrigin: '100% 0'}}>REP {n}</div>; };
+  const solo = (kind: 'v' | 'h', o: Partial<React.ComponentProps<typeof RigBox>> = {}) => <><RigBox kind={kind} t={t} K={KS} x={kind === 'v' ? 78 : -6} y={SY} {...o} />{badge(o.speed ?? 1)}</>;
   const split = (oa: Partial<React.ComponentProps<typeof RigBox>> = {}, od: Partial<React.ComponentProps<typeof RigBox>> = {}) => <><RigBox kind="v" t={t} K={KH} x={227} y={0} {...oa} /><RigBox kind="h" t={t} K={KH} x={170} y={550} off={0.18} {...od} /></>;
   const hv = headStage('v', KS, 78, SY), hh = headStage('h', KS, -6, SY);
   const panels = (n: React.ReactNode) => <><svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0}}><rect x={0} y={10} width={1080} height={530} rx={28} fill="#E3EDFF" stroke="#17181C" strokeWidth={5} /><rect x={0} y={560} width={1080} height={530} rx={28} fill="#FFE6E3" stroke="#17181C" strokeWidth={5} /></svg>{n}</>;
   const BA = '#E3EDFF', BD = '#FFE6E3', BW = '#FFFFFF';
   switch (name) {
-    case 'hook': { const z = t < EV.vertical ? 1.0 : t < EV.horizontal ? 1.45 : t < 3.4 ? 1.45 : 1.0; return {node: panels(split()), bg: '#fff', cam: [z, 540, t >= EV.vertical && t < EV.horizontal ? 280 : t >= EV.horizontal && t < 3.4 ? 830 : 550]}; }
+    case 'hook': {
+      const onlyA = t >= EV.vertical && t < EV.horizontal, onlyD = t >= EV.horizontal && t < 3.4;
+      const node = <><svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0}}>{!onlyD && <rect x={0} y={10} width={1080} height={530} rx={28} fill="#E3EDFF" stroke="#17181C" strokeWidth={5} />}{!onlyA && <rect x={0} y={560} width={1080} height={530} rx={28} fill="#FFE6E3" stroke="#17181C" strokeWidth={5} />}</svg>{!onlyD && <RigBox kind="v" t={t} K={KH} x={227} y={0} speed={1.8} />}{!onlyA && <RigBox kind="h" t={t} K={KH} x={170} y={550} off={0.1} speed={1.8} />}</>;
+      return {node, bg: '#fff', cam: onlyA ? [1.9, 540, 280] : onlyD ? [1.9, 540, 830] : [1.0, 540, 550]};
+    }
     case 'q1': return {node: solo('v'), bg: BA, cam: [2.3, hv[0] - 40, hv[1] + 40]};
     case 'q2': return {node: solo('h'), bg: BD, cam: [2.3, hh[0] - 40, hh[1] + 40]};
     case 'q3': return {node: panels(split()), bg: '#fff', cam: drift(1.0, 1.15, 540, 550)};
@@ -248,9 +300,9 @@ const shotAt = (name: string, t: number, lt: number, dur: number): ShotOut => {
     case 'r2_a': return {node: solo('v', {lumbar: 0.5}), bg: BA, chip: ['VERTICAL: PELVIS IS FREE', BLUE], cam: drift(1.0, 1.5, 430, 640)};
     case 'r3_stops': return {node: solo('v', {stops: true, dmin: 70, speed: 0.6}), bg: BA, chip: ['USE THE SAFETY STOPS', '#22A861'], cam: drift(1.0, 1.6, 450, 690)};
     case 'r3_knees': return {node: <Svg><g transform="translate(150 0)"><rect x={600} y={420} width={30} height={220} rx={12} fill="#9AA0AC" stroke={OL} strokeWidth={5} /><rect x={560} y={800} width={30} height={220} rx={12} fill="#9AA0AC" stroke={OL} strokeWidth={5} /><Capsule a={[230, 640]} b={[90, 520]} w={120} c={BLUE} /><Capsule a={[230, 940]} b={[90, 820]} w={120} c={BLUE} /><LegSide hip={[230, 640]} foot={[600, 520]} t={t} locked /><LegSide hip={[230, 940]} foot={[560, 880]} t={t} /></g><text x={540} y={330} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={72} fill={RED}>✖ LOCKED</text><text x={540} y={1068} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={72} fill="#22A861">✔ SOFT KNEES</text></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 640)};
-    case 'r4_high': return {node: <Svg><rect x={640} y={330} width={36} height={620} rx={14} fill="#9AA0AC" stroke={OL} strokeWidth={6} /><Capsule a={[290, 790]} b={[130, 650]} w={130} c={BLUE} /><LegSide hip={[290, 790]} foot={[lerp(600, 640, repU(t)), 520]} glow="hams" t={t} /><text x={540} y={170} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={62} fill="#FF8A1E">FEET HIGHER</text><text x={540} y={240} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={42} fill="#17181C">GLUTES + HAMSTRINGS</text></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 580)};
-    case 'r4_low': return {node: <Svg><rect x={640} y={330} width={36} height={620} rx={14} fill="#9AA0AC" stroke={OL} strokeWidth={6} /><Capsule a={[290, 790]} b={[130, 650]} w={130} c={BLUE} /><LegSide hip={[290, 790]} foot={[lerp(600, 640, repU(t)), 900]} glow="quads" t={t} /><text x={540} y={170} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={62} fill="#22A861">FEET LOWER</text><text x={540} y={240} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={42} fill="#17181C">MORE QUADS</text></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 600)};
-    case 'r4_both': return {node: panels(split()), bg: '#fff', cam: drift(1.15, 1.0, 540, 550)};
+    case 'r4_high': return {node: solo('v', {footOff: -52, muscles: 'high', speed: 0.9}), bg: BA, chip: ['FEET HIGH → GLUTES + HAMSTRINGS', '#E26A00'], cam: drift(1.0, 1.55, 470, 650)};
+    case 'r4_low': return {node: solo('v', {footOff: 52, muscles: 'low', speed: 0.9}), bg: BA, chip: ['FEET LOW → MORE QUADS', '#117A3A'], cam: drift(1.0, 1.55, 470, 650)};
+    case 'r4_both': return {node: <Svg><MuscleMap lt={lt} t={t} /></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 600)};
     case 'r5_floor': return {node: <Svg><FloorPlan lt={lt} /></Svg>, bg: '#EFE6D2', cam: drift(1.0, 1.12, 540, 560)};
     case 'bonus': return {node: <>{solo('v', {plates: lt < 2.2 ? 1 : lt < 3.6 ? 2 : 3, speed: 0.8})}</>, bg: BA, chip: [lt < 2.2 ? 'LIGHT SET FIRST' : 'THEN ADD WEIGHT SLOWLY', '#8E6FD1'], cam: drift(1.0, 1.3, 480, 600)};
     case 'wins': return {node: <Svg><Wins t={t} lt={lt} /></Svg>, bg: '#FFF3C9', cam: drift(1.0, 1.1, 540, 550)};
@@ -270,6 +322,7 @@ export const LegPressVideo: React.FC = () => {
   const dangerShot = shot.name === 'dng_a' || shot.name === 'dng_spine';
   const sh = shot.name === 'hook' && t < 0.5 ? 5 : dangerShot ? 6 : 0;
   let [z, cx, cy] = out.cam; { const hx = 540 / z, hy = 550 / z; cx = Math.min(1080 - hx, Math.max(hx, cx)); cy = Math.min(CH - hy, Math.max(hy, cy)); }
+  const sway = ['intro_a', 'intro_d', 'r1_a', 'r1_d', 'dng_a', 'r2_d', 'r2_a', 'r3_stops', 'r4_high', 'r4_low', 'bonus', 'beg', 'exp', 'ctrl'].includes(shot.name) ? Math.sin(t * 2.4) * 1.1 : 0;
   const ox = Math.sin(t * 53) * sh, oy = Math.cos(t * 47) * sh, sl = lt < 0.2 && shot.name !== 'hook' ? 1 - lt / 0.2 : 0;
   const flash = Math.max(0, ...[EV.r1, EV.r2, EV.r3, EV.r4, EV.r5, EV.bonus, EV.pointA, EV.pointD2, EV.pointD5, EV.draw3, EV.draw4].map((a) => 1 - (t - (a - 0.05)) / 0.12).filter((v) => v < 1)) * 0.28 + (lt < 0.1 && shot.name !== 'hook' ? 0.3 * (1 - lt / 0.1) : 0);
   const hookK = t < 4.6 ? 1 : 0, scoreK = sm(c01((t - 4.4) / 0.3));
@@ -277,7 +330,7 @@ export const LegPressVideo: React.FC = () => {
     <AbsoluteFill style={{background: G.bg}}>
       <BG />
       <div style={{position: 'absolute', left: 0, top: TOP, width: 1080, height: CH, overflow: 'hidden', borderRadius: 28, background: out.bg}}>
-        <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: CH, transformOrigin: '0 0', transform: `translate(${540 - cx * z + ox + sl * 150}px, ${550 - cy * z + oy}px) scale(${z})`, filter: sl > 0 ? `blur(${sl * 6}px)` : undefined}}>
+        <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: CH, transformOrigin: '0 0', transform: `translate(${540 - cx * z + ox + sl * 150}px, ${550 - cy * z + oy}px) scale(${z}) rotate(${sway}deg)`, filter: sl > 0 ? `blur(${sl * 6}px)` : undefined}}>
           <svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>{shot.name === 'hook' || shot.name === 'q3' || shot.name === 'r1_cmp' || shot.name === 'r4_both' || shot.name === 'ctrl' ? null : null}</svg>
           {out.node}
         </div>
