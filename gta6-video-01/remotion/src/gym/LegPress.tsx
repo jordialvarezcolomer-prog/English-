@@ -151,10 +151,28 @@ const Card: React.FC<{t: number; at: number; title: string; sub?: string; bg?: s
     </g>
   );
 };
+const HookCard: React.FC<{t: number}> = ({t}) => {
+  const kA = back(c01((t - (EV.vertical - 0.1)) / 0.35)), kD = back(c01((t - (EV.horizontal - 0.1)) / 0.35)), kV = back(c01((t - (EV.horizontal + 0.4)) / 0.35));
+  const fight = t > 3.3, sh = fight ? Math.sin(t * 40) * 3 : 0;
+  const box = (x: number, col: string, title: string, sub: string, k: number, on: boolean) => (
+    <g transform={`translate(${x} ${CY + 95})`}>
+      {!on && <rect x={-190} y={-86} width={380} height={172} rx={34} fill="none" stroke="#9A9AA2" strokeWidth={5} strokeDasharray="16 12" opacity={0.7} />}
+      <g transform={`scale(${on ? k : 0})`}><rect x={-190} y={-86} width={380} height={172} rx={34} fill={col} stroke="#17181C" strokeWidth={6} /><text textAnchor="middle" y={-2} fontFamily={FONT} fontWeight={900} fontSize={title.length > 8 ? 46 : 56} fill="#fff">{title}</text><text textAnchor="middle" y={46} fontFamily={FONT} fontWeight={800} fontSize={25} fill="#fff" opacity={0.85}>{sub}</text></g>
+    </g>
+  );
+  return (
+    <g transform={`translate(${sh} 0)`}>
+      {box(260, BLUE, 'VERTICAL', '45° sled · push UP', kA, t >= EV.vertical - 0.1)}
+      {box(820, RED, 'HORIZONTAL', 'flat seat · push FORWARD', kD, t >= EV.horizontal - 0.1)}
+      <g transform={`translate(540 ${CY + 95}) scale(${(t >= EV.horizontal + 0.4 ? kV : 0.001) * (1 + (fight ? 0.1 * Math.sin(t * 16) : 0))}) rotate(${fight ? Math.sin(t * 12) * 8 : 0})`}><polygon points="-62,-10 -28,-70 -6,-28 26,-74 20,-28 62,-18 18,0 54,62 0,18 -36,68 -20,10" fill="#FFC93C" stroke="#17181C" strokeWidth={6} strokeLinejoin="round" /><text textAnchor="middle" y={20} fontFamily={FONT} fontWeight={900} fontSize={50} fill="#17181C">VS</text></g>
+    </g>
+  );
+};
 const Cards: React.FC<{t: number}> = ({t}) => {
   const w = (a: number, b: number) => t >= a && t < b, R1 = CY + 86, R2 = CY + 138;
   return (
     <g>
+      {t < 4.7 && <HookCard t={t} />}
       {w(4.6, 7.8) && <Card t={t} at={4.6} title="TWO MACHINES, ONE QUESTION" sub="Lying, push UP  vs  sitting, push FORWARD"><g fontFamily={FONT} fontWeight={900} fontSize={46}><text x={80} y={CY + 150} fill={BLUE}>VERTICAL</text><text x={470} y={CY + 150} fill="#17181C">VS</text><text x={580} y={CY + 150} fill={RED}>HORIZONTAL</text></g></Card>}
       {w(7.8, 11.0) && <Card t={t} at={7.8} title="ALEX: LYING BACK, PUSHES UP" sub="45° sled leg press" />}
       {w(11.0, EV.r1 - 0.2) && <Card t={t} at={11.0} title="DANIEL: SEATED, PUSHES FORWARD" sub="Flat seated leg press" />}
@@ -339,7 +357,7 @@ export const LegPressVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{background: G.bg}}>
       <BG />
-      <div style={{position: 'absolute', left: 135, top: 285, width: 1080, height: CH, overflow: 'hidden', borderRadius: 28, background: out.bg, transformOrigin: '0 0', transform: 'scale(0.75)'}}>
+      <div style={{position: 'absolute', left: 162, top: 335, width: 1080, height: CH, overflow: 'hidden', borderRadius: 28, background: out.bg, transformOrigin: '0 0', transform: 'scale(0.7)'}}>
         <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: CH, transformOrigin: '0 0', transform: `translate(${540 - cx * z + ox + sl * 150}px, ${550 - cy * z + oy}px) scale(${z}) rotate(${sway}deg)`, filter: sl > 0 ? `blur(${sl * 6}px)` : undefined}}>
           <svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>{shot.name === 'hook' || shot.name === 'q3' || shot.name === 'r1_cmp' || shot.name === 'r4_both' || shot.name === 'ctrl' ? null : null}</svg>
           {out.node}
@@ -347,8 +365,8 @@ export const LegPressVideo: React.FC = () => {
         {out.chip && <Chip text={out.chip[0]} color={out.chip[1]} />}
       </div>
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}>
-        <g opacity={scoreK} transform="translate(0 112)"><Score t={t} /></g>
-        {hookK > 0 && <g transform="translate(540 212) scale(0.85)"><rect x={-500} y={-86} width={1000} height={172} rx={40} fill="#fff" stroke="#17181C" strokeWidth={8} /><text textAnchor="middle" y={-4} fontFamily={FONT} fontWeight={900} fontSize={66}><tspan fill={BLUE}>VERTICAL</tspan><tspan fill="#17181C"> or </tspan><tspan fill={RED}>HORIZONTAL?</tspan></text><text textAnchor="middle" y={54} fontFamily={FONT} fontWeight={800} fontSize={34} fill="#5A5A60">which leg press is better?</text></g>}
+        <g opacity={scoreK} transform="translate(0 162)"><Score t={t} /></g>
+        {hookK > 0 && <g transform="translate(540 258) scale(0.8)"><rect x={-500} y={-86} width={1000} height={172} rx={40} fill="#fff" stroke="#17181C" strokeWidth={8} /><text textAnchor="middle" y={-4} fontFamily={FONT} fontWeight={900} fontSize={66}><tspan fill={BLUE}>VERTICAL</tspan><tspan fill="#17181C"> or </tspan><tspan fill={RED}>HORIZONTAL?</tspan></text><text textAnchor="middle" y={54} fontFamily={FONT} fontWeight={800} fontSize={34} fill="#5A5A60">which leg press is better?</text></g>}
         <Cards t={t} />
         <Stamp t={t} at={EV.r1 - 0.05} text="ROUND 1" fill="#17181C" /><Stamp t={t} at={EV.r2 - 0.05} text="ROUND 2" fill="#17181C" /><Stamp t={t} at={EV.r3 - 0.05} text="ROUND 3" fill="#17181C" /><Stamp t={t} at={EV.r4 - 0.05} text="ROUND 4" fill="#17181C" /><Stamp t={t} at={EV.r5 - 0.05} text="ROUND 5" fill="#17181C" /><Stamp t={t} at={EV.bonus - 0.05} text="BONUS" fill="#8E6FD1" />
         <Stamp t={t} at={EV.pointA - 0.05} text="POINT: ALEX" fill={BLUE} y={1070} size={72} rot={4} dur={1.2} /><Stamp t={t} at={EV.pointD2 - 0.05} text="POINT: DANIEL" fill={RED} y={1070} size={72} rot={-4} dur={1.2} /><Stamp t={t} at={EV.pointD5 - 0.05} text="POINT: DANIEL" fill={RED} y={1070} size={72} rot={4} dur={1.2} />
