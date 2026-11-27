@@ -9,7 +9,7 @@ import SH from '../macaque/lpshots.json';
 const FPS = 30;
 const SEG = D.segs as {start: number; end: number; text: string}[];
 const EV = D.events as Record<string, number>;
-const SHOTS = SH as {name: string; from: number; to: number}[];
+const SHOTS = SH as {name: string; from: number; to: number; speed: number}[];
 const A = (i: number) => SEG[i].start;
 const END = D.dur + 0.9;
 export const LEGPRESS_TOTAL = Math.round(END * FPS);
@@ -270,26 +270,28 @@ const MuscleMap: React.FC<{lt: number; t: number}> = ({lt, t}) => {
   );
 };
 
+const celeb = (t: number, ph: number): Pose => { const b = (0.5 + 0.5 * Math.sin(t * 6 + ph)) * 26; return {...POSES.flex, hip: [200, 365 + b], sh: [200, 215 + b], head: [200, 158 + b], handL: [100 + Math.sin(t * 7 + ph) * 26, 110 + Math.cos(t * 7 + ph) * 50], handR: [300 - Math.sin(t * 7 + ph + 1.2) * 26, 110 + Math.cos(t * 7 + ph + 1.2) * 50]}; };
+
 /* ---------------- shot renderer ---------------- */
 const KS = 1.4, SY = 144;      // solo rig scale + position in stage
 const KH = 0.95;               // split rigs
 type ShotOut = {node: React.ReactNode; bg: string; chip?: [string, string]; cam: [number, number, number]};
-const shotAt = (name: string, t: number, lt: number, dur: number): ShotOut => {
+const shotAt = (name: string, t: number, lt: number, dur: number, sp: number): ShotOut => {
   const u = c01(lt / dur), drift = (z0: number, z1: number, cx: number, cy: number): [number, number, number] => [lerp(z0, z1, sm(u)), cx, cy];
   const badge = (sp: number) => { const n = Math.floor((lt * sp) / REP) + 1, ph = ((lt * sp) / REP) % 1, pop = ph < 0.2 ? 1 + 0.35 * (1 - ph / 0.2) : 1; return <div style={{position: 'absolute', right: 30, top: 24, background: '#17181C', color: '#fff', borderRadius: 24, padding: '6px 22px', fontFamily: FONT, fontWeight: 900, fontSize: 44, transform: `scale(${pop})`, transformOrigin: '100% 0'}}>REP {n}</div>; };
-  const solo = (kind: 'v' | 'h', o: Partial<React.ComponentProps<typeof RigBox>> = {}) => <><RigBox kind={kind} t={t} K={KS} x={kind === 'v' ? 78 : -6} y={SY} {...o} />{badge(o.speed ?? 1)}</>;
-  const split = (oa: Partial<React.ComponentProps<typeof RigBox>> = {}, od: Partial<React.ComponentProps<typeof RigBox>> = {}) => <><RigBox kind="v" t={t} K={KH} x={227} y={0} {...oa} /><RigBox kind="h" t={t} K={KH} x={170} y={550} off={0.18} {...od} /></>;
+  const solo = (kind: 'v' | 'h', o: Partial<React.ComponentProps<typeof RigBox>> = {}) => <><RigBox kind={kind} t={t} K={KS} x={kind === 'v' ? 78 : -6} y={SY} speed={sp} {...o} />{badge(o.speed ?? sp)}</>;
+  const split = (oa: Partial<React.ComponentProps<typeof RigBox>> = {}, od: Partial<React.ComponentProps<typeof RigBox>> = {}) => <><RigBox kind="v" t={t} K={KH} x={227} y={0} speed={sp} {...oa} /><RigBox kind="h" t={t} K={KH} x={170} y={550} off={0.18} speed={sp} {...od} /></>;
   const hv = headStage('v', KS, 78, SY), hh = headStage('h', KS, -6, SY);
   const panels = (n: React.ReactNode) => <><svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0}}><rect x={0} y={10} width={1080} height={530} rx={28} fill="#E3EDFF" stroke="#17181C" strokeWidth={5} /><rect x={0} y={560} width={1080} height={530} rx={28} fill="#FFE6E3" stroke="#17181C" strokeWidth={5} /></svg>{n}</>;
   const BA = '#E3EDFF', BD = '#FFE6E3', BW = '#FFFFFF';
   switch (name) {
     case 'hook': {
       const onlyA = t >= EV.vertical && t < EV.horizontal, onlyD = t >= EV.horizontal && t < 3.4;
-      const node = <><svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0}}>{!onlyD && <rect x={0} y={10} width={1080} height={530} rx={28} fill="#E3EDFF" stroke="#17181C" strokeWidth={5} />}{!onlyA && <rect x={0} y={560} width={1080} height={530} rx={28} fill="#FFE6E3" stroke="#17181C" strokeWidth={5} />}</svg>{!onlyD && <RigBox kind="v" t={t} K={KH} x={227} y={0} speed={1.8} />}{!onlyA && <RigBox kind="h" t={t} K={KH} x={170} y={550} off={0.1} speed={1.8} />}</>;
+      const node = <><svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0}}>{!onlyD && <rect x={0} y={10} width={1080} height={530} rx={28} fill="#E3EDFF" stroke="#17181C" strokeWidth={5} />}{!onlyA && <rect x={0} y={560} width={1080} height={530} rx={28} fill="#FFE6E3" stroke="#17181C" strokeWidth={5} />}</svg>{!onlyD && <RigBox kind="v" t={t} K={KH} x={227} y={0} speed={sp} />}{!onlyA && <RigBox kind="h" t={t} K={KH} x={170} y={550} off={0.1} speed={sp} />}</>;
       return {node, bg: '#fff', cam: onlyA ? [1.9, 540, 280] : onlyD ? [1.9, 540, 830] : [1.0, 540, 550]};
     }
-    case 'q1': return {node: solo('v'), bg: BA, cam: [2.3, hv[0] - 40, hv[1] + 40]};
-    case 'q2': return {node: solo('h'), bg: BD, cam: [2.3, hh[0] - 40, hh[1] + 40]};
+    case 'q1': return {node: solo('v'), bg: BA, cam: drift(1.5, 1.7, 470, 600)};
+    case 'q2': return {node: solo('h'), bg: BD, cam: drift(1.5, 1.7, 340, 620)};
     case 'q3': return {node: panels(split()), bg: '#fff', cam: drift(1.0, 1.15, 540, 550)};
     case 'intro_a': return {node: <>{solo('v')}<Svg><text x={700} y={300} fontFamily={FONT} fontWeight={900} fontSize={56} fill={BLUE}>PUSH ↗</text></Svg></>, bg: BA, chip: ['ALEX · VERTICAL 45°', BLUE], cam: drift(1.0, 1.25, 540, 570)};
     case 'intro_d': return {node: <>{solo('h')}<Svg><text x={640} y={330} fontFamily={FONT} fontWeight={900} fontSize={56} fill={RED}>PUSH →</text></Svg></>, bg: BD, chip: ['DANIEL · HORIZONTAL', RED], cam: drift(1.25, 1.0, 540, 580)};
@@ -300,18 +302,23 @@ const shotAt = (name: string, t: number, lt: number, dur: number): ShotOut => {
     case 'dng_spine': return {node: <Svg><g transform="translate(540 640) scale(1.12) translate(-540 -640)"><SpineDiagram t={t} lt={lt} /></g></Svg>, bg: '#FFE4E1', cam: drift(1.0, 1.1, 540, 600)};
     case 'r2_d': return {node: solo('h', {padGlow: true}), bg: BD, chip: ['HORIZONTAL: SEAT HOLDS YOU', RED], cam: drift(1.0, 1.7, 320, 580)};
     case 'r2_a': return {node: solo('v', {lumbar: 0.5}), bg: BA, chip: ['VERTICAL: PELVIS IS FREE', BLUE], cam: drift(1.0, 1.5, 430, 640)};
-    case 'r3_stops': return {node: solo('v', {stops: true, dmin: 70, speed: 0.6}), bg: BA, chip: ['USE THE SAFETY STOPS', '#22A861'], cam: drift(1.0, 1.6, 450, 690)};
+    case 'r3_stops': return {node: solo('v', {stops: true, dmin: 70}), bg: BA, chip: ['USE THE SAFETY STOPS', '#22A861'], cam: drift(1.0, 1.6, 450, 690)};
     case 'r3_knees': return {node: <Svg><g transform="translate(150 0)"><rect x={600} y={420} width={30} height={220} rx={12} fill="#9AA0AC" stroke={OL} strokeWidth={5} /><rect x={560} y={800} width={30} height={220} rx={12} fill="#9AA0AC" stroke={OL} strokeWidth={5} /><Capsule a={[230, 640]} b={[90, 520]} w={120} c={BLUE} /><Capsule a={[230, 940]} b={[90, 820]} w={120} c={BLUE} /><LegSide hip={[230, 640]} foot={[600, 520]} t={t} locked /><LegSide hip={[230, 940]} foot={[560, 880]} t={t} /></g><text x={540} y={330} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={72} fill={RED}>✖ LOCKED</text><text x={540} y={1068} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={72} fill="#22A861">✔ SOFT KNEES</text></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 640)};
-    case 'r4_high': return {node: solo('v', {footOff: -52, muscles: 'high', speed: 0.9}), bg: BA, chip: ['FEET HIGH → GLUTES + HAMSTRINGS', '#E26A00'], cam: drift(1.0, 1.55, 470, 650)};
-    case 'r4_low': return {node: solo('v', {footOff: 52, muscles: 'low', speed: 0.9}), bg: BA, chip: ['FEET LOW → MORE QUADS', '#117A3A'], cam: drift(1.0, 1.55, 470, 650)};
+    case 'r4_high': return {node: solo('v', {footOff: -52, muscles: 'high'}), bg: BA, chip: ['FEET HIGH → GLUTES + HAMSTRINGS', '#E26A00'], cam: drift(1.0, 1.55, 470, 650)};
+    case 'r4_low': return {node: solo('v', {footOff: 52, muscles: 'low'}), bg: BA, chip: ['FEET LOW → MORE QUADS', '#117A3A'], cam: drift(1.0, 1.55, 470, 650)};
     case 'r4_both': return {node: <Svg><MuscleMap lt={lt} t={t} /></Svg>, bg: BW, cam: drift(1.0, 1.08, 540, 600)};
-    case 'r5_floor': return {node: <Svg><FloorPlan lt={lt} /></Svg>, bg: '#EFE6D2', cam: drift(1.0, 1.12, 540, 560)};
-    case 'bonus': return {node: <>{solo('v', {plates: lt < 2.2 ? 1 : lt < 3.6 ? 2 : 3, speed: 0.8})}</>, bg: BA, chip: [lt < 2.2 ? 'LIGHT SET FIRST' : 'THEN ADD WEIGHT SLOWLY', '#8E6FD1'], cam: drift(1.0, 1.3, 480, 600)};
+    case 'r5_floor': {
+      const popK = (i: number) => sm(c01((lt - 0.15 - i * 0.35) / 0.3));
+      const D6: [number, number][] = [[-20, 110], [340, 110], [700, 110], [-20, 370], [340, 370], [700, 370]];
+      return {node: <><svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0}}>{Array.from({length: 9}).map((_, i) => <line key={i} x1={0} x2={1080} y1={110 + i * 120} y2={110 + i * 120} stroke="#D9C7A6" strokeWidth={4} />)}<text x={540} y={80} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={46} fill="#17181C">A TYPICAL GYM (illustrative)</text></svg>
+        {D6.map(([x, y], i) => <div key={i} style={{position: 'absolute', left: 0, top: 0, opacity: popK(i) > 0 ? 1 : 0, transformOrigin: `${x + 200}px ${y + 140}px`, transform: `scale(${0.6 + 0.4 * popK(i)})`}}><RigBox kind="h" t={t} K={0.5} x={x} y={y} off={i * 0.19} speed={sp * (0.9 + 0.08 * (i % 3))} plates={1 + (i % 3)} /></div>)}
+        <div style={{position: 'absolute', left: 0, top: 0, opacity: lt > 2.6 ? 1 : 0, transformOrigin: '540px 860px', transform: `scale(${0.6 + 0.4 * sm(c01((lt - 2.6) / 0.35))})`}}><RigBox kind="v" t={t} K={0.78} x={230} y={640} speed={sp} /></div></>, bg: '#EFE6D2', cam: drift(1.0, 1.1, 540, 560)}; }
+    case 'bonus': return {node: <>{solo('v', {plates: lt < 2.2 ? 1 : lt < 3.6 ? 2 : 3})}</>, bg: BA, chip: [lt < 2.2 ? 'LIGHT SET FIRST' : 'THEN ADD WEIGHT SLOWLY', '#8E6FD1'], cam: drift(1.0, 1.3, 480, 600)};
     case 'wins': return {node: <Svg><Wins t={t} lt={lt} /></Svg>, bg: '#FFF3C9', cam: drift(1.0, 1.1, 540, 550)};
     case 'beg': return {node: solo('h', {lumbar: 0.5}), bg: BD, chip: ['BEGINNER / SORE BACK → HORIZONTAL', RED], cam: drift(1.0, 1.35, 340, 600)};
     case 'exp': return {node: solo('v', {dmin: 70, angle: true}), bg: BA, chip: ['EXPERIENCED + MOBILE → VERTICAL', BLUE], cam: drift(1.0, 1.5, 470, 620)};
-    case 'ctrl': { const pl = 1 + Math.min(3, Math.floor(lt / 1.3)); return {node: lt < 2.8 ? solo('v', {plates: pl, speed: 1.2}) : solo('h', {plates: pl, speed: 1.2}), bg: lt < 2.8 ? BA : BD, chip: [lt < 2.8 ? 'CONTROL THE REP...' : '...THEN ADD WEIGHT', lt < 2.8 ? BLUE : RED], cam: drift(1.0, 1.4, 520, 620)}; }
-    case 'cta': return {node: <>{Array.from({length: 26}).map((_, i) => <div key={i} style={{position: 'absolute', left: random(`cf${i}`) * 1040, top: ((t * 220 * (0.6 + random(`cs${i}`)) + random(`cy${i}`) * 1100) % 1100) - 40, width: 18, height: 26, background: ['#2F7BF2', '#E5383B', '#FFC93C', '#22A861'][i % 4], transform: `rotate(${t * 200 + i * 40}deg)`, border: '3px solid #17181C'}} />)}<Person pose={POSES.flex} shirt={BLUE} phones hair="short" mood="smile" s={1.2} x={40} y={260 - Math.abs(Math.sin(t * 6)) * 40} /><Person pose={POSES.flex} shirt={RED} phones={false} cap beard mood="smile" flip s={1.2} x={480} y={260 - Math.abs(Math.sin(t * 6 + 1)) * 40} /></>, bg: '#FFF3C9', cam: drift(1.0, 1.1, 540, 550)};
+    case 'ctrl': { const pl = 1 + Math.min(3, Math.floor(lt / 1.3)); return {node: lt < 2.8 ? solo('v', {plates: pl}) : solo('h', {plates: pl}), bg: lt < 2.8 ? BA : BD, chip: [lt < 2.8 ? 'CONTROL THE REP...' : '...THEN ADD WEIGHT', lt < 2.8 ? BLUE : RED], cam: drift(1.0, 1.4, 520, 620)}; }
+    case 'cta': return {node: <>{Array.from({length: 26}).map((_, i) => <div key={i} style={{position: 'absolute', left: random(`cf${i}`) * 1040, top: ((t * 220 * (0.6 + random(`cs${i}`)) + random(`cy${i}`) * 1100) % 1100) - 40, width: 18, height: 26, background: ['#2F7BF2', '#E5383B', '#FFC93C', '#22A861'][i % 4], transform: `rotate(${t * 200 + i * 40}deg)`, border: '3px solid #17181C'}} />)}<Person pose={celeb(t, 0)} shirt={BLUE} phones hair="short" mood="smile" s={1.2} x={40} y={260 - Math.abs(Math.sin(t * 6)) * 24} /><Person pose={celeb(t, 1.3)} shirt={RED} phones={false} cap beard mood="smile" flip s={1.2} x={480} y={260 - Math.abs(Math.sin(t * 6 + 1.3)) * 24} /></>, bg: '#FFF3C9', cam: drift(1.0, 1.1, 540, 550)};
     default: return {node: panels(split()), bg: '#fff', cam: drift(1.0, 1.1, 540, 550)};
   }
 };
@@ -320,7 +327,7 @@ const shotAt = (name: string, t: number, lt: number, dur: number): ShotOut => {
 export const LegPressVideo: React.FC = () => {
   const f = useCurrentFrame(), t = f / FPS;
   const shot = SHOTS.find((s) => t >= s.from && t < s.to) ?? SHOTS[SHOTS.length - 1], lt = t - shot.from, dur = shot.to - shot.from;
-  const out = shotAt(shot.name, t, lt, dur);
+  const out = shotAt(shot.name, t, lt, dur, shot.speed);
   const dangerShot = shot.name === 'dng_a' || shot.name === 'dng_spine';
   const sh = shot.name === 'hook' && t < 0.5 ? 5 : dangerShot ? 6 : 0;
   let [z, cx, cy] = out.cam; { const hx = 540 / z, hy = 550 / z; cx = Math.min(1080 - hx, Math.max(hx, cx)); cy = Math.min(CH - hy, Math.max(hy, cy)); }
@@ -352,8 +359,8 @@ export const LegPressVideo: React.FC = () => {
       <Subs />
       <Audio src={staticFile('audio/lp_voice.wav')} />
       <Audio src={staticFile('audio/lp_sfx.wav')} volume={0.3} />
-      <Audio src={staticFile('audio/lp_music_frantic.wav')} volume={(fr) => 0.5 * (1 - calmW(fr / FPS))} />
-      <Audio src={staticFile('audio/lp_music_calm.wav')} volume={(fr) => 0.5 * calmW(fr / FPS)} />
+      <Audio src={staticFile('audio/lp_music_frantic.wav')} volume={(fr) => 0.65 * (1 - calmW(fr / FPS))} />
+      <Audio src={staticFile('audio/lp_music_calm.wav')} volume={(fr) => 0.65 * calmW(fr / FPS)} />
     </AbsoluteFill>
   );
 };

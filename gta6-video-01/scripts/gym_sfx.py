@@ -52,8 +52,9 @@ for sh in json.load(open(f'{OUT}/src/macaque/lpshots.json')): add(S, sh['from'] 
 add(S, 0.45, whoosh(0.4, 200, 1800), 0.8); add(S, 0.5, thump(70, 0.3), 1.2)                       # hook pull-back
 for k in ('vertical', 'horizontal'): add(S, EV[k] - 0.05, boing(), 0.25); add(S, EV[k], ding(740, 0.3), 0.5)
 REP = 1.05
-for t in np.arange(0.1, 4.6, 0.58): add(S, t, clank(600, 0.3), 0.4); add(S, t + 0.05, clank(520, 0.3), 0.3)
-for t in np.arange(4.6, EV['r5'] + 8.0, REP): add(S, t, clank(600, 0.3), 0.32); add(S, t + 0.04, clank(520, 0.3), 0.26)   # both machines, rep by rep
+for sh in json.load(open(f'{OUT}/src/macaque/lpshots.json')):
+    if sh['speed'] > 0:
+        for t in np.arange(sh['from'] + 0.05, sh['to'], REP / sh['speed']): add(S, t, clank(600, 0.3), 0.34); add(S, t + 0.04, clank(520, 0.3), 0.26)
 for k in ('r1', 'r2', 'r3', 'r4', 'r5', 'bonus'): add(S, EV[k] - 0.1, gong(170), 0.6); add(S, EV[k] - 0.1, chalk(), 0.5)
 for k in ('pointA', 'pointD2', 'pointD5'): add(S, EV[k], ding(988), 0.8); add(S, EV[k] + 0.12, ding(1319), 0.7)
 for k in ('draw3', 'draw4'): add(S, EV[k], tick(), 1.2); add(S, EV[k] + 0.25, tick(), 1.2); add(S, EV[k] + 0.5, ding(520, 0.5), 0.6)
