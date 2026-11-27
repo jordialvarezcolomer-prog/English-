@@ -74,6 +74,9 @@ w=wave.open(f'{OUT}/public/audio/lp_voice.wav','wb'); w.setnchannels(1); w.setsa
 SPD = 1.05   # light speed-up (pitch preserved) for a more dynamic read
 subprocess.run(['ffmpeg','-y','-loglevel','error','-i',f'{OUT}/public/audio/lp_voice.wav','-filter:a',f'atempo={SPD}',f'{OUT}/public/audio/lp_voice2.wav'],check=True)
 import os; os.replace(f'{OUT}/public/audio/lp_voice2.wav',f'{OUT}/public/audio/lp_voice.wav')
+# make the narration clearer/louder: gentle compression + make-up gain + peak limiter (the music/SFX levels in the mix stay the same)
+subprocess.run(['ffmpeg','-y','-loglevel','error','-i',f'{OUT}/public/audio/lp_voice.wav','-af','acompressor=threshold=-24dB:ratio=3:attack=5:release=90:makeup=1.6,alimiter=limit=0.93','/tmp/_vb.wav'],check=True)
+os.replace('/tmp/_vb.wav',f'{OUT}/public/audio/lp_voice.wav')
 for k in seg: seg[k]['start']/=SPD; seg[k]['end']/=SPD
 for n in ev: ev[n]/=SPD
 y=np.zeros(int(len(y)/SPD))
