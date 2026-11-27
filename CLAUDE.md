@@ -34,3 +34,7 @@
 - **Labels/names must fit** (auto-size chips, keep them in screen space, never clip them at the edge when the camera zooms).
 - **SVG diagrams need an `<svg>` wrapper** when placed inside an HTML stage (blank shots otherwise).
 - **Review before sending**: render stills of EVERY shot (mid-point + extra frames), read the contact sheets, fix, then render. Say honestly what was checked.
+
+## TikTok / Reels safe zone + music level (owner feedback; apply to ALL videos)
+- Videos are uploaded to TikTok and Instagram Reels: the **bottom ~480 px (y > ~1440 of 1920)** is covered by the caption/description/username/UI, the top ~130 px by the app header, and the **right ~120 px** by the like/comment/share column. Keep EVERY essential element (subtitles, cards, stickers, CTA pills, meters, faces) inside y 130-1440 and x 60-960. Subtitles go at about 60% of the height (y ~1130), never at the very bottom. The leg-press layout (stage scaled 0.75 at y 285, scoreboard y ~150, subtitles y 1128, compact cards y 1245-1435) is the reference.
+- Music mix reference: music stems volume **0.45** (each stem, crossfaded), SFX 0.3, voice full. Do not raise the music above this unless the owner says so.
