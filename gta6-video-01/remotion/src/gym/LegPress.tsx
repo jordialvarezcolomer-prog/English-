@@ -118,7 +118,7 @@ const RigBox: React.FC<{kind: 'v' | 'h'; t: number; K: number; x: number; y: num
 };
 const headStage = (kind: 'v' | 'h', K: number, x: number, y: number): V => { const g = rigGeo(kind, 140); return [x + K * g.headR[0], y + K * g.headR[1]]; };
 
-const Stamp: React.FC<{t: number; at: number; text: string; fill: string; dur?: number; y?: number; rot?: number; size?: number}> = ({t, at, text, fill, dur = 1.3, y = 1000, rot = -5, size = 96}) => {
+const Stamp: React.FC<{t: number; at: number; text: string; fill: string; dur?: number; y?: number; rot?: number; size?: number}> = ({t, at, text, fill, dur = 1.3, y = 760, rot = -5, size = 96}) => {
   const lt = t - at; if (lt < 0 || lt > dur) return null;
   const k = lt < 0.3 ? back(lt / 0.3) : 1, o = lt > dur - 0.25 ? (dur - lt) / 0.25 : 1, w = text.length * size * 0.62 + 80;
   return <g transform={`translate(540 ${y}) rotate(${rot}) scale(${k})`} opacity={o}><rect x={-w / 2} y={-size * 0.8} width={w} height={size * 1.5} rx={26} fill={fill} stroke="#fff" strokeWidth={8} /><text textAnchor="middle" y={size * 0.28} fontFamily={FONT} fontWeight={900} fontSize={size} fill="#fff" stroke="#17181C" strokeWidth={8} paintOrder="stroke">{text}</text></g>;
@@ -135,38 +135,39 @@ const Score: React.FC<{t: number}> = ({t}) => {
     </g>
   );
 };
+const CY = 1245;   // card top: everything lives inside the TikTok/Reels safe area (y <= ~1440)
 const Bar: React.FC<{y: number; label: string; v: number; col: string; t0: number; t: number}> = ({y, label, v, col, t0, t}) => {
   const k = sm(c01((t - t0) / 0.7)) * v;
-  return <g><text x={90} y={y + 36} fontFamily={FONT} fontWeight={900} fontSize={38} fill="#17181C">{label}</text><rect x={420} y={y} width={540} height={54} rx={27} fill="#fff" stroke="#17181C" strokeWidth={5} /><rect x={424} y={y + 4} width={Math.max(0, 532 * k)} height={46} rx={23} fill={col} /></g>;
+  return <g><text x={80} y={y + 31} fontFamily={FONT} fontWeight={900} fontSize={30} fill="#17181C">{label}</text><rect x={380} y={y} width={600} height={42} rx={21} fill="#fff" stroke="#17181C" strokeWidth={4} /><rect x={383} y={y + 3} width={Math.max(0, 594 * k)} height={36} rx={18} fill={col} /></g>;
 };
 const Card: React.FC<{t: number; at: number; title: string; sub?: string; bg?: string; children?: React.ReactNode}> = ({t, at, title, sub, bg = '#fff', children}) => {
   const k = sm(c01((t - at) / 0.35));
   return (
-    <g transform={`translate(0 ${(1 - k) * 80})`} opacity={k}>
-      <rect x={50} y={1480} width={980} height={400} rx={40} fill={bg} stroke="#17181C" strokeWidth={6} />
-      <text x={90} y={1550} fontFamily={FONT} fontWeight={900} fontSize={44} fill="#17181C">{title}</text>
-      {sub && <text x={90} y={1590} fontFamily={FONT} fontWeight={700} fontSize={28} fill="#5A5A60">{sub}</text>}
+    <g transform={`translate(0 ${(1 - k) * 60})`} opacity={k}>
+      <rect x={50} y={CY} width={980} height={190} rx={34} fill={bg} stroke="#17181C" strokeWidth={5} />
+      <text x={80} y={CY + 42} fontFamily={FONT} fontWeight={900} fontSize={34} fill="#17181C">{title}</text>
+      {sub && <text x={80} y={CY + 68} fontFamily={FONT} fontWeight={700} fontSize={22} fill="#5A5A60">{sub}</text>}
       {children}
     </g>
   );
 };
 const Cards: React.FC<{t: number}> = ({t}) => {
-  const w = (a: number, b: number) => t >= a && t < b;
+  const w = (a: number, b: number) => t >= a && t < b, R1 = CY + 86, R2 = CY + 138;
   return (
     <g>
-      {w(4.6, 7.8) && <Card t={t} at={4.6} title="TWO MACHINES, ONE QUESTION" sub="Lying, push UP  vs  sitting, push FORWARD"><text x={90} y={1700} fontFamily={FONT} fontWeight={900} fontSize={60} fill={BLUE}>VERTICAL</text><text x={90} y={1780} fontFamily={FONT} fontWeight={900} fontSize={60} fill={RED}>HORIZONTAL</text><text x={560} y={1740} fontFamily={FONT} fontWeight={900} fontSize={120} fill="#17181C">VS</text></Card>}
+      {w(4.6, 7.8) && <Card t={t} at={4.6} title="TWO MACHINES, ONE QUESTION" sub="Lying, push UP  vs  sitting, push FORWARD"><g fontFamily={FONT} fontWeight={900} fontSize={46}><text x={80} y={CY + 150} fill={BLUE}>VERTICAL</text><text x={470} y={CY + 150} fill="#17181C">VS</text><text x={580} y={CY + 150} fill={RED}>HORIZONTAL</text></g></Card>}
       {w(7.8, 11.0) && <Card t={t} at={7.8} title="ALEX: LYING BACK, PUSHES UP" sub="45° sled leg press" />}
       {w(11.0, EV.r1 - 0.2) && <Card t={t} at={11.0} title="DANIEL: SEATED, PUSHES FORWARD" sub="Flat seated leg press" />}
-      {w(EV.r1 - 0.2, EV.but) && <Card t={t} at={EV.r1 - 0.2} title="ROUND 1: RANGE OF MOTION" sub="Illustrative"><Bar y={1640} label="VERTICAL" v={0.92} col={BLUE} t0={EV.r1} t={t} /><Bar y={1730} label="HORIZONTAL" v={0.6} col={RED} t0={EV.r1 + 0.3} t={t} /></Card>}
-      {w(EV.but, EV.r2 - 0.2) && <Card t={t} at={EV.but} title="DANGER: TOO DEEP" sub="Pelvis lifts off the pad, lower back ROUNDS" bg="#FFE4E1"><path d="M 220 1790 Q 330 1630 440 1790" fill="none" stroke={RED} strokeWidth={22} strokeLinecap="round" /><text x={520} y={1760} fontFamily={FONT} fontWeight={900} fontSize={64} fill={RED}>ROUNDS!</text></Card>}
-      {w(EV.r2 - 0.2, EV.r3 - 0.2) && <Card t={t} at={EV.r2 - 0.2} title="ROUND 2: BACK SUPPORT" sub="Illustrative"><Bar y={1640} label="HORIZONTAL" v={0.92} col={RED} t0={EV.r2} t={t} /><Bar y={1730} label="VERTICAL" v={0.6} col={BLUE} t0={EV.r2 + 0.3} t={t} /></Card>}
-      {w(EV.r3 - 0.2, EV.r4 - 0.2) && <Card t={t} at={EV.r3 - 0.2} title="ROUND 3: SAFETY" sub="Same rules for BOTH"><g fontFamily={FONT} fontWeight={900} fontSize={46}><text x={90} y={1700} fill="#22A861">✔ USE THE SAFETY STOPS</text>{t >= EV.lock - 0.2 && <text x={90} y={1780} fill={RED}>✖ NEVER LOCK YOUR KNEES</text>}</g></Card>}
-      {w(EV.r4 - 0.2, EV.r5 - 0.2) && <Card t={t} at={EV.r4 - 0.2} title="ROUND 4: THE MUSCLES" sub="Same for BOTH machines"><g fontFamily={FONT} fontWeight={900} fontSize={42}><text x={90} y={1690} fill={t >= EV.higher - 0.1 && t < EV.lower - 0.2 ? '#17181C' : '#9A9AA2'}>FEET HIGHER → GLUTES + HAMSTRINGS</text><text x={90} y={1770} fill={t >= EV.lower - 0.2 ? '#17181C' : '#9A9AA2'}>FEET LOWER → QUADS</text></g></Card>}
-      {w(EV.r5 - 0.2, EV.bonus - 0.2) && <Card t={t} at={EV.r5 - 0.2} title="ROUND 5: CONVENIENCE" sub="In most gyms. Illustrative"><Bar y={1640} label="HORIZONTAL" v={0.95} col={RED} t0={EV.r5} t={t} /><Bar y={1730} label="VERTICAL" v={0.3} col={BLUE} t0={EV.r5 + 0.3} t={t} /></Card>}
-      {w(EV.bonus - 0.2, EV.wins - 0.6) && <Card t={t} at={EV.bonus - 0.2} title="BONUS: WARM-UP" sub="Light set first, add weight slowly">{[0, 1, 2, 3].map((i) => <circle key={i} cx={200 + i * 150} cy={1740} r={30 + i * 12} fill="#1C1D22" stroke="#17181C" strokeWidth={5} opacity={t >= EV.bonus + 1.2 + i * 0.7 ? 1 : 0.2} />)}</Card>}
-      {w(EV.wins - 0.6, EV.control - 0.2) && <Card t={t} at={EV.wins - 0.6} title="WHO WINS? IT DEPENDS ON YOU" sub="Your level and your back decide"><g fontFamily={FONT} fontWeight={900} fontSize={37}>{t >= EV.horiz - 0.2 ? <><text x={90} y={1690} fill={RED}>BEGINNER / SORE BACK → HORIZONTAL</text></> : null}{t >= EV.vert - 0.2 ? <text x={90} y={1770} fill={BLUE}>EXPERIENCED + MOBILE → VERTICAL</text> : null}</g></Card>}
-      {w(EV.control - 0.2, EV.tell - 0.2) && <Card t={t} at={EV.control - 0.2} title="PICK THE ONE YOU CONTROL" sub="Add weight little by little. Quality reps beat ego">{[0, 1, 2, 3].map((i) => <rect key={i} x={120 + i * 200} y={1790 - (i + 1) * 40} width={150} height={(i + 1) * 40} rx={10} fill={i % 2 ? RED : BLUE} stroke="#17181C" strokeWidth={5} opacity={t >= EV.control + 0.3 + i * 0.5 ? 1 : 0.2} />)}</Card>}
-      {t >= EV.tell - 0.2 && <Card t={t} at={EV.tell - 0.2} title="WHICH DO YOU USE?" sub="Tell me in the comments"><rect x={150} y={1660} width={780} height={150} rx={75} fill={G.yellow} stroke="#17181C" strokeWidth={6} /><text x={540} y={1760} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={42} fill="#17181C">SEND IT TO YOUR GYM BUDDY</text></Card>}
+      {w(EV.r1 - 0.2, EV.but) && <Card t={t} at={EV.r1 - 0.2} title="ROUND 1: RANGE OF MOTION" sub="Illustrative"><Bar y={R1} label="VERTICAL" v={0.92} col={BLUE} t0={EV.r1} t={t} /><Bar y={R2} label="HORIZONTAL" v={0.6} col={RED} t0={EV.r1 + 0.3} t={t} /></Card>}
+      {w(EV.but, EV.r2 - 0.2) && <Card t={t} at={EV.but} title="DANGER: TOO DEEP" sub="Pelvis lifts off the pad, lower back ROUNDS" bg="#FFE4E1"><path d={`M 90 ${CY + 160} Q 170 ${CY + 90} 250 ${CY + 160}`} fill="none" stroke={RED} strokeWidth={16} strokeLinecap="round" /><text x={300} y={CY + 158} fontFamily={FONT} fontWeight={900} fontSize={56} fill={RED}>ROUNDS!</text></Card>}
+      {w(EV.r2 - 0.2, EV.r3 - 0.2) && <Card t={t} at={EV.r2 - 0.2} title="ROUND 2: BACK SUPPORT" sub="Illustrative"><Bar y={R1} label="HORIZONTAL" v={0.92} col={RED} t0={EV.r2} t={t} /><Bar y={R2} label="VERTICAL" v={0.6} col={BLUE} t0={EV.r2 + 0.3} t={t} /></Card>}
+      {w(EV.r3 - 0.2, EV.r4 - 0.2) && <Card t={t} at={EV.r3 - 0.2} title="ROUND 3: SAFETY" sub="Same rules for BOTH"><g fontFamily={FONT} fontWeight={900} fontSize={34}><text x={80} y={R1 + 26} fill="#22A861">✔ USE THE SAFETY STOPS</text>{t >= EV.lock - 0.2 && <text x={80} y={R2 + 30} fill={RED}>✖ NEVER LOCK YOUR KNEES</text>}</g></Card>}
+      {w(EV.r4 - 0.2, EV.r5 - 0.2) && <Card t={t} at={EV.r4 - 0.2} title="ROUND 4: THE MUSCLES" sub="Same for BOTH machines"><g fontFamily={FONT} fontWeight={900} fontSize={32}><text x={80} y={R1 + 26} fill={t >= EV.higher - 0.1 && t < EV.lower - 0.2 ? '#17181C' : '#9A9AA2'}>FEET HIGH → GLUTES + HAMSTRINGS</text><text x={80} y={R2 + 30} fill={t >= EV.lower - 0.2 ? '#17181C' : '#9A9AA2'}>FEET LOW → QUADS</text></g></Card>}
+      {w(EV.r5 - 0.2, EV.bonus - 0.2) && <Card t={t} at={EV.r5 - 0.2} title="ROUND 5: CONVENIENCE" sub="In most gyms. Illustrative"><Bar y={R1} label="HORIZONTAL" v={0.95} col={RED} t0={EV.r5} t={t} /><Bar y={R2} label="VERTICAL" v={0.3} col={BLUE} t0={EV.r5 + 0.3} t={t} /></Card>}
+      {w(EV.bonus - 0.2, EV.wins - 0.6) && <Card t={t} at={EV.bonus - 0.2} title="BONUS: WARM-UP" sub="Light set first, add weight slowly">{[0, 1, 2, 3].map((i) => <circle key={i} cx={130 + i * 120} cy={CY + 140} r={20 + i * 6} fill="#1C1D22" stroke="#17181C" strokeWidth={4} opacity={t >= EV.bonus + 1.2 + i * 0.7 ? 1 : 0.2} />)}</Card>}
+      {w(EV.wins - 0.6, EV.control - 0.2) && <Card t={t} at={EV.wins - 0.6} title="WHO WINS? IT DEPENDS ON YOU" sub="Your level and your back decide"><g fontFamily={FONT} fontWeight={900} fontSize={30}>{t >= EV.horiz - 0.2 && <text x={80} y={R1 + 26} fill={RED}>BEGINNER / SORE BACK → HORIZONTAL</text>}{t >= EV.vert - 0.2 && <text x={80} y={R2 + 30} fill={BLUE}>EXPERIENCED + MOBILE → VERTICAL</text>}</g></Card>}
+      {w(EV.control - 0.2, EV.tell - 0.2) && <Card t={t} at={EV.control - 0.2} title="PICK THE ONE YOU CONTROL" sub="Add weight little by little. Quality reps beat ego">{[0, 1, 2, 3].map((i) => <rect key={i} x={520 + i * 110} y={CY + 180 - (i + 1) * 24} width={84} height={(i + 1) * 24} rx={8} fill={i % 2 ? RED : BLUE} stroke="#17181C" strokeWidth={4} opacity={t >= EV.control + 0.3 + i * 0.5 ? 1 : 0.2} />)}</Card>}
+      {t >= EV.tell - 0.2 && <Card t={t} at={EV.tell - 0.2} title="WHICH DO YOU USE?" sub="Tell me in the comments"><rect x={140} y={CY + 92} width={800} height={78} rx={39} fill={G.yellow} stroke="#17181C" strokeWidth={5} /><text x={540} y={CY + 144} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={40} fill="#17181C">SEND IT TO YOUR GYM BUDDY</text></Card>}
     </g>
   );
 };
@@ -179,7 +180,7 @@ const Subs: React.FC = () => {
   for (const c of chunks) { const d = ((sg.end - sg.start) * (c.join(' ').length + 1)) / tot, L = c.reduce((a, x) => a + x.length + 1, 0); let acc = tt; cards.push({t0: tt, t1: tt + d, w: c.map((x) => { const st = acc; acc += (d * (x.length + 1)) / L; return {w: x, a: st}; })}); tt += d; }
   const card = cards.find((c) => s >= c.t0 && s < c.t1 + 0.04) ?? cards[cards.length - 1];
   return (
-    <div style={{position: 'absolute', left: 40, width: 1000, top: 1346, display: 'flex', justifyContent: 'center'}}>
+    <div style={{position: 'absolute', left: 40, width: 1000, top: 1128, display: 'flex', justifyContent: 'center'}}>
       <div style={{background: '#111', borderRadius: 16, padding: '10px 28px 14px', fontFamily: FONT, fontWeight: 900, fontSize: 54, letterSpacing: -1, whiteSpace: 'nowrap', boxShadow: '0 8px 0 rgba(0,0,0,.18)'}}>
         {card.w.map((x, j) => <span key={j} style={{color: s >= x.a - 0.02 ? '#fff' : '#7d7d7d', marginRight: j < card.w.length - 1 ? 16 : 0}}>{x.w}</span>)}
       </div>
@@ -338,7 +339,7 @@ export const LegPressVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{background: G.bg}}>
       <BG />
-      <div style={{position: 'absolute', left: 0, top: TOP, width: 1080, height: CH, overflow: 'hidden', borderRadius: 28, background: out.bg}}>
+      <div style={{position: 'absolute', left: 135, top: 285, width: 1080, height: CH, overflow: 'hidden', borderRadius: 28, background: out.bg, transformOrigin: '0 0', transform: 'scale(0.75)'}}>
         <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: CH, transformOrigin: '0 0', transform: `translate(${540 - cx * z + ox + sl * 150}px, ${550 - cy * z + oy}px) scale(${z}) rotate(${sway}deg)`, filter: sl > 0 ? `blur(${sl * 6}px)` : undefined}}>
           <svg width={1080} height={CH} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>{shot.name === 'hook' || shot.name === 'q3' || shot.name === 'r1_cmp' || shot.name === 'r4_both' || shot.name === 'ctrl' ? null : null}</svg>
           {out.node}
@@ -346,13 +347,13 @@ export const LegPressVideo: React.FC = () => {
         {out.chip && <Chip text={out.chip[0]} color={out.chip[1]} />}
       </div>
       <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}>
-        <g opacity={scoreK}><Score t={t} /></g>
-        {hookK > 0 && <g transform="translate(540 120)"><rect x={-500} y={-86} width={1000} height={172} rx={40} fill="#fff" stroke="#17181C" strokeWidth={8} /><text textAnchor="middle" y={-4} fontFamily={FONT} fontWeight={900} fontSize={66}><tspan fill={BLUE}>VERTICAL</tspan><tspan fill="#17181C"> or </tspan><tspan fill={RED}>HORIZONTAL?</tspan></text><text textAnchor="middle" y={54} fontFamily={FONT} fontWeight={800} fontSize={34} fill="#5A5A60">which leg press is better?</text></g>}
+        <g opacity={scoreK} transform="translate(0 112)"><Score t={t} /></g>
+        {hookK > 0 && <g transform="translate(540 212) scale(0.85)"><rect x={-500} y={-86} width={1000} height={172} rx={40} fill="#fff" stroke="#17181C" strokeWidth={8} /><text textAnchor="middle" y={-4} fontFamily={FONT} fontWeight={900} fontSize={66}><tspan fill={BLUE}>VERTICAL</tspan><tspan fill="#17181C"> or </tspan><tspan fill={RED}>HORIZONTAL?</tspan></text><text textAnchor="middle" y={54} fontFamily={FONT} fontWeight={800} fontSize={34} fill="#5A5A60">which leg press is better?</text></g>}
         <Cards t={t} />
         <Stamp t={t} at={EV.r1 - 0.05} text="ROUND 1" fill="#17181C" /><Stamp t={t} at={EV.r2 - 0.05} text="ROUND 2" fill="#17181C" /><Stamp t={t} at={EV.r3 - 0.05} text="ROUND 3" fill="#17181C" /><Stamp t={t} at={EV.r4 - 0.05} text="ROUND 4" fill="#17181C" /><Stamp t={t} at={EV.r5 - 0.05} text="ROUND 5" fill="#17181C" /><Stamp t={t} at={EV.bonus - 0.05} text="BONUS" fill="#8E6FD1" />
-        <Stamp t={t} at={EV.pointA - 0.05} text="POINT: ALEX" fill={BLUE} y={1250} size={72} rot={4} dur={1.2} /><Stamp t={t} at={EV.pointD2 - 0.05} text="POINT: DANIEL" fill={RED} y={1250} size={72} rot={-4} dur={1.2} /><Stamp t={t} at={EV.pointD5 - 0.05} text="POINT: DANIEL" fill={RED} y={1250} size={72} rot={4} dur={1.2} />
-        <Stamp t={t} at={EV.draw3 - 0.1} text="DRAW!" fill="#8A8A90" y={1250} size={84} dur={1.3} /><Stamp t={t} at={EV.draw4 - 0.1} text="DRAW!" fill="#8A8A90" y={1250} size={84} dur={1.3} rot={5} />
-        <Stamp t={t} at={EV.but} text="DANGER!" fill={RED} y={1250} size={110} dur={2.2} rot={-6} />
+        <Stamp t={t} at={EV.pointA - 0.05} text="POINT: ALEX" fill={BLUE} y={1070} size={72} rot={4} dur={1.2} /><Stamp t={t} at={EV.pointD2 - 0.05} text="POINT: DANIEL" fill={RED} y={1070} size={72} rot={-4} dur={1.2} /><Stamp t={t} at={EV.pointD5 - 0.05} text="POINT: DANIEL" fill={RED} y={1070} size={72} rot={4} dur={1.2} />
+        <Stamp t={t} at={EV.draw3 - 0.1} text="DRAW!" fill="#8A8A90" y={1070} size={84} dur={1.3} /><Stamp t={t} at={EV.draw4 - 0.1} text="DRAW!" fill="#8A8A90" y={1070} size={84} dur={1.3} rot={5} />
+        <Stamp t={t} at={EV.but} text="DANGER!" fill={RED} y={1050} size={110} dur={2.2} rot={-6} />
         {dangerShot && <rect width={1080} height={1920} fill={RED} opacity={0.07 + 0.07 * Math.sin(t * 18)} />}
       </svg>
       <AbsoluteFill style={{background: '#fff', opacity: flash, pointerEvents: 'none'}} />
