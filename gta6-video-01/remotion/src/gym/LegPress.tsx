@@ -359,8 +359,8 @@ export const LegPressVideo: React.FC = () => {
       <Subs />
       <Audio src={staticFile('audio/lp_voice.wav')} />
       <Audio src={staticFile('audio/lp_sfx.wav')} volume={0.3} />
-      <Audio src={staticFile('audio/lp_music_frantic.wav')} volume={(fr) => 0.65 * (1 - calmW(fr / FPS))} />
-      <Audio src={staticFile('audio/lp_music_calm.wav')} volume={(fr) => 0.65 * calmW(fr / FPS)} />
+      <Audio src={staticFile('audio/lp_music_frantic.wav')} volume={(fr) => 0.45 * (1 - calmW(fr / FPS))} />
+      <Audio src={staticFile('audio/lp_music_calm.wav')} volume={(fr) => 0.45 * calmW(fr / FPS)} />
     </AbsoluteFill>
   );
 };
